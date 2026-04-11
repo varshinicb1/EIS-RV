@@ -1,0 +1,9 @@
+<svg width="20mm" height="20mm" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Outer arc -->
+  <path d="
+    M 5 10
+    A 5 5 0 1 1 15 10
+  " stroke="black" stroke-width="1.5" fill="none"></path>
+
+</svg>

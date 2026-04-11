@@ -1,0 +1,21 @@
+id,paper_title,doi,Rs_ohm,Rct_ohm,Cdl_F,sigma_warburg,capacitance_F_g,capacitance_mF_cm2,electrolyte,freq_min_Hz,freq_max_Hz,confidence
+5,Facile Fabrication of a Nanocomposite Electrode for Enhanced Electrochemical Performance,10.21203/rs.3.rs-7148554/v1,,,,,,,0.1M NaOH,,,0.9
+14,Graphene/Ruthenium Active Species Aerogel as Electrode for Supercapacitor Applications,10.3390/ma11010057,,,,,,,1M NaCl,,,0.9
+20,Varying Impedance “Orbital Impedance Stability“ Graphene Based Supercapacitor Nanofiber Electrodes – Utilizing A New Direct Method of Studying Impedance Based on Actual Experimental Data,10.2478/acmy-2019-0008,,,,,,,1M H2SO4,,,0.9
+2,INVESTIGATION OF GOLD NANOPARTICLE MODIFICATION ON SCREEN PRINTED GOLD ELECTRODE BY ELECTROCHEMICAL IMPEDANCE SPECTROSCOPY,10.31796/ogummf.1066433,,,,,,,0.5M H2SO4,0.1,10000.0,0.88
+8,Microfabricated Thin Film Impedance Sensor &amp; AC Impedance Measurements,10.3390/s100605847,,,,,,,0.1M NaCl,0.1,1000000.0,0.88
+7,CTAB-assisted hydrothermal synthesis of micro-sheets like Ni-BDC electrode material for supercapacitor application,10.1088/1402-4896/adb45c,,,,,800.0,,2M KOH,,,0.85
+9,Investigation of Reaction Kinetics in Carbon Anode with Nano-Fillers through Impedance Spectroscopy,10.1149/ma2020-012387mtgabs,,,,,,,,0.03,200000.0,0.85
+10,Introduction to High-Temperature Superconductivity for Solid State Chemists,,39.0,,,,,,,,,0.85
+11,High mechanical strength Si anode synthesis with interlayer bonded expanded graphite structure for lithium-ion batteries,10.1016/j.jechem.2024.02.021.,1.12,,,,,,,,,0.85
+17,Impedance spectroscopy and equivalent circuit modelling of SrZrS3 chalcogenide perovskite solar cells,10.1016/j.solener.2025.114136,3.0,,,,,,,,,0.85
+18,Quantifying the intrinsic surface charge density and charge-transfer resistance of the graphene-solution interface through bias-free low-level charge measurement,10.1063/1.4955404,,6.5,,,,,,,,0.85
+19,MEMS Impedance Biosensor for accurate and rapid detection of E.coli 0157:H7,10.32469/10355/57140,,,,,,,,100.0,1000000.0,0.85
+6,Precise control on morphology of ultrafine LiMn2O4 nanorods as supercapacitor electrode via two-step hydrothermal method,10.1039/C8CE01029C,10.0,,,,653.5,,,,,0.82
+1,Preparation of Ag-CNTs and Ag-Graphene nanocomposite and their combination with MnO2 bath deposition for flexible supercapacitor development.,10.58837/chula.the.2019.375,,,,,,677.12,,,,0.8
+3,New Electrochemical Characterization Methods for Nanocomposite Supercapacitor Electrodes,,,,,,345.0,,,,,0.8
+4,Low-density functionalized amorphous carbon nanofoam as binder-free Supercapacitor electrode,10.1016/j.cartre.2025.100516,,,,,,4.1,,,,0.8
+12,A pseudo-capacitive chalcogenide-based electrode with dense 1-dimensional nanoarrays for enhanced energy density in asymmetric supercapacitors,,,,,,,378.0,,,,0.8
+13,Highly porous carbonaceous aerogel for symmetric supercapacitor with dual-redox active electrolyte revealing high performance pseudo-capacitance,10.21203/rs.3.rs-4357023/v1,,,,,560.0,,,,,0.8
+15,A cellulose-based hybrid 2D material aerogel for a flexible all-solid-state supercapacitor with high specific capacitance,10.1039/c7ra07908g,,,,,916.42,,,,,0.8
+16,Three-dimensional aerogel on sulfonyldibenzene derivative functionalized reduced graphene oxide for aqueous supercapacitor,10.22541/au.171040521.17556047/v1,,,,,388.0,,,,,0.8

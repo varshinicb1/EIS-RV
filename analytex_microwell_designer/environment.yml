@@ -1,0 +1,18 @@
+# AnalyteX MicroWell Designer - Conda Environment
+# Create with: conda env create -f environment.yml
+# Activate:    conda activate analytex
+
+name: analytex
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+  - cadquery>=2.4
+  - numpy>=1.24
+  - pip
+  - pip:
+    - PyQt6>=6.5.0
+    - pyqtgraph>=0.13.0
+    - PyOpenGL>=3.1.7

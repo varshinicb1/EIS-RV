@@ -1,0 +1,26 @@
+<svg width="40mm" height="40mm" viewBox="-20 -20 40 40" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- ===== WORKING ELECTRODE (WE) ===== -->
+  <circle cx="0" cy="0" r="2" fill="black"></circle>
+
+  <!-- ===== COUNTER ELECTRODE (CE) ===== -->
+  <!-- Proper ring segment (top half only) -->
+  <path fill="black" d="
+    M -5 0
+    A 5 5 0 0 1 5 0
+    L 3 0
+    A 3 3 0 0 0 -3 0
+    Z
+  "></path>
+
+  <!-- ===== REFERENCE ELECTRODE (RE) ===== -->
+  <!-- small arc segment -->
+  <path fill="black" d="
+    M -2.8 0.5
+    A 3 3 0 0 1 -1.2 2.7
+    L -1.5 2.2
+    A 2.5 2.5 0 0 0 -2.4 0.7
+    Z
+  "></path>
+
+</svg>

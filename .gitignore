@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ML models
+vanl/backend/ml/saved_models/*.pkl
+vanl/backend/ml/saved_models/*.joblib
+
+# Datasets (large)
+vanl/datasets/external/*.csv
+vanl/datasets/research/*.db
+
+# Temp files
+*.tmp
+*.bak
+~$*
+
+# Byte-compiled
+*.pyc
+
+# Logs
+*.log

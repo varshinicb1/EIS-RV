@@ -1,0 +1,61 @@
+<svg width="800" height="240" viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+
+  <!-- Background -->
+  <rect width="800" height="240" fill="black"></rect>
+
+  <!-- Pixel Grid Font Style -->
+  <g fill="#00FF9C">
+
+    <!-- A -->
+    <rect x="40" y="80" width="20" height="80"></rect>
+    <rect x="60" y="60" width="20" height="20"></rect>
+    <rect x="80" y="80" width="20" height="80"></rect>
+    <rect x="60" y="110" width="20" height="20"></rect>
+
+    <!-- N -->
+    <rect x="120" y="60" width="20" height="100"></rect>
+    <rect x="140" y="80" width="20" height="20"></rect>
+    <rect x="160" y="100" width="20" height="20"></rect>
+    <rect x="180" y="120" width="20" height="40"></rect>
+    <rect x="180" y="60" width="20" height="40"></rect>
+
+    <!-- A -->
+    <rect x="220" y="80" width="20" height="80"></rect>
+    <rect x="240" y="60" width="20" height="20"></rect>
+    <rect x="260" y="80" width="20" height="80"></rect>
+    <rect x="240" y="110" width="20" height="20"></rect>
+
+    <!-- L -->
+    <rect x="300" y="60" width="20" height="100"></rect>
+    <rect x="320" y="140" width="40" height="20"></rect>
+
+    <!-- Y -->
+    <rect x="380" y="60" width="20" height="40"></rect>
+    <rect x="420" y="60" width="20" height="40"></rect>
+    <rect x="400" y="100" width="20" height="60"></rect>
+
+    <!-- T -->
+    <rect x="460" y="60" width="80" height="20"></rect>
+    <rect x="500" y="80" width="20" height="80"></rect>
+
+    <!-- E -->
+    <rect x="560" y="60" width="20" height="100"></rect>
+    <rect x="580" y="60" width="60" height="20"></rect>
+    <rect x="580" y="100" width="40" height="20"></rect>
+    <rect x="580" y="140" width="60" height="20"></rect>
+
+    <!-- X -->
+    <rect x="660" y="60" width="20" height="40"></rect>
+    <rect x="700" y="60" width="20" height="40"></rect>
+    <rect x="680" y="100" width="20" height="20"></rect>
+    <rect x="660" y="120" width="20" height="40"></rect>
+    <rect x="700" y="120" width="20" height="40"></rect>
+
+  </g>
+
+  <!-- Subtitle -->
+  <text x="400" y="200" font-family="monospace" font-size="24" fill="#AAAAAA" text-anchor="middle">
+    by VidyuthLabs
+  </text>
+
+</svg>

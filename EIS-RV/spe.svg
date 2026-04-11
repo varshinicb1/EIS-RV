@@ -1,0 +1,49 @@
+<svg width="20mm" height="40mm" viewBox="0 0 20 40" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- ===== WORKING ELECTRODE (WE) ===== -->
+  <!-- Ø4 mm -->
+  <circle cx="10" cy="10" r="2" fill="black"></circle>
+
+  <!-- ===== COUNTER ELECTRODE (CE) ===== -->
+  <!-- Thick semi-ring -->
+  <path d="
+    M 5 10
+    A 5 5 0 1 1 15 10
+    L 13.5 10
+    A 3.5 3.5 0 1 0 6.5 10
+    Z
+  " fill="black"></path>
+
+  <!-- ===== REFERENCE ELECTRODE (RE) ===== -->
+  <!-- Small thick arc -->
+  <path d="
+    M 6.5 7.5
+    A 3.5 3.5 0 0 1 8.5 5.5
+    L 8 6.5
+    A 2.5 2.5 0 0 0 7 7.5
+    Z
+  " fill="black"></path>
+
+  <!-- ===== TRACKS ===== -->
+
+  <!-- RE track -->
+  <rect x="6.5" y="12" width="1" height="15" fill="black"></rect>
+
+  <!-- WE track -->
+  <rect x="9.5" y="12" width="1" height="15" fill="black"></rect>
+
+  <!-- CE track -->
+  <rect x="12.5" y="12" width="1" height="15" fill="black"></rect>
+
+  <!-- ===== PADS (2.54mm pitch) ===== -->
+
+  <!-- RE -->
+  <rect x="6" y="27" width="2" height="6" fill="black"></rect>
+
+  <!-- WE -->
+  <rect x="9" y="27" width="2" height="6" fill="black"></rect>
+
+  <!-- CE -->
+  <rect x="12" y="27" width="2" height="6" fill="black"></rect>
+
+</svg>

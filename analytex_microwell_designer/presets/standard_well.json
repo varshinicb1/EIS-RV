@@ -1,0 +1,49 @@
+{
+  "name": "Standard Electrochemical Well",
+  "well": {
+    "diameter": 3.0,
+    "depth": 1.0,
+    "taper_angle": 3.0,
+    "fillet_radius": 0.1,
+    "bottom_fillet": 0.08
+  },
+  "substrate": {
+    "thickness": 2.5,
+    "margin": 4.0,
+    "corner_radius": 1.5
+  },
+  "array": {
+    "array_type": "single",
+    "rows": 1,
+    "cols": 1,
+    "spacing_x": 5.0,
+    "spacing_y": 5.0
+  },
+  "electrode": {
+    "enabled": false,
+    "we_diameter": 3.0,
+    "re_width": 1.5,
+    "re_length": 3.0,
+    "ce_width": 2.0,
+    "ce_length": 4.0,
+    "we_re_spacing": 2.0,
+    "we_ce_spacing": 3.0,
+    "re_offset_angle": 120.0,
+    "ce_offset_angle": 240.0
+  },
+  "channel": {
+    "enabled": true,
+    "groove_width": 1.5,
+    "groove_depth": 0.3,
+    "pad_width": 4.0,
+    "pad_length": 6.0,
+    "pad_depth": 0.2,
+    "snap_fit": false
+  },
+  "surface": {
+    "well_surface": "hydrophilic",
+    "outer_surface": "hydrophobic",
+    "contact_angle_well": 30.0,
+    "contact_angle_outer": 110.0
+  }
+}
