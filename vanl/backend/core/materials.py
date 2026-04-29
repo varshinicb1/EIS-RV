@@ -181,6 +181,17 @@ MATERIAL_DATABASE: Dict[str, dict] = {
         "electrochemical_window": 1.5,
         "typical_Cdl": 30e-6,
     },
+    "NiMoO4": {
+        "formula": "α-NiMoO₄",
+        "type": "transition_metal_oxide",
+        "bulk_conductivity": 1e-4,
+        "theoretical_surface_area": 82.0,  # BET surface area from paper
+        "density": 1.23,                 # X-ray density
+        "cost_factor": 0.4,
+        "pseudocapacitive": True,
+        "electrochemical_window": 0.65,  # 3-electrode window
+        "typical_capacitance": 548,      # F/g from paper
+    },
 }
 
 

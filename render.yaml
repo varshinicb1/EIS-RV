@@ -1,0 +1,18 @@
+services:
+  # VANL API Service
+  - type: web
+    name: vanl-api
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "pip install -r vanl/requirements.txt"
+    startCommand: "uvicorn vanl.backend.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: LOG_LEVEL
+        value: INFO
+    healthCheckPath: /api/health
