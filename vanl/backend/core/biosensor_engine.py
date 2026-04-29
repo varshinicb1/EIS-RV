@@ -356,7 +356,9 @@ def _generate_calibration(
     responses = michaelis_menten(concentrations, Vmax_uA, Km)
 
     # Add noise (realistic baseline noise)
-    noise_std = Vmax_uA * 0.005  # 0.5% of Vmax
+    # Baseline noise from electrode double-layer (Johnson-Nyquist + 1/f)
+    # Typical for carbon SPE: ~10-50 nA RMS; use 1% of Vmax or 50 nA minimum
+    noise_std = max(0.05, Vmax_uA * 0.01)  # µA
     responses_noisy = responses + np.random.normal(0, noise_std, len(responses))
 
     perf.concentrations_mM = concentrations.tolist()
@@ -402,6 +404,8 @@ def _simulate_chronoamp(
     C_test = 1e-3  # 1 mM test concentration (mol/L = M)
 
     t = np.linspace(0.01, 60, 200)  # 60 seconds
+    # C_test = 1e-3 mol/L; Cottrell needs mol/cm³: 1 mol/L = 1e-3 mol/cm³
+    # so C_test / 1000 = 1e-6 mol/cm³ — correct unit conversion
     i_cottrell = cottrell_current(n, 96485, A_eff, D, C_test / 1000, t)
 
     # Add steady-state enzyme response

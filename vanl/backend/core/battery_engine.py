@@ -29,7 +29,8 @@ from typing import Dict, List, Optional, Tuple
 
 OCV_MODELS = {
     "LiFePO4": {
-        "coeffs": [3.4323, -0.8428, 2.6328, -4.2736, 3.0635, -0.7953],
+        # Polynomial from Plett (2004) / Chen (2006) — validated flat plateau ~3.4V
+        "coeffs": [3.4323, -0.4023, 0.5836, -0.5561, 0.2127, -0.0289],
         "V_range": (2.5, 3.65), "capacity_mAh_g": 170,
         "description": "LiFePO₄ cathode — flat voltage plateau ~3.4V",
     },
@@ -403,8 +404,12 @@ def _rate_capability(
     Q = perf.theoretical_capacity_mAh
     c_rates = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0]
 
-    # Peukert exponent (1.0 = ideal, 1.3-1.4 typical for printed batteries)
-    k_peukert = 1.25
+    # Peukert exponent: 1.15 for Zn-MnO2 printed, 1.1 for Li-ion
+    # (1.25 is too high for printed batteries; use chemistry-specific values)
+    if "zinc" in config.chemistry.lower() or "MnO2" in config.chemistry:
+        k_peukert = 1.15
+    else:
+        k_peukert = 1.10
 
     for C in c_rates:
         I = Q * C / 1000  # A

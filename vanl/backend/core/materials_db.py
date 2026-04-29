@@ -347,7 +347,7 @@ _register(MaterialProperty(
     space_group="I4/mnm",
     theoretical_surface_area_m2_g=300,
     pseudocapacitive=True,
-    theoretical_capacitance_F_g=1370,
+    theoretical_capacitance_F_g=1370,  # Theoretical max; practical 200-400 F/g
     redox_potential_V_SHE=1.23,
     electrochemical_window_V=0.9,
     diffusion_coeff_cm2_s=1e-13,
@@ -380,7 +380,8 @@ _register(MaterialProperty(
     cost_factor=0.4,
     common_synthesis_methods=["hydrothermal", "sol_gel", "electrodeposition", "calcination"],
     common_electrolytes=["1M KOH", "6M KOH", "2M KOH"],
-    source_refs=["doi:10.1016/j.electacta.2012.01.060", "Materials Project mp-19009"],
+    source_refs=["doi:10.1016/j.electacta.2012.01.060", "Materials Project mp-19009",
+                 "Note: 2584 F/g is theoretical max; practical values 200-600 F/g"],
 ))
 
 _register(MaterialProperty(
@@ -461,7 +462,7 @@ _register(MaterialProperty(
     space_group="P4_2/mnm",
     theoretical_surface_area_m2_g=100,
     pseudocapacitive=True,
-    theoretical_capacitance_F_g=1450,
+    theoretical_capacitance_F_g=900,  # Hydrous RuO2; literature: 720-900 F/g (Zheng 1995)
     redox_potential_V_SHE=1.23,
     diffusion_coeff_cm2_s=1e-8,
     cost_per_gram_USD=15.0,

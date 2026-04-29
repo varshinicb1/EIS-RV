@@ -247,6 +247,7 @@ def descriptors_to_eis(
     electrode_area_cm2: float = 0.07,  # 3mm diameter well
     electrolyte_conductivity_S_m: float = 1.0,  # e.g., 0.1M KCl
     cell_constant: float = 1.0,
+    n_electrons: int = 1,
 ) -> EISParameters:
     """
     Estimate EIS parameters from structural descriptors using
@@ -315,13 +316,23 @@ def descriptors_to_eis(
     # Higher crystallinity → more ordered structure → lower σ_w
     D_eff = 1e-6 * (1 - 0.5 * descriptors.porosity) * (
         0.5 + 0.5 * descriptors.crystallinity
-    )  # cm²/s
+    )  # cm²/s → convert to m²/s below
     D_eff = max(D_eff, 1e-10)
 
-    C_bulk = 5e-6  # mol/cm³ (5 mM redox species)
-    F = 96485  # C/mol
+    C_bulk = 5e-6  # mol/cm³ = 5 mM; convert to mol/m³ below
+    R_const = 8.314   # J/(mol·K)
+    T_const = 298.15  # K
+    F_const = 96485   # C/mol
 
-    sigma_w = RT_nF / (F * effective_area_cm2 * np.sqrt(2 * D_eff) * C_bulk)
+    # Warburg coefficient (Bard & Faulkner eq 11.4.18):
+    # σ_W = RT / (n²F²A√(2D)C)
+    # Units: A in m², D in m²/s, C in mol/m³
+    area_m2 = effective_area_cm2 * 1e-4          # cm² → m²
+    D_eff_m2s = D_eff * 1e-4                     # cm²/s → m²/s
+    C_bulk_mol_m3 = C_bulk * 1e6                 # mol/cm³ → mol/m³
+    sigma_w = (R_const * T_const) / (
+        n_electrons**2 * F_const**2 * area_m2 * np.sqrt(2 * D_eff_m2s) * C_bulk_mol_m3
+    )
     sigma_w = np.clip(sigma_w, 0.1, 5000)
 
     # ── CPE exponent ──

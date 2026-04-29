@@ -355,8 +355,12 @@ def _analyze_gcd_cycles(result: GCDResult, mass_kg: float):
             Cs = 0
 
         # Energy: E = ½ C V² (in Wh/kg)
+        # E [J/g] = 0.5 * Cs [F/g] * V² [V²]
+        # E [Wh/kg] = E [J/g] * 1000 [g/kg] / 3600 [J/Wh]
+        #           = 0.5 * Cs * V² * 1000 / 3600
+        #           = 0.5 * Cs * V² / 3.6
         if mass_kg > 0 and Cs > 0:
-            E_wh_kg = 0.5 * Cs * V_range**2 / 3.6  # F/g × V² / 3600 × 1000
+            E_wh_kg = 0.5 * Cs * V_range**2 / 3.6  # F/g × V² / 3.6 = Wh/kg
         else:
             E_wh_kg = 0
 

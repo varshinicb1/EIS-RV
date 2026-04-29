@@ -669,3 +669,38 @@ async def estimate_cost(composition: Dict[str, float], mass_g: float = 1.0):
             "1kg": round(total_cost * 1000 * 0.4, 2),
         },
     }
+
+
+# ══════════════════════════════════════════════════════════════════════
+#   External Data Endpoint
+# ══════════════════════════════════════════════════════════════════════
+
+@router.get("/materials/external/{formula}")
+async def get_external_material_data(formula: str):
+    """
+    Fetch material data from Materials Project, NIST, GNoME, and OCP.
+
+    Returns aggregated property data from multiple external sources.
+    Live API calls (Materials Project, NIST) are attempted with graceful
+    fallback to static reference tables (GNoME, OCP).
+    """
+    try:
+        from ..core.external_data import (
+            fetch_materials_project_data, fetch_nist_data,
+            get_gnome_stability, get_ocp_reference,
+        )
+        mp_data = fetch_materials_project_data(formula)
+        nist_data = fetch_nist_data(formula)
+        gnome_data = get_gnome_stability(formula)
+        ocp_data = get_ocp_reference(formula)
+
+        return {
+            "formula": formula,
+            "materials_project": mp_data,
+            "nist": nist_data,
+            "gnome_stability": gnome_data,
+            "ocp_adsorption": ocp_data,
+        }
+    except Exception as e:
+        logger.exception("External data fetch failed for %s", formula)
+        raise HTTPException(status_code=500, detail=str(e))

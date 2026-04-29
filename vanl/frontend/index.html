@@ -3,9 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VANL — Digital Twin for Printed Electronics</title>
-    <meta name="description" content="Physics-based digital twin platform for printed electronics: supercapacitors, batteries, biosensors. Ink formulation to device simulation.">
+    <title>Prajna — Physics-Informed Digital Twin for Printed Electronics</title>
+    <meta name="description" content="Prajna: Physics-based digital twin platform for printed electronics. Quantum-accurate EIS, CV, GCD, biosensor, battery, supercapacitor simulation with real-time 3D crystal rendering.">
+    <meta name="keywords" content="electrochemistry, EIS, biosensor, printed electronics, digital twin, materials science, India, research">
+    <!-- Plotly for electrochemical charts -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- 3Dmol.js for WebGL molecular/crystal 3D rendering -->
+    <script src="https://3dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+    <!-- Three.js for custom 3D device stack rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -14,8 +20,8 @@
     <!-- ═══ Top Bar ═══ -->
     <header id="topbar">
         <div class="topbar-left">
-            <span class="brand-mark">VANL</span>
-            <span class="brand-sub">Digital Twin for Printed Electronics</span>
+            <span class="brand-mark">PRAJNA</span>
+            <span class="brand-sub">Physics-Informed Digital Twin · Printed Electronics · India</span>
         </div>
         <div class="topbar-right">
             <span id="api-status" class="status-badge offline">API Offline</span>
@@ -44,6 +50,12 @@
             <button class="nav-btn" data-tab="predict">Predict</button>
             <button class="nav-btn" data-tab="cost">Cost</button>
             <button class="nav-btn" data-tab="research">Research</button>
+        </div>
+        <div class="nav-section">
+            <span class="nav-label">3D / AI</span>
+            <button class="nav-btn" data-tab="crystal3d">Crystal 3D</button>
+            <button class="nav-btn" data-tab="noise">Noise Model</button>
+            <button class="nav-btn" data-tab="alchemi">NVIDIA ALCHEMI</button>
         </div>
     </nav>
 
@@ -449,11 +461,192 @@
                 <button class="btn-run" onclick="loadPipelineStats()" style="margin-top:1rem;">Refresh Stats</button>
             </div>
         </section>
+
+        <!-- ═══ CRYSTAL 3D TAB ═══ -->
+        <section class="tab-panel" id="tab-crystal3d">
+            <div class="panel-grid two-col">
+                <div class="panel param-panel">
+                    <h2>Crystal Structure Viewer</h2>
+                    <p class="panel-note">Real-time WebGL rendering via 3Dmol.js · GPU-accelerated</p>
+                    <div class="param-group">
+                        <label>Material</label>
+                        <select id="crystal-material" onchange="loadCrystalStructure()">
+                            <option value="graphene">Graphene (C)</option>
+                            <option value="MnO2">MnO₂ (Pyrolusite)</option>
+                            <option value="LiFePO4">LiFePO₄</option>
+                            <option value="TiO2">TiO₂ (Anatase)</option>
+                            <option value="RuO2">RuO₂</option>
+                            <option value="NiO">NiO</option>
+                            <option value="Fe2O3">Fe₂O₃ (Hematite)</option>
+                            <option value="MXene_Ti3C2">Ti₃C₂Tₓ MXene</option>
+                            <option value="PEDOT_PSS">PEDOT:PSS</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>Render Style</label>
+                        <select id="crystal-style">
+                            <option value="sphere">Ball-and-Stick</option>
+                            <option value="stick">Stick</option>
+                            <option value="sphere_only">Space-Fill (CPK)</option>
+                            <option value="surface">Surface</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>Color Scheme</label>
+                        <select id="crystal-color">
+                            <option value="element">By Element</option>
+                            <option value="chain">By Chain</option>
+                            <option value="spectrum">Spectrum</option>
+                        </select>
+                    </div>
+                    <button class="btn-run" onclick="loadCrystalStructure()">Render Structure</button>
+                    <div id="crystal-info" class="results-table" style="margin-top:10px;"></div>
+                    <div style="margin-top:12px;">
+                        <p class="panel-note" style="color:#d29922;">
+                            ⚡ NVIDIA ALCHEMI integration: geometry relaxation &amp; property prediction via NIM microservices.
+                            Requires NVIDIA API key at <a href="https://build.nvidia.com" target="_blank" style="color:#58a6ff;">build.nvidia.com</a>
+                        </p>
+                    </div>
+                </div>
+                <div class="panel plot-panel">
+                    <div id="crystal-3d-viewer" style="width:100%;height:420px;background:#0d1117;border:1px solid #30363d;border-radius:4px;position:relative;">
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#8b949e;font-family:IBM Plex Mono,monospace;font-size:12px;text-align:center;">
+                            Select a material and click Render Structure
+                        </div>
+                    </div>
+                    <div id="crystal-properties" class="results-table" style="margin-top:8px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ NOISE MODEL TAB ═══ -->
+        <section class="tab-panel" id="tab-noise">
+            <div class="panel-grid two-col">
+                <div class="panel param-panel">
+                    <h2>Quantum Noise &amp; Real-World Uncertainty</h2>
+                    <p class="panel-note">Johnson-Nyquist · Shot noise · 1/f flicker · Quantization · Environmental drift</p>
+                    <div class="param-group">
+                        <label>Measurement Type</label>
+                        <select id="noise-type">
+                            <option value="eis">EIS Measurement</option>
+                            <option value="cv">Cyclic Voltammetry</option>
+                            <option value="amperometric">Amperometric Biosensor</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>Temperature</label>
+                        <div class="param-row">
+                            <input type="range" id="noise-temp" min="273" max="373" step="1" value="298">
+                            <input type="number" id="noise-temp-val" value="298" step="1"> <span class="unit">K</span>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label>Electrode Resistance R</label>
+                        <div class="param-row">
+                            <input type="number" id="noise-R" value="100" step="10"> <span class="unit">Ω</span>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label>Bandwidth</label>
+                        <div class="param-row">
+                            <input type="number" id="noise-bw" value="1000" step="100"> <span class="unit">Hz</span>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label>DC Current (for shot noise)</label>
+                        <div class="param-row">
+                            <input type="number" id="noise-I" value="1e-6" step="1e-7"> <span class="unit">A</span>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label>ADC Resolution</label>
+                        <div class="param-row">
+                            <select id="noise-adc">
+                                <option value="12">12-bit (AD5940)</option>
+                                <option value="16" selected>16-bit</option>
+                                <option value="24">24-bit</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label>1/f Corner Frequency</label>
+                        <div class="param-row">
+                            <input type="number" id="noise-fc" value="10" step="1"> <span class="unit">Hz</span>
+                        </div>
+                    </div>
+                    <button class="btn-run" onclick="runNoiseModel()">Compute Noise Budget</button>
+                </div>
+                <div class="panel plot-panel">
+                    <div class="plot-tabs">
+                        <button class="plot-tab active" onclick="switchNoisePlot('psd')">Power Spectral Density</button>
+                        <button class="plot-tab" onclick="switchNoisePlot('snr')">SNR vs Frequency</button>
+                        <button class="plot-tab" onclick="switchNoisePlot('budget')">Noise Budget</button>
+                    </div>
+                    <div id="noise-plot" class="plot-container"></div>
+                    <div id="noise-results" class="results-table"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ NVIDIA ALCHEMI TAB ═══ -->
+        <section class="tab-panel" id="tab-alchemi">
+            <div class="panel full-panel">
+                <h2>NVIDIA ALCHEMI Integration <span class="badge">NIM Microservices</span></h2>
+                <p class="panel-note">
+                    NVIDIA ALCHEMI (AI Lab for Chemistry and Materials Innovation) — geometry relaxation, molecular dynamics, conformer search.
+                    Powered by Machine Learning Interatomic Potentials (MLIPs) via NVIDIA NIM microservices.
+                    <a href="https://developer.nvidia.com/alchemi" target="_blank" style="color:#58a6ff;">developer.nvidia.com/alchemi</a>
+                </p>
+                <div class="panel-grid two-col" style="margin-top:12px;">
+                    <div class="panel param-panel">
+                        <h2>Geometry Relaxation (BGR NIM)</h2>
+                        <p class="panel-note">Batched Geometry Relaxation — 25×–800× speedup vs DFT</p>
+                        <div class="param-group">
+                            <label>NVIDIA API Key</label>
+                            <input type="password" id="alchemi-key" placeholder="nvapi-..." style="width:100%;">
+                        </div>
+                        <div class="param-group">
+                            <label>Material Formula</label>
+                            <input type="text" id="alchemi-formula" value="LiFePO4" style="width:100%;">
+                        </div>
+                        <div class="param-group">
+                            <label>MLIP Model</label>
+                            <select id="alchemi-model">
+                                <option value="mace-mp-0">MACE-MP-0 (universal)</option>
+                                <option value="equiformer-v2">EquiformerV2</option>
+                                <option value="uma">UMA (Universal Model for Atoms)</option>
+                            </select>
+                        </div>
+                        <button class="btn-run" onclick="runAlchemiRelaxation()">Run Geometry Relaxation</button>
+                        <div id="alchemi-results" class="results-table" style="margin-top:10px;"></div>
+                    </div>
+                    <div class="panel param-panel">
+                        <h2>Framework Reference</h2>
+                        <p class="panel-note">What ALCHEMI provides for electrochemical materials research:</p>
+                        <div class="results-table">
+                            <div class="result-row"><span class="result-label">BGR NIM</span><span class="result-value good">Geometry relaxation · 800× DFT speedup</span></div>
+                            <div class="result-row"><span class="result-label">BMD NIM</span><span class="result-value good">Batched molecular dynamics</span></div>
+                            <div class="result-row"><span class="result-label">BCS NIM</span><span class="result-value good">Conformer search</span></div>
+                            <div class="result-row"><span class="result-label">PhysicsNeMo</span><span class="result-value">Physics-ML surrogate training</span></div>
+                            <div class="result-row"><span class="result-label">MACE-MP-0</span><span class="result-value">Universal MLIP (87 elements)</span></div>
+                            <div class="result-row"><span class="result-label">UMA</span><span class="result-value">Universal Model for Atoms (Meta/FAIR)</span></div>
+                            <div class="result-row"><span class="result-label">GNoME</span><span class="result-value">2.2M stable crystals (DeepMind)</span></div>
+                            <div class="result-row"><span class="result-label">OCP</span><span class="result-value">Open Catalyst Project (Meta)</span></div>
+                        </div>
+                        <p class="panel-note" style="margin-top:12px;color:#d29922;">
+                            ⚠ ALCHEMI NIM requires NVIDIA GPU Cloud account.
+                            Free trial at <a href="https://build.nvidia.com" target="_blank" style="color:#58a6ff;">build.nvidia.com</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer id="footer">
-        <span>VANL v1.0 — Physics-based digital twin for printed electronics</span>
-        <span>Engines: EIS · CV · GCD · Ink Rheology · Supercapacitor · Battery · Biosensor</span>
+        <span>Prajna v2.0 — Physics-informed digital twin · VidyuthLabs · India</span>
+        <span>Engines: EIS · CV · GCD · Ink · Supercap · Battery · Biosensor · 3D Crystal · Noise · ALCHEMI</span>
     </footer>
 
     <script src="app.js"></script>

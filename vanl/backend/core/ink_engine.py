@@ -479,7 +479,10 @@ def simulate_ink(formulation: InkFormulation) -> InkProperties:
     # Adjust phi_max and intrinsic viscosity for non-spherical particles
     if formulation.aspect_ratio > 10:
         phi_max = 0.64 / (1 + 0.1 * np.log10(formulation.aspect_ratio))
-        intrinsic_eta = 2.5 + 0.3 * formulation.aspect_ratio
+        # Simha (1940) rod formula: [η] ≈ AR / (5·ln(2·AR) - 1.5) for AR >> 1
+        AR = formulation.aspect_ratio
+        intrinsic_eta = AR / (5 * np.log(2 * AR) - 1.5)
+        intrinsic_eta = np.clip(intrinsic_eta, 2.5, 50)
     else:
         phi_max = 0.64
         intrinsic_eta = 2.5
@@ -626,7 +629,10 @@ def rheology_curve(formulation: InkFormulation, n_points: int = 50) -> dict:
 
     if formulation.aspect_ratio > 10:
         phi_max = 0.64 / (1 + 0.1 * np.log10(formulation.aspect_ratio))
-        intrinsic_eta = 2.5 + 0.3 * formulation.aspect_ratio
+        # Simha (1940) rod formula: [η] ≈ AR / (5·ln(2·AR) - 1.5) for AR >> 1
+        AR = formulation.aspect_ratio
+        intrinsic_eta = AR / (5 * np.log(2 * AR) - 1.5)
+        intrinsic_eta = np.clip(intrinsic_eta, 2.5, 50)
     else:
         phi_max = 0.64
         intrinsic_eta = 2.5

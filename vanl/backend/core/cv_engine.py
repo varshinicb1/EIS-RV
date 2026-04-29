@@ -144,7 +144,14 @@ class CVResult:
             return "irreversible"
 
     def _randles_sevcik_ip(self) -> float:
-        """Theoretical peak current from Randles-Sevcik equation."""
+        """Theoretical peak current from Randles-Sevcik equation.
+
+        i_p = 0.4463 · n^(3/2) · F^(3/2) · A · C · √(Dv/RT)
+
+        Units: D in cm²/s, C in mol/cm³ (= M × 1e-3), A in cm²
+        → i_p in Amperes. Constant 0.4463 is correct for these SI-cgs units
+        (Bard & Faulkner, 3rd Ed., eq. 6.2.18).
+        """
         p = self.params
         A_eff = p.electrode_area_cm2 * p.roughness_factor
         C = p.C_ox_bulk_M * 1e-3  # mol/cm³
@@ -306,26 +313,45 @@ def _build_potential_waveform(
 
 
 def _analyze_peaks(result: CVResult):
-    """Find anodic and cathodic peaks in the CV."""
+    """Find anodic and cathodic peaks in the CV.
+
+    Detects sweep direction from E_start vs E_vertex1 so the forward
+    sweep is correctly identified regardless of scan direction.
+    """
     E = result.E
     i = result.i_total
     n = len(E)
+    p = result.params
 
     half = n // 2 if n > 10 else n
 
-    # Forward sweep (first half): find anodic peak (positive max)
-    i_fwd = i[:half]
-    if len(i_fwd) > 0:
-        idx_pa = np.argmax(i_fwd)
-        result.i_pa = float(i_fwd[idx_pa])
-        result.E_pa = float(E[idx_pa])
+    # Determine if forward sweep is anodic (E_start < E_vertex1) or cathodic
+    forward_is_anodic = p.E_start_V < p.E_vertex1_V
 
-    # Reverse sweep (second half): find cathodic peak (negative min)
+    i_fwd = i[:half]
     i_rev = i[half:]
-    if len(i_rev) > 0:
-        idx_pc = np.argmin(i_rev)
-        result.i_pc = float(i_rev[idx_pc])
-        result.E_pc = float(E[half + idx_pc])
+
+    if forward_is_anodic:
+        # Forward sweep → anodic peak (positive max)
+        if len(i_fwd) > 0:
+            idx_pa = np.argmax(i_fwd)
+            result.i_pa = float(i_fwd[idx_pa])
+            result.E_pa = float(E[idx_pa])
+        # Reverse sweep → cathodic peak (negative min)
+        if len(i_rev) > 0:
+            idx_pc = np.argmin(i_rev)
+            result.i_pc = float(i_rev[idx_pc])
+            result.E_pc = float(E[half + idx_pc])
+    else:
+        # Forward sweep is cathodic (scanning negative first)
+        if len(i_fwd) > 0:
+            idx_pc = np.argmin(i_fwd)
+            result.i_pc = float(i_fwd[idx_pc])
+            result.E_pc = float(E[idx_pc])
+        if len(i_rev) > 0:
+            idx_pa = np.argmax(i_rev)
+            result.i_pa = float(i_rev[idx_pa])
+            result.E_pa = float(E[half + idx_pa])
 
     result.delta_Ep = abs(result.E_pa - result.E_pc)
 

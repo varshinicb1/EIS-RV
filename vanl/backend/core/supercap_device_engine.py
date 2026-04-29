@@ -274,7 +274,9 @@ def simulate_device(config: DeviceConfig) -> DevicePerformance:
 
 def _electrode_resistance(electrode: ElectrodeSpec) -> float:
     """Electrode bulk + ionic resistance in porous structure."""
-    # Electronic resistance through film
+    # Electronic resistance through film: R = L / (σ · A)
+    # area_cm2() * 1e-4 → m²; thickness_cm() * 1e-2 → m
+    # R = m / (S/m · m²) = Ω  ✓
     R_electronic = 1.0 / (
         max(electrode.conductivity_S_m, 1e-6) *
         electrode.area_cm2() * 1e-4 /

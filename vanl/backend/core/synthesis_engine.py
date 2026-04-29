@@ -155,11 +155,14 @@ class SynthesisEngine:
         particle_size = np.clip(particle_size, 2.0, 500.0)
 
         # ─────── Surface Area ───────
-        # For spherical particles: SA ∝ 1/d
-        # Also depends on porosity and structural arrangement
-        # Normalize: SA_max occurs at minimum particle size
-        sa_particle_factor = 30.0 / max(particle_size, 2.0)  # Inverse size
-        surface_area = base_sa * sa_particle_factor * (0.5 + 0.5 * effects["porosity_base"])
+        # For spherical particles: SA = 6/(ρ_eff * d) [m²/g]
+        # d in meters, ρ in kg/m³ → SA in m²/kg → divide by 1000 for m²/g
+        rho_eff = 2000  # kg/m³ effective density (weighted average)
+        d_m = particle_size * 1e-9  # nm → m
+        sa_spherical = 6.0 / (rho_eff * d_m) / 1000  # m²/kg → m²/g
+        # Blend with composition-weighted theoretical SA
+        sa_blend_factor = 0.3 + 0.7 * effects["porosity_base"]
+        surface_area = (0.4 * sa_spherical + 0.6 * base_sa) * sa_blend_factor
         surface_area = np.clip(surface_area, 5.0, 3000.0)
 
         # ─────── Porosity ───────
