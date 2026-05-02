@@ -20,14 +20,17 @@ const path = require('path');
 const { spawn } = require('child_process');
 const Store = require('electron-store');
 const crypto = require('crypto');
+const { initAutoUpdater, downloadUpdate, installUpdate, checkForUpdates } = require('./auto-updater');
 
 // Secure configuration
 const CONFIG = {
     SERVER_PORT: 8000,
+    VITE_PORT: 5173,
     SERVER_HOST: '127.0.0.1',
     MAX_WINDOW_COUNT: 5,
     PYTHON_TIMEOUT: 30000,
     IPC_RATE_LIMIT: 100, // requests per minute
+    IS_DEV: process.argv.includes('--dev'),
 };
 
 // Initialize secure store
@@ -45,7 +48,7 @@ const store = new Store({
 // Global references
 let mainWindow = null;
 let pythonProcess = null;
-const windowCount = 0;
+let windowCount = 0;
 const ipcCallCounts = new Map();
 
 /**
@@ -114,6 +117,7 @@ function createWindow() {
         dialog.showErrorBox('Error', 'Maximum window count reached');
         return;
     }
+    windowCount++;
     
     // Load saved bounds
     const bounds = store.get('windowBounds');
@@ -123,9 +127,9 @@ function createWindow() {
         height: bounds.height,
         minWidth: 1200,
         minHeight: 700,
-        title: 'RĀMAN Studio - Desktop Companion for AnalyteX',
+        title: 'RĀMAN Studio v2.0 — VidyuthLabs',
         icon: path.join(__dirname, '../../resources/icons/icon.png'),
-        backgroundColor: '#0a0e1a',
+        backgroundColor: '#141517',
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -150,16 +154,17 @@ function createWindow() {
                 ...details.responseHeaders,
                 'Content-Security-Policy': [
                     "default-src 'self'; " +
-                    "script-src 'self' 'unsafe-inline' https://3Dmol.csb.pitt.edu; " +
-                    "style-src 'self' 'unsafe-inline'; " +
-                    "img-src 'self' data: https:; " +
-                    "connect-src 'self' http://localhost:8000 https://license.vidyuthlabs.com; " +
-                    "font-src 'self' data:; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://3Dmol.csb.pitt.edu; " +
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                    "img-src 'self' data: blob: https:; " +
+                    "worker-src 'self' blob:; " +
+                    "child-src 'self' blob:; " +
+                    "connect-src 'self' http://localhost:8000 http://localhost:5173 http://127.0.0.1:8000 http://127.0.0.1:5173 ws://localhost:5173 https://license.vidyuthlabs.com https://raw.githack.com https://raw.githubusercontent.com; " +
+                    "font-src 'self' data: https://fonts.gstatic.com; " +
                     "object-src 'none'; " +
                     "base-uri 'self'; " +
                     "form-action 'self'; " +
-                    "frame-ancestors 'none'; " +
-                    "upgrade-insecure-requests;"
+                    "frame-ancestors 'none';"
                 ],
                 'X-Content-Type-Options': ['nosniff'],
                 'X-Frame-Options': ['DENY'],
@@ -174,6 +179,8 @@ function createWindow() {
     mainWindow.webContents.on('will-navigate', (event, url) => {
         const allowedOrigins = [
             `http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`,
+            `http://${CONFIG.SERVER_HOST}:${CONFIG.VITE_PORT}`,
+            `http://localhost:${CONFIG.VITE_PORT}`,
             'https://license.vidyuthlabs.com'
         ];
         
@@ -198,8 +205,19 @@ function createWindow() {
         mainWindow.show();
     });
 
-    // Load the application
-    mainWindow.loadURL(`http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`);
+    // Load the application — Vite dev server in dev, built renderer in production
+    if (CONFIG.IS_DEV) {
+        mainWindow.loadURL(`http://localhost:${CONFIG.VITE_PORT}`);
+    } else {
+        const rendererPath = path.join(__dirname, '../frontend/dist/index.html');
+        const fs = require('fs');
+        if (fs.existsSync(rendererPath)) {
+            mainWindow.loadFile(rendererPath);
+        } else {
+            // Fallback to backend-served frontend
+            mainWindow.loadURL(`http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`);
+        }
+    }
 
     // Open DevTools only in development
     if (process.argv.includes('--dev')) {
@@ -215,10 +233,19 @@ function createWindow() {
     // Handle window close
     mainWindow.on('closed', () => {
         mainWindow = null;
+        windowCount--;
     });
 
     // Create application menu
     createMenu();
+
+    // Initialize auto-updater
+    initAutoUpdater(mainWindow);
+
+    // Update IPC handlers
+    ipcMain.handle('check-for-updates', () => checkForUpdates());
+    ipcMain.handle('download-update', () => downloadUpdate());
+    ipcMain.handle('install-update', () => installUpdate());
 }
 
 /**
@@ -382,10 +409,10 @@ function createMenu() {
                             dialog.showMessageBox(mainWindow, {
                                 type: 'info',
                                 title: 'About RĀMAN Studio',
-                                message: 'RĀMAN Studio v1.0.0',
+                                message: 'RĀMAN Studio v2.0.0',
                                 detail: 'The Digital Twin for Your Potentiostat\n\n' +
                                        'AI-powered electrochemical analysis by VidyuthLabs.\n' +
-                                       'Desktop companion for AnalyteX devices.\n\n' +
+                                       'C++ accelerated · Multi-runtime · Enterprise-grade\n\n' +
                                        'Honoring Professor CNR Rao\'s legacy in materials science.\n\n' +
                                        '© 2026 VidyuthLabs\n' +
                                        'https://vidyuthlabs.co.in',
@@ -407,37 +434,60 @@ function createMenu() {
  */
 function startPythonServer() {
     return new Promise((resolve, reject) => {
-        console.log('🚀 Starting Python backend server...');
+        console.log('[RAMAN] Starting Python backend server...');
 
         // Validate port
         const serverPort = validatePort(CONFIG.SERVER_PORT);
         
-        // Determine Python executable
-        const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+        // Start backend server with security settings
+        let serverCmd;
+        let serverArgs;
         
-        // Start uvicorn server with security settings
-        pythonProcess = spawn(pythonCmd, [
-            '-m', 'uvicorn',
-            'vanl.backend.main:app',
-            '--host', CONFIG.SERVER_HOST,
-            '--port', serverPort.toString(),
-            '--log-level', 'info',
-            '--no-access-log'  // Reduce log verbosity
-        ], {
-            cwd: path.join(__dirname, '../..'),
-            env: {
-                ...process.env,
-                PYTHONUNBUFFERED: '1',
-                NVIDIA_API_KEY: process.env.NVIDIA_API_KEY || '',
-                // Security: Disable Python optimizations that could leak info
-                PYTHONDONTWRITEBYTECODE: '1'
-            },
-            // Windows: Hide console window
-            ...(process.platform === 'win32' && {
-                windowsHide: true,
-                detached: false
-            })
-        });
+        if (app.isPackaged) {
+            // Production: use compiled PyInstaller executable
+            const exeExt = process.platform === 'win32' ? '.exe' : '';
+            serverCmd = path.join(process.resourcesPath, 'backend', `raman_backend${exeExt}`);
+            serverArgs = [
+                '--host', CONFIG.SERVER_HOST,
+                '--port', serverPort.toString()
+            ];
+            
+            pythonProcess = spawn(serverCmd, serverArgs, {
+                env: {
+                    ...process.env,
+                    NVIDIA_API_KEY: process.env.NVIDIA_API_KEY || ''
+                },
+                ...(process.platform === 'win32' && {
+                    windowsHide: true,
+                    detached: false
+                })
+            });
+        } else {
+            // Development: use python executable
+            serverCmd = process.platform === 'win32' ? 'python' : 'python3';
+            serverArgs = [
+                '-m', 'uvicorn',
+                'src.backend.api.server:app',
+                '--host', CONFIG.SERVER_HOST,
+                '--port', serverPort.toString(),
+                '--log-level', 'info',
+                '--no-access-log'
+            ];
+            
+            pythonProcess = spawn(serverCmd, serverArgs, {
+                cwd: path.join(__dirname, '../..'),
+                env: {
+                    ...process.env,
+                    PYTHONUNBUFFERED: '1',
+                    NVIDIA_API_KEY: process.env.NVIDIA_API_KEY || '',
+                    PYTHONDONTWRITEBYTECODE: '1'
+                },
+                ...(process.platform === 'win32' && {
+                    windowsHide: true,
+                    detached: false
+                })
+            });
+        }
 
         let serverStarted = false;
 
@@ -448,7 +498,7 @@ function startPythonServer() {
             // Check if server is ready
             if (output.includes('Uvicorn running') && !serverStarted) {
                 serverStarted = true;
-                console.log('✅ Python backend server started');
+                console.log('[RAMAN] Python backend server started');
                 resolve();
             }
         });
@@ -458,7 +508,7 @@ function startPythonServer() {
         });
 
         pythonProcess.on('error', (error) => {
-            console.error('❌ Failed to start Python server:', error);
+            console.error('[RAMAN] Failed to start Python server:', error);
             reject(error);
         });
 
@@ -487,7 +537,7 @@ function startPythonServer() {
  */
 function stopPythonServer() {
     if (pythonProcess) {
-        console.log('🛑 Stopping Python backend server...');
+        console.log('[RAMAN] Stopping Python backend server...');
         
         try {
             // Try graceful shutdown first
@@ -515,13 +565,29 @@ function stopPythonServer() {
 ipcMain.handle('get-gpu-status', async () => {
     try {
         rateLimitIPC('get-gpu-status');
-        // This would call Python backend API
-        return {
-            available: true,
-            name: 'NVIDIA GeForce RTX 4050',
-            memory: '6 GB',
-            utilization: 15
-        };
+        // Fetch real GPU status from the Python backend
+        const http = require('http');
+        return new Promise((resolve) => {
+            const req = http.get(`http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}/api/v2/engine-info`, (res) => {
+                let body = '';
+                res.on('data', (chunk) => body += chunk);
+                res.on('end', () => {
+                    try {
+                        const data = JSON.parse(body);
+                        resolve({
+                            available: data.cpp || data.python,
+                            cpp_engine: data.cpp,
+                            python_fallback: data.python,
+                            engines: data.engines || [],
+                        });
+                    } catch {
+                        resolve({ available: false, error: 'Failed to parse engine info' });
+                    }
+                });
+            });
+            req.on('error', () => resolve({ available: false, error: 'Backend unreachable' }));
+            req.setTimeout(5000, () => { req.destroy(); resolve({ available: false, error: 'Timeout' }); });
+        });
     } catch (error) {
         console.error('IPC error:', error);
         return { error: error.message };
@@ -532,12 +598,23 @@ ipcMain.handle('get-gpu-status', async () => {
 ipcMain.handle('get-license-info', async () => {
     try {
         rateLimitIPC('get-license-info');
-        // This would call Python backend API
-        return {
-            status: 'trial',
-            days_remaining: 25,
-            features: ['all']
-        };
+        // Fetch real license status from the Python backend
+        const http = require('http');
+        return new Promise((resolve) => {
+            const req = http.get(`http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}/api/v2/auth/license`, (res) => {
+                let body = '';
+                res.on('data', (chunk) => body += chunk);
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(body));
+                    } catch {
+                        resolve({ status: 'unknown', error: 'Failed to parse license info' });
+                    }
+                });
+            });
+            req.on('error', () => resolve({ status: 'unknown', error: 'Backend unreachable' }));
+            req.setTimeout(5000, () => { req.destroy(); resolve({ status: 'unknown', error: 'Timeout' }); });
+        });
     } catch (error) {
         console.error('IPC error:', error);
         return { error: error.message };
@@ -678,10 +755,11 @@ process.on('loaded', () => {
     };
 });
 
-console.log('⚛️  RĀMAN Studio - Secure Edition');
-console.log('   The Digital Twin for Your Potentiostat');
-console.log('   Company: VidyuthLabs');
-console.log('   Version: 1.0.0');
-console.log('   Platform:', process.platform);
-console.log('   Arch:', process.arch);
-console.log('   Security: Enhanced');
+console.log('[RAMAN] RAMAN Studio v2.0 — Secure Edition');
+console.log('[RAMAN] The Digital Twin for Your Potentiostat');
+console.log('[RAMAN] Company: VidyuthLabs');
+console.log('[RAMAN] Version: 2.0.0');
+console.log('[RAMAN] Platform:', process.platform);
+console.log('[RAMAN] Arch:', process.arch);
+console.log('[RAMAN] Mode:', CONFIG.IS_DEV ? 'Development' : 'Production');
+console.log('[RAMAN] Security: Enhanced');

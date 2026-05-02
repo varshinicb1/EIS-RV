@@ -55,6 +55,8 @@ add_library(raman_core_static STATIC
     src/eis_solver.cpp
     src/cv_solver.cpp
     src/diffusion_solver.cpp
+    src/drt_solver.cpp
+    src/circuit_fitter.cpp
 )
 
 target_include_directories(raman_core_static PUBLIC
@@ -69,7 +71,7 @@ if(RAMAN_USE_OPENMP AND OpenMP_CXX_FOUND)
 endif()
 
 # ── Python Bindings (shared .so/.pyd) ─────────────────────
-pybind11_add_module(raman_core
+pybind11_add_module(raman_core NO_EXTRAS
     bindings/pybind_module.cpp
 )
 
@@ -85,4 +87,11 @@ if(RAMAN_BUILD_TESTS)
     add_executable(test_cv_solver tests/test_cv_solver.cpp)
     target_link_libraries(test_cv_solver PRIVATE raman_core_static)
     add_test(NAME CVSolverTests COMMAND test_cv_solver)
+
+    # DRT solver test (if test file exists)
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_drt_solver.cpp)
+        add_executable(test_drt_solver tests/test_drt_solver.cpp)
+        target_link_libraries(test_drt_solver PRIVATE raman_core_static)
+        add_test(NAME DRTSolverTests COMMAND test_drt_solver)
+    endif()
 endif()

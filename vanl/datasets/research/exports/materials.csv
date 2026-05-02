@@ -91,6 +91,8 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 743,Click-Chemistry-Mediated Synthesis of Silver Nanoparticle-Supported Polymer-Wrapped Carbon Nanotubes: Glucose Sensor and Antibacterial Material,10.1021/acsomega.2c02832.s001,CNT,,,,0.6
 774,Rapid cholesterol detection by functionalized carbon nanotube based electrochemical sensor on flow injection microfluidic chip,10.1109/icsens.2009.5398459,CNT,,,,0.6
 779,Non-invasive wearable chemical sensor for detection of sweat biomarker,10.58837/chula.the.2022.1370,CNT,,,,0.6
+811,A renewable screen-printed electrode based on magnetic NiCo@N-doped carbon nanotubes derived from Co-MOF for ractopamine detection,10.1007/s00604-024-06507-w,CNT,,,,0.6
+818,Electrochemical behaviour of vertically aligned carbon nanotubes and graphene oxide nanocomposite as electrode material,10.1016/J.ELECTACTA.2013.12.024,CNT,,,,0.6
 282,Fe2O3/ Co3O4 composite nanoparticle ethanol sensor,10.3938/jkps.69.373,Co3O4,,,,0.95
 245,Nio/Co3o4 Hybrid Micro−Nanostructure as Long-Term Electrode for Aqueous Supercapacitors,10.2139/ssrn.4400882,Co3O4,,,,0.6
 278,Compact Yttria-Stabilized Zirconia Based Total NOx Sensor with a Dual Functional Co3O4/NiO Sensing Electrode,10.1021/acssensors.9b00981.s001,Co3O4,,,,0.6
@@ -105,6 +107,9 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 265,Structure evolution of nanoparticulate Fe2O3,10.1039/C4NR06989G,Fe2O3,,,,0.95
 281,Fe2O3/ Co3O4 composite nanoparticle ethanol sensor,10.3938/jkps.69.373,Fe2O3,,,,0.95
 283,Novel magnetic and ferroelectric behaviors observed in alpha Fe2O3 particles,,Fe2O3,,,,0.95
+819,In Situ Electrochemical Impedance Measurements of α-Fe2O3 Nanofibers: Unravelling the Li-Ion Conduction Mechanism in Li-Ion Batteries,10.3390/batteries8050044,Fe2O3,,,,0.95
+822,Fabrication and characterization of double protective carbon aerogel (CA)/α-Fe2O3@Polypyrrole (PPy) composites as an anode material for high performance lithium ion batteries,10.1016/J.SSI.2018.03.027,Fe2O3,,,,0.95
+821,Synthesis of Rhombohedral-like Fe2O3 Nanoparticles for Iron–Air Battery Anodes,10.1109/EEE-AM66675.2025.11473428,Fe2O3,,,,0.9
 234,Non-Enzymatic Glucose sensing properties of NiO nanostructured flower decorated Exfoliated Graphite Electrodes,,Fe2O3,,,,0.8
 268,Study of electrical properties of MoO3–Fe2O3–P2O5 and SrO–Fe2O3–P2O5 glasses by impedance spectroscopy. II,10.1016/j.jnoncrysol.2003.08.050,Fe2O3,,,,0.7
 290,Α-Fe2o3/Tio2 Anode for Li-Storage and Applications in Lini0.5mn1.5o4//Α-Fe2o3/Tio2 Full Cells,10.2139/ssrn.4855276,Fe2O3,,,,0.7
@@ -122,6 +127,7 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 320,Grain-boundary states in solid oxide electrolyte ceramics processed using iron oxide sintering aids: a Mössbauer spectroscopy study,10.1007/s10008-017-3622-3,Fe2O3,,,,0.6
 397,Hydrothermal-induced ɑ-Fe2O3/graphene nanocomposite with ultrahigh capacitance for stabilized and enhanced supercapacitor electrodes,10.1007/s11581-019-02859-z,Fe2O3,,,,0.6
 566,Self-Generated Nanoporous Silver Framework for High-Performance Iron Oxide Pseudocapacitor Anodes,10.1021/acsami.8b03725.s001,Fe2O3,,,,0.6
+820,Facile synthesis of monodispersed α-Fe2O3 cubes as a high-performance anode material for lithium-ion batteries,10.1007/s11581-021-04128-4,Fe2O3,,,,0.6
 508,Searching for a magnetic proximity effect in magnetite-carbon structures,,Fe3O4,,,,0.9
 235,Non-Enzymatic Glucose sensing properties of NiO nanostructured flower decorated Exfoliated Graphite Electrodes,,Fe3O4,,,,0.6
 249,Three-component NiO/Fe3O4/rGO nanostructure as an electrode material towards supercapacitor and alcohol electrooxidation,10.1016/j.heliyon.2024.e39399,Fe3O4,,,,0.6
@@ -161,6 +167,7 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 78,Self-Assembly Synthesis and Electrochemical Performance of Partially Reduced Graphene Oxide Supported Hierarchical MnO2 Nanonocomposite for Supercapacitor,10.52568/000779/jcsp/41.04.2019,MnO2,,,,0.95
 34,Preparation of Ag-CNTs and Ag-Graphene nanocomposite and their combination with MnO2 bath deposition for flexible supercapacitor development.,10.58837/chula.the.2019.375,MnO2,,,,0.9
 183,Precise control on morphology of ultrafine LiMn2O4 nanorods as supercapacitor electrode via two-step hydrothermal method,10.1039/C8CE01029C,MnO2,,,,0.8
+791,α-Manganese Dioxide (α-MnO2) Coated with Polyaniline (PANI) and Reduced Graphene Oxide (rGO)-Based Nanocomposite for Supercapacitor Application,10.3390/jcs7040167,MnO2,,,,0.8
 30,"Review for ""Enhanced Supercapacitor Performance Using Graphene Quantum Dots/ manganese dioxide/ tin-organic framework (NGQDs/MnO2/Sn-MOF) Hybrid Electrode""",10.1039/d4nj05331a/v2/review2,MnO2,,,,0.7
 158,MnO2/Porous Carbon Nanotube/MnO2 Nanocomposites for High-Performance Supercapacitor,10.1021/acsanm.0c02163.s001,MnO2,,,,0.7
 22,Oxidative MnO2 Template Assisted Electrochemical Fabrication of Graphene/Polypyrrole Supercapacitor Electrodes,10.1021/acs.langmuir.4c00316.s001,MnO2,,,,0.6
@@ -178,9 +185,14 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 563,Effects of Temperature on Electrochemical Properties of Bismuth Oxide/Manganese Oxide Pseudocapacitor,10.1021/acs.iecr.7b04980.s001,MnO2,,,,0.6
 601,All-solid-state electrochemical capacitors using MnO2/carbon nanotube composite electrode,10.1016/j.electacta.2013.07.154,MnO2,,,,0.6
 775,Effect of Lithium Manganese Oxide on Lithium Detection in Microfluidic Electrochemical Sensor,10.1109/transducers61432.2025.11110279,MnO2,,,,0.6
+794,A facile hydrothermal synthesis of MnO2/rGO nanocomposites with enhanced electrochemical performance for supercapacitor applications,10.1007/s10854-025-15599-w,MnO2,,,,0.6
+798,Synthesis and characterization of reduced graphene oxide decorated with CeO2-doped MnO2 nanorods for supercapacitor applications.,10.1016/j.jcis.2017.01.100,MnO2,,,,0.6
+800,Mesoporous MnO2 Nanosphere/Graphene Sheets as Electrodes for Supercapacitor Synthesized by a Simple and Inexpensive Reflux Reaction,10.1016/J.ELECTACTA.2017.02.153,MnO2,,,,0.6
+809,A novel potentiometric screen-printed electrode based on crown ethers/nano manganese oxide/Nafion composite for trace level determination of copper ion in biological fluids,10.1007/s00604-024-06394-1,MnO2,,,,0.6
 119,"Modeling of the bending of an electroactive pseudo trilayer based on PEDOT, a semiconductor polymer",,Nafion,,,,0.6
 574,Selective Electrochemical Detection of Ciprofloxacin with a Porous Nafion/Multiwalled Carbon Nanotube Composite Film Electrode,10.1021/acsami.5b07337.s001,Nafion,,,,0.6
 777,Increasing Sensitivity and Selectivity for Heavy Metal Sensing through Microfluidic Electrochemical Sensor,10.1149/ma2023-02622944mtgabs,Nafion,,,,0.6
+810,A novel potentiometric screen-printed electrode based on crown ethers/nano manganese oxide/Nafion composite for trace level determination of copper ion in biological fluids,10.1007/s00604-024-06394-1,Nafion,,,,0.6
 60,Oxygen redox in battery cathodes: A brief overview,10.1007/978-3-031-47303-6_15,NiO,,,,0.95
 237,NiO Exchange Bias Layers Grown by Direct Ion Beam Sputtering of a Nickel Oxide Target,10.1109/20.539107,NiO,,,,0.95
 242,Half-Metallicity of Wurtzite NiO and ZnO/NiO (0001) Interface: First Principles Simulation,,NiO,,,,0.95
@@ -220,6 +232,7 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 670,On the mechanism of conductivity enhancement in PEDOT/PSS film doped with sorbitol,10.1515/epoly.2011.11.1.428,PEDOT,,,,0.95
 118,"Modeling of the bending of an electroactive pseudo trilayer based on PEDOT, a semiconductor polymer",,PEDOT,,,,0.9
 671,One-Pot Improvement of Stretchable PEDOT/PSS Alginate Conductivity for Soft Sensing Biomedical Processes,10.3390/pr13072173,PEDOT,,,,0.8
+807,Influence of SrTi1-xCoxO3 NPs on electrocatalytic activity of SrTi1-xCoxO3 NPs/PEDOT-PSS counter electrodes for high efficiency dye sensitized solar cells,10.1016/J.ENERGY.2018.04.122,PEDOT,,,,0.8
 109,The Interaction between PEDOT/PSS Gate and sub-$μ$ low-k Insulator for All Printed OFETs,,PEDOT,,,,0.7
 111,"Correlation of morphology and charge transport in poly(3,4-ethylenedioxythiophene)-polystyrenesulfonic acid (PEDOT-PSS) films",10.1088/0953-8984/21/7/072101,PEDOT,,,,0.7
 120,"Modeling of an electro-active pseudo-trilayer based on PEDOT, a semi-conductor polymer",,PEDOT,,,,0.7
@@ -242,11 +255,14 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 700,Organic Based Flexible Speaker Through Enhanced Conductivity of PEDOT/PSS with Various Solvents,10.1016/s0379-6779(02)01026-3,PEDOT,,,,0.6
 702,Low-Impedance Graphene – PEDOT-PSS Electrodes for Neural Recording and Stimulation in Implantable Medical Devices,10.1109/nano51122.2021.9514286,PEDOT,,,,0.6
 783,"(Invited) wearable Hydrogel Patch with Noninvasive, Electrochemical Glucose Sensor for Natural Sweat Detection",10.1149/ma2023-01341943mtgabs,PEDOT,,,,0.6
+804,A Disposable Amperometric Sensor Based on High-Performance PEDOT:PSS/Ionic Liquid Nanocomposite Thin Film-Modified Screen-Printed Electrode for the Analysis of Catechol in Natural Water Samples,10.3390/s17081716,PEDOT,,,,0.6
 131,Electroporation with PEDOT : PSS Coated Microelectrodes,10.70675/c53a5ce5z4b92z4824z8d5az85815de5261a,PEDOT:PSS,,,,0.95
 685,Tuning of <scp>PEDOT</scp>:<scp>PSS</scp> synthesis via multiple doping for enhanced electrical conductivity,10.1002/pi.6234,PEDOT:PSS,,,,0.95
 692,On the Influence of Silver Nanoparticles Size in the Electrical Conductivity of PEDOT: PSS,10.4028/www.scientific.net/msf.644.85,PEDOT:PSS,,,,0.9
 425,Efficient indoor p-i-n hybrid perovskite solar cells using low temperature solution processed NiO as hole extraction layers,10.1016/j.solmat.2019.110071,PEDOT:PSS,,,,0.8
 679,Synthesis and Characterization of PEDOT: PSS-PAs with Good Electrical Conductivity for Supercapacitor,10.9734/csji/2023/v32i5856,PEDOT:PSS,,,,0.8
+803,A Disposable Amperometric Sensor Based on High-Performance PEDOT:PSS/Ionic Liquid Nanocomposite Thin Film-Modified Screen-Printed Electrode for the Analysis of Catechol in Natural Water Samples,10.3390/s17081716,PEDOT:PSS,,,,0.8
+805,PEDOT:PSS/AuNPs/CA modified screen-printed carbon based disposable electrochemical sensor for sensitive and selective determination of carmine,10.1016/J.JELECHEM.2018.07.030,PEDOT:PSS,,,,0.8
 673,Relationship between enhancement of <scp>PEDOT</scp>:<scp>PSS</scp> conductivity by solvent treatment and <scp>PSS</scp> chain reorganization,10.1002/pol.20220605,PEDOT:PSS,,,,0.7
 121,Electrode 3D de PEDOT : PSS pour la détection de métabolites électrochimiquement actifs de Pseudomonas aeruginosa,10.70675/03891c61zb770z49f8zbc68z2d68197863ea,PEDOT:PSS,,,,0.6
 122,PEDOT: PSS/PEDOT composite film for high performance electrochemical electrode,10.1063/1.4971897,PEDOT:PSS,,,,0.6
@@ -261,6 +277,8 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 694,The mechanism of enhancing the conductivity of PEDOT: PSS films through molecular weight optimization of PSS,10.1016/j.porgcoat.2024.108308,PEDOT:PSS,,,,0.6
 698,Why does solvent treatment increase the conductivity of PEDOT : PSS? Insight from molecular dynamics simulations,10.1039/d2cp02655d,PEDOT:PSS,,,,0.6
 699,Conductivity Degradation Study of PEDOT: PSS Films under Heat Treatment in Helium and Atmospheric Air,10.4236/ojopm.2012.21002,PEDOT:PSS,,,,0.6
+801,Interface Fermi level pinning at contacts between PEDOT: PSS and molecular organic semiconductors.,10.1002/CPHC.200600542,PEDOT:PSS,,,,0.6
+802,The interface between phthalocyanines and PEDOT:PSS: evidence for charge transfer and doping,10.1016/J.SUSC.2004.05.108,PEDOT:PSS,,,,0.6
 616,Carbon nanotube/polymer composite membrane for CO2 capture,10.58837/chula.the.2017.84,PVDF,,,,0.95
 276,Investigation of Reaction Kinetics in Carbon Anode with Nano-Fillers through Impedance Spectroscopy,10.1149/ma2020-012387mtgabs,PVDF,,,,0.6
 313,Quasi-solid-state electrolyte for ultra-high safety and cycle stability battery,,PVDF,,,,0.6
@@ -283,6 +301,7 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 461,Investigation of charge transport/transfer and charge storage at mesoporous TiO2 electrodes in aqueous electrolytes,10.70675/392f1418z84efz4a2dz93fezd4017f5bf503,TiO2,,,,0.95
 494,Structural and Morphological modification of TiO2 doped metal ions and investigation of photo-induced charge transfer processes,10.70675/2b16fc13z8aa0z4d72za8e2zecdfd3a09fe8,TiO2,,,,0.95
 196,Preparation and characterization of Bismaleimide resin/titania nanocomposites via sol-gel process,,TiO2,,,,0.9
+815,Hybrid TiO2–RGO nanocomposite as high specific capacitance electrode for supercapacitor,10.1088/1361-6528/ad6a6a,TiO2,,,,0.9
 441,Role of interface reaction on resistive switching of Metal/a-TiO2/Al RRAM devices,,TiO2,,,,0.8
 455,Carbon Decorated TiO2 Nanotube Membranes: A Renewable Nanofilter for Size- and Charge Selective Enrichment of Proteins,10.1021/acsami.6b06232,TiO2,,,,0.8
 291,Α-Fe2o3/Tio2 Anode for Li-Storage and Applications in Lini0.5mn1.5o4//Α-Fe2o3/Tio2 Full Cells,10.2139/ssrn.4855276,TiO2,,,,0.7
@@ -404,6 +423,7 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 768,DEVELOPMENT OF ELECTROCHEMICAL SENSOR FOR DETERMINATION OF GLUCOSAMINE USING DROPLET MICROFLUIDIC SYSTEM,10.58837/chula.the.2015.1021,gold_nanoparticles,,,,0.6
 780,Non-invasive wearable chemical sensor for detection of sweat biomarker,10.58837/chula.the.2022.1370,gold_nanoparticles,,,,0.6
 786,"A Wearable, Textile-Based Polyacrylate Imprinted Electrochemical Sensor for Cortisol Detection in Sweat",10.3390/bios12100854,gold_nanoparticles,,,,0.6
+806,PEDOT:PSS/AuNPs/CA modified screen-printed carbon based disposable electrochemical sensor for sensitive and selective determination of carmine,10.1016/J.JELECHEM.2018.07.030,gold_nanoparticles,,,,0.6
 13,Advanced Asymmetrical Supercapacitors Based on Graphene Hybrid Materials,,graphene,,,,0.95
 88,Integrating Functional Oxides with Graphene,10.1016/j.ssc.2012.04.050,graphene,,,,0.95
 161,Different Synthesis Routes of Graphene-Based Metal Nanocomposites,10.1007/978-3-030-10614-0_30-1,graphene,,,,0.95
@@ -541,6 +561,11 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 769,Paper Microfluidic Electrochemical Sensor for Salivary Cortisol Analysis,10.1149/ma2017-01/42/1952,graphene,,,,0.6
 782,Wearable electrochemical sensors for sweat analysis based on graphene-based nanocomposites,10.14711/thesis-991012873065103412,graphene,,,,0.6
 787,A wearable electrochemical sensor based on β-CD functionalized graphene for pH and potassium ion analysis in sweat,10.1016/j.talanta.2022.123481,graphene,,,,0.6
+790,α-Manganese Dioxide (α-MnO2) Coated with Polyaniline (PANI) and Reduced Graphene Oxide (rGO)-Based Nanocomposite for Supercapacitor Application,10.3390/jcs7040167,graphene,,,,0.6
+797,Synthesis and characterization of reduced graphene oxide decorated with CeO2-doped MnO2 nanorods for supercapacitor applications.,10.1016/j.jcis.2017.01.100,graphene,,,,0.6
+799,Mesoporous MnO2 Nanosphere/Graphene Sheets as Electrodes for Supercapacitor Synthesized by a Simple and Inexpensive Reflux Reaction,10.1016/J.ELECTACTA.2017.02.153,graphene,,,,0.6
+814,Hybrid TiO2–RGO nanocomposite as high specific capacitance electrode for supercapacitor,10.1088/1361-6528/ad6a6a,graphene,,,,0.6
+817,Electrochemical behaviour of vertically aligned carbon nanotubes and graphene oxide nanocomposite as electrode material,10.1016/J.ELECTACTA.2013.12.024,graphene,,,,0.6
 3,Dynamics of electrochemical flows 2 Electrochemical flows-through porous electrode,,graphene_oxide,,,,0.95
 54,Method development for determination of carbofuran using nanomaterial-modified screen-printed carbon electrode,10.58837/chula.the.2016.1420,graphene_oxide,,,,0.95
 76,Self-Assembly Synthesis and Electrochemical Performance of Partially Reduced Graphene Oxide Supported Hierarchical MnO2 Nanonocomposite for Supercapacitor,10.52568/000779/jcsp/41.04.2019,graphene_oxide,,,,0.95
@@ -635,6 +660,10 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 755,Highly Sensitive Electrochemical Sensor for Anticancer Drug by a Zirconia Nanoparticle-Decorated Reduced Graphene Oxide Nanocomposite,10.1021/acsomega.8b02129.s001,graphene_oxide,,,,0.6
 758,The Physicochemical and Electrochemical Characterization of Silver Nanoparticle-Incorporated Magnetite/Reduced Graphene Oxide,10.55373/mjchem.v25i4.73,graphene_oxide,,,,0.6
 764,Two-Dimensional (2D) Layered Metal–Organic Framework (MOF) Composites as an Electrochemical Sensor for Nitrofurans,10.1149/ma2024-01492702mtgabs,graphene_oxide,,,,0.6
+789,α-Manganese Dioxide (α-MnO2) Coated with Polyaniline (PANI) and Reduced Graphene Oxide (rGO)-Based Nanocomposite for Supercapacitor Application,10.3390/jcs7040167,graphene_oxide,,,,0.6
+796,Synthesis and characterization of reduced graphene oxide decorated with CeO2-doped MnO2 nanorods for supercapacitor applications.,10.1016/j.jcis.2017.01.100,graphene_oxide,,,,0.6
+813,Hybrid TiO2–RGO nanocomposite as high specific capacitance electrode for supercapacitor,10.1088/1361-6528/ad6a6a,graphene_oxide,,,,0.6
+816,Electrochemical behaviour of vertically aligned carbon nanotubes and graphene oxide nanocomposite as electrode material,10.1016/J.ELECTACTA.2013.12.024,graphene_oxide,,,,0.6
 452,Probing the Charge Separation Process on In2S3/Pt-TiO2 Nanocomposites for Boosted Visible-light Photocatalytic Hydrogen Production,10.1016/j.apcatb.2016.05.048,platinum_nanoparticles,,,,0.6
 47,Modification of screen-printed carbon electrode for detection of pesticides,10.58837/chula.the.2021.66,polyaniline,,,,0.95
 181,Facile Fabrication of a Nanocomposite Electrode for Enhanced Electrochemical Performance,10.21203/rs.3.rs-7148554/v1,polyaniline,,,,0.95
@@ -645,6 +674,7 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 168,GRAPHENE/POLYANILINE NANOCOMPOSITE MODIFIED ELECTRODE FOR ACUTE KIDNEY INJURY DIAGNOSIS,10.58837/chula.the.2014.1039,polyaniline,,,,0.8
 213,Direct laser printing of thin-film polyaniline devices,10.1007/s00339-012-7127-8,polyaniline,,,,0.8
 767,DEVELOPMENT OF ELECTROCHEMICAL SENSOR FOR DETERMINATION OF GLUCOSAMINE USING DROPLET MICROFLUIDIC SYSTEM,10.58837/chula.the.2015.1021,polyaniline,,,,0.8
+792,α-Manganese Dioxide (α-MnO2) Coated with Polyaniline (PANI) and Reduced Graphene Oxide (rGO)-Based Nanocomposite for Supercapacitor Application,10.3390/jcs7040167,polyaniline,,,,0.8
 149,Catalytic Formation of Narrow Nb Nanowires inside Carbon Nanotubes,,polyaniline,,,,0.7
 165,GRAPHENE NANOCOMPOSITE MODIFIED ELECTRODE FOR ELECTROCHEMICAL DETECTION,10.58837/chula.the.2014.1041,polyaniline,,,,0.7
 212,Magnetic study of an amorphous conducting polyaniline,10.1063/1.1561166,polyaniline,,,,0.7
@@ -676,6 +706,7 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 394,"Fabrication of N,B‐codoped Graphene Aerogel/PPy Composites for Asymmetric Supercapacitor",10.1002/slct.202102995,polypyrrole,,,,0.95
 535,Impedance DNA Biosensor Using Electropolymerized Polypyrrole/Multiwalled Carbon Nanotubes Modified Electrode,10.1002/elan.200603544,polypyrrole,,,,0.95
 599,Electrochemical synthesis and corrosion behaviour of polypyrrole and polypyrrole/carbon nanotube nanocomposite films,10.1177/0021998313495904,polypyrrole,,,,0.95
+823,Fabrication and characterization of double protective carbon aerogel (CA)/α-Fe2O3@Polypyrrole (PPy) composites as an anode material for high performance lithium ion batteries,10.1016/J.SSI.2018.03.027,polypyrrole,,,,0.95
 38,Using electropolymerization based doping for electro-addressable functionalization of a multi-electrode array probe for nucleic acid detection,,polypyrrole,,,,0.8
 453,"Normalized Contact Force to Minimize ""Electrode-Lead"" Resistance in a Nanodevice",,polypyrrole,,,,0.8
 23,Oxidative MnO2 Template Assisted Electrochemical Fabrication of Graphene/Polypyrrole Supercapacitor Electrodes,10.1021/acs.langmuir.4c00316.s001,polypyrrole,,,,0.6
@@ -708,6 +739,8 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 736,Facile and green synthesis of silver nanoparticle-reduced graphene oxide composite and its application as nonenzymatic electrochemical sensor for hydrogen peroxide,10.5267/j.ccl.2021.3.002,reduced_graphene_oxide,,,,0.95
 763,Two-Dimensional (2D) Layered Metal–Organic Framework (MOF) Composites as an Electrochemical Sensor for Nitrofurans,10.1149/ma2024-01492702mtgabs,reduced_graphene_oxide,,,,0.95
 379,Graphene/Ruthenium Active Species Aerogel as Electrode for Supercapacitor Applications,10.3390/ma11010057,reduced_graphene_oxide,,,,0.9
+812,Hybrid TiO2–RGO nanocomposite as high specific capacitance electrode for supercapacitor,10.1088/1361-6528/ad6a6a,reduced_graphene_oxide,,,,0.9
+788,α-Manganese Dioxide (α-MnO2) Coated with Polyaniline (PANI) and Reduced Graphene Oxide (rGO)-Based Nanocomposite for Supercapacitor Application,10.3390/jcs7040167,reduced_graphene_oxide,,,,0.8
 184,Functionalization of graphene sponge electrodes with two-dimensional materials for tailored electrocatalytic activity towards specific contaminants of emerging concern,10.1016/j.cej.2022.137057,reduced_graphene_oxide,,,,0.7
 229,Non-Enzymatic Glucose sensing properties of NiO nanostructured flower decorated Exfoliated Graphite Electrodes,,reduced_graphene_oxide,,,,0.7
 676,Synthesis and Characterization of PEDOT: PSS-PAs with Good Electrical Conductivity for Supercapacitor,10.9734/csji/2023/v32i5856,reduced_graphene_oxide,,,,0.7
@@ -750,6 +783,9 @@ id,paper_title,doi,component,ratio_value,ratio_unit,role,confidence
 754,Highly Sensitive Electrochemical Sensor for Anticancer Drug by a Zirconia Nanoparticle-Decorated Reduced Graphene Oxide Nanocomposite,10.1021/acsomega.8b02129.s001,reduced_graphene_oxide,,,,0.6
 757,The Physicochemical and Electrochemical Characterization of Silver Nanoparticle-Incorporated Magnetite/Reduced Graphene Oxide,10.55373/mjchem.v25i4.73,reduced_graphene_oxide,,,,0.6
 778,Highly Stretchable Wearable Electrochemical Sensor Based on Ni-Co MOF Nanosheet-Decorated Ag/rGO/PU Fiber for Continuous Sweat Glucose Detection,10.1021/acs.analchem.1c04106.s001,reduced_graphene_oxide,,,,0.6
+793,A facile hydrothermal synthesis of MnO2/rGO nanocomposites with enhanced electrochemical performance for supercapacitor applications,10.1007/s10854-025-15599-w,reduced_graphene_oxide,,,,0.6
+795,Synthesis and characterization of reduced graphene oxide decorated with CeO2-doped MnO2 nanorods for supercapacitor applications.,10.1016/j.jcis.2017.01.100,reduced_graphene_oxide,,,,0.6
+808,Hydrothermal synthesis of BaCeO3@rGO nanohybrid as electrode material for supercapacitor devices,10.1016/j.jpcs.2024.111973,reduced_graphene_oxide,,,,0.6
 693,On the Influence of Silver Nanoparticles Size in the Electrical Conductivity of PEDOT: PSS,10.4028/www.scientific.net/msf.644.85,silver_nanoparticles,,,,0.7
 303,Tuning MXene Pathways via Silver Nanoparticle Size Variations for Anode-Free Battery Applications,10.1021/acs.jpclett.4c03587.s001,silver_nanoparticles,,,,0.6
 423,One-pot method to synthesis polyaniline wrapped graphene aerogel/silver nanoparticle composites for solid-state supercapacitor devices,10.1016/j.matlet.2018.01.058,silver_nanoparticles,,,,0.6

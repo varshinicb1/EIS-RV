@@ -52614,7 +52614,871 @@
       "materials": [],
       "synthesis": [],
       "eis_data": []
+    },
+    {
+      "id": 2400,
+      "title": "α-Manganese Dioxide (α-MnO2) Coated with Polyaniline (PANI) and Reduced Graphene Oxide (rGO)-Based Nanocomposite for Supercapacitor Application",
+      "authors": [
+        "Pranoti H. Patil",
+        "Vidya V. Kulkarni",
+        "T. Dongale",
+        "S. Jadhav"
+      ],
+      "doi": "10.3390/jcs7040167",
+      "arxiv_id": null,
+      "year": 2023,
+      "journal": "Journal of Composites Science",
+      "application": "supercapacitor",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/c82977c7276a56713e718d1f447c088486186d6c",
+      "materials": [
+        {
+          "component": "reduced_graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.8
+        },
+        {
+          "component": "graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "graphene",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "MnO2",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.8
+        },
+        {
+          "component": "polyaniline",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.8
+        }
+      ],
+      "synthesis": [
+        {
+          "method": null,
+          "temperature_C": 2000.0,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.7
+        }
+      ],
+      "eis_data": [
+        {
+          "Rs_ohm": null,
+          "Rct_ohm": null,
+          "Cdl_F": null,
+          "sigma_warburg": null,
+          "capacitance_F_g": 261.0,
+          "capacitance_mF_cm2": null,
+          "electrolyte": null,
+          "freq_min_Hz": null,
+          "freq_max_Hz": null,
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "id": 2401,
+      "title": "A facile hydrothermal synthesis of MnO2/rGO nanocomposites with enhanced electrochemical performance for supercapacitor applications",
+      "authors": [
+        "P. Shobha",
+        "A. R. Baby Suganthi",
+        "P. Sagayaraj",
+        "S. Selvakumar",
+        "S. Joseph Manoj Babu",
+        "R. Gunaseelan",
+        "S. Amala Jayanthi"
+      ],
+      "doi": "10.1007/s10854-025-15599-w",
+      "arxiv_id": null,
+      "year": 2025,
+      "journal": "Journal of Materials Science: Materials in Electronics",
+      "application": "supercapacitor",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/9c1e981fc79bb339d52e6bc14686e0c049a27895",
+      "materials": [
+        {
+          "component": "reduced_graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "MnO2",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "hydrothermal",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2402,
+      "title": "Synthesis and characterization of reduced graphene oxide decorated with CeO2-doped MnO2 nanorods for supercapacitor applications.",
+      "authors": [
+        "Gunendra Prasad Ojha",
+        "Bishweshwar Pant",
+        "Soojin Park",
+        "Mira Park",
+        "H. Kim"
+      ],
+      "doi": "10.1016/j.jcis.2017.01.100",
+      "arxiv_id": null,
+      "year": 2017,
+      "journal": "Journal of Colloid and Interface Science",
+      "application": "supercapacitor",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/ee4bd7eea086152bee388fc7e9b22c8664181d31",
+      "materials": [
+        {
+          "component": "reduced_graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "graphene",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "MnO2",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [],
+      "eis_data": []
+    },
+    {
+      "id": 2403,
+      "title": "Mesoporous MnO2 Nanosphere/Graphene Sheets as Electrodes for Supercapacitor Synthesized by a Simple and Inexpensive Reflux Reaction",
+      "authors": [
+        "J. Yao",
+        "Qingjing Pan",
+        "S. Yao",
+        "Limei Duan",
+        "Jinghai Liu"
+      ],
+      "doi": "10.1016/J.ELECTACTA.2017.02.153",
+      "arxiv_id": null,
+      "year": 2017,
+      "journal": null,
+      "application": "supercapacitor",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/166e109b5d1af501742b35790423e3b1e31563f9",
+      "materials": [
+        {
+          "component": "graphene",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "MnO2",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [],
+      "eis_data": []
+    },
+    {
+      "id": 2404,
+      "title": "Interface Fermi level pinning at contacts between PEDOT: PSS and molecular organic semiconductors.",
+      "authors": [
+        "H. Peisert",
+        "A. Petr",
+        "L. Dunsch",
+        "T. Chassé",
+        "M. Knupfer"
+      ],
+      "doi": "10.1002/CPHC.200600542",
+      "arxiv_id": null,
+      "year": 2007,
+      "journal": "ChemPhysChem",
+      "application": null,
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/9b582a2f6679c0cc0e5d910437d493efd1edc540",
+      "materials": [
+        {
+          "component": "PEDOT:PSS",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [],
+      "eis_data": []
+    },
+    {
+      "id": 2405,
+      "title": "The interface between phthalocyanines and PEDOT:PSS: evidence for charge transfer and doping",
+      "authors": [
+        "H. Peisert",
+        "M. Knupfer",
+        "Fapei Zhang",
+        "A. Petr",
+        "L. Dunsch",
+        "J. Fink"
+      ],
+      "doi": "10.1016/J.SUSC.2004.05.108",
+      "arxiv_id": null,
+      "year": 2004,
+      "journal": null,
+      "application": null,
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/68b410081d38d458117913d9e4f9bc7dfc6123f7",
+      "materials": [
+        {
+          "component": "PEDOT:PSS",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [],
+      "eis_data": []
+    },
+    {
+      "id": 2406,
+      "title": "A Disposable Amperometric Sensor Based on High-Performance PEDOT:PSS/Ionic Liquid Nanocomposite Thin Film-Modified Screen-Printed Electrode for the Analysis of Catechol in Natural Water Samples",
+      "authors": [
+        "Francis D. Krampa",
+        "Yaw Aniweh",
+        "G. Awandare",
+        "Prosper Kanyong"
+      ],
+      "doi": "10.3390/s17081716",
+      "arxiv_id": null,
+      "year": 2017,
+      "journal": "Italian National Conference on Sensors",
+      "application": null,
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/a76ae17803825a87a727a336ba093469b3e687ae",
+      "materials": [
+        {
+          "component": "PEDOT:PSS",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.8
+        },
+        {
+          "component": "PEDOT",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "screen_printing",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2407,
+      "title": "PEDOT:PSS/AuNPs/CA modified screen-printed carbon based disposable electrochemical sensor for sensitive and selective determination of carmine",
+      "authors": [
+        "Xiaoyu Zhao",
+        "Jianhua Ding",
+        "Wen‐Long Bai",
+        "Yanfei Wang",
+        "Yujia Yan",
+        "Yan Cheng",
+        "Juankun Zhang"
+      ],
+      "doi": "10.1016/J.JELECHEM.2018.07.030",
+      "arxiv_id": null,
+      "year": 2018,
+      "journal": "Journal of Electroanalytical Chemistry",
+      "application": "biosensor",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/c34517b0bd9aa95e6c2491e5630c68e44c7a37e0",
+      "materials": [
+        {
+          "component": "PEDOT:PSS",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.8
+        },
+        {
+          "component": "gold_nanoparticles",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "screen_printing",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2408,
+      "title": "Influence of SrTi1-xCoxO3 NPs on electrocatalytic activity of SrTi1-xCoxO3 NPs/PEDOT-PSS counter electrodes for high efficiency dye sensitized solar cells",
+      "authors": [
+        "Wasan Maiaugree",
+        "A. Karaphun",
+        "Adulphan Pimsawad",
+        "V. Amornkitbamrung",
+        "E. Swatsitang"
+      ],
+      "doi": "10.1016/J.ENERGY.2018.04.122",
+      "arxiv_id": null,
+      "year": 2018,
+      "journal": "Energy",
+      "application": "fuel_cell",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/c8fbbcd69dcd2cda739a2e9104bc624869973feb",
+      "materials": [
+        {
+          "component": "PEDOT",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.8
+        }
+      ],
+      "synthesis": [
+        {
+          "method": null,
+          "temperature_C": 925.0,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.7
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2409,
+      "title": "Hydrothermal synthesis of the NiS@g-C3N4 nanohybrid electrode material for supercapacitor applications",
+      "authors": [
+        "Mukhtiar Hussain",
+        "Saeed Alahmari",
+        "F. Alharbi",
+        "S. R. Ejaz",
+        "M. Abdullah",
+        "Salma Aman",
+        "Abdullah G. Al-Sehemi",
+        "A. Henaish",
+        "A. Sadaf",
+        "Hafiz Muhammad Tahir Farid"
+      ],
+      "doi": "10.1016/j.est.2023.110289",
+      "arxiv_id": null,
+      "year": 2024,
+      "journal": "Journal of Energy Storage",
+      "application": "supercapacitor",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/c3e0708fdb4afb75002899b49974c0b5915a7946",
+      "materials": [],
+      "synthesis": [
+        {
+          "method": "hydrothermal",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2410,
+      "title": "Hydrothermal synthesis of BaCeO3@rGO nanohybrid as electrode material for supercapacitor devices",
+      "authors": [
+        "Mahmood Ali",
+        "A. Alrowaily",
+        "N. Drissi",
+        "B. M. Alotaibi",
+        "Haifa A. Alyousef",
+        "A. Henaish"
+      ],
+      "doi": "10.1016/j.jpcs.2024.111973",
+      "arxiv_id": null,
+      "year": 2024,
+      "journal": "Journal of Physics and Chemistry of Solids",
+      "application": "supercapacitor",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/ee8cc863db5defbc0de72b5ff42c0b954162c98a",
+      "materials": [
+        {
+          "component": "reduced_graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "hydrothermal",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2411,
+      "title": "A novel potentiometric screen-printed electrode based on crown ethers/nano manganese oxide/Nafion composite for trace level determination of copper ion in biological fluids",
+      "authors": [
+        "Saad S.M. Hassan",
+        "H. El-Shalakany",
+        "M. Fathy",
+        "A. H. Kamel"
+      ],
+      "doi": "10.1007/s00604-024-06394-1",
+      "arxiv_id": null,
+      "year": 2024,
+      "journal": "Microchimica Acta",
+      "application": "fuel_cell",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/431877ee01fbb2c53c187b1bc259da88a25aae69",
+      "materials": [
+        {
+          "component": "MnO2",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "Nafion",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "screen_printing",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2412,
+      "title": "A renewable screen-printed electrode based on magnetic NiCo@N-doped carbon nanotubes derived from Co-MOF for ractopamine detection",
+      "authors": [
+        "Mingyu Zheng",
+        "Xinmei Qian",
+        "Chunxiang Li",
+        "Jinglun Wang",
+        "Haowen Huang",
+        "Keqin Deng"
+      ],
+      "doi": "10.1007/s00604-024-06507-w",
+      "arxiv_id": null,
+      "year": 2024,
+      "journal": "Microchimica Acta",
+      "application": null,
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/c740417aa949e83db1d85709b5f18a27a45462d9",
+      "materials": [
+        {
+          "component": "CNT",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "screen_printing",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2413,
+      "title": "Hybrid TiO2–RGO nanocomposite as high specific capacitance electrode for supercapacitor",
+      "authors": [
+        "Jamil K Jadoon",
+        "Phuong V. Pham"
+      ],
+      "doi": "10.1088/1361-6528/ad6a6a",
+      "arxiv_id": null,
+      "year": 2024,
+      "journal": "Nanotechnology",
+      "application": "supercapacitor",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/bdae989e5790b0beec6dc46d65a436ac32bbb7f7",
+      "materials": [
+        {
+          "component": "reduced_graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.9
+        },
+        {
+          "component": "graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "graphene",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "TiO2",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.9
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "hydrothermal",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": [
+        {
+          "Rs_ohm": null,
+          "Rct_ohm": null,
+          "Cdl_F": null,
+          "sigma_warburg": null,
+          "capacitance_F_g": 152.0,
+          "capacitance_mF_cm2": null,
+          "electrolyte": null,
+          "freq_min_Hz": null,
+          "freq_max_Hz": null,
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "id": 2414,
+      "title": "Development of MnAl2O4/Ni3Se2 nanocomposite for enhanced electrocapacitive performance",
+      "authors": [
+        "Younis Ejaz",
+        "S. Alsalhi",
+        "Ashraf Muhammad",
+        "Mahmood Ali",
+        "Muhammad Saleem",
+        "Muhammad Aslam"
+      ],
+      "doi": "10.1007/s10971-024-06615-2",
+      "arxiv_id": null,
+      "year": 2024,
+      "journal": "Journal of Sol-Gel Science and Technology",
+      "application": null,
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/ec093041b124d5401783952ffd1a037a6d57b13d",
+      "materials": [],
+      "synthesis": [],
+      "eis_data": []
+    },
+    {
+      "id": 2415,
+      "title": "Thermal and electrochemical analysis on SnSO3/ZnSO3 nanocomposite",
+      "authors": [
+        "R. Gayathri",
+        "S. Shanmugha Soundare",
+        "M. Mithren",
+        "S. Ariponnammal"
+      ],
+      "doi": "10.15251/jor.2025.212.187",
+      "arxiv_id": null,
+      "year": 2025,
+      "journal": "Journal of Ovonic Research",
+      "application": "fuel_cell",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/795cf6bfa54694773f8ffae630c23adf6dac6443",
+      "materials": [],
+      "synthesis": [
+        {
+          "method": "hydrothermal",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2416,
+      "title": "Electrochemical analysis on SnSeO3/ZnSeO3 nanocomposite",
+      "authors": [
+        "N. G. Basil Ralph",
+        "S. Shanmugha Soundare",
+        "D. Yamuna",
+        "S. Ariponnammal"
+      ],
+      "doi": "10.15251/cl.2024.219.729",
+      "arxiv_id": null,
+      "year": 2024,
+      "journal": "Chalcogenide Letters",
+      "application": "fuel_cell",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/7b97aa501edbd79650f1e60f2549e9301038dd99",
+      "materials": [],
+      "synthesis": [
+        {
+          "method": "hydrothermal",
+          "temperature_C": 5000.0,
+          "duration_hours": 3.0,
+          "pH": null,
+          "confidence": 0.75
+        }
+      ],
+      "eis_data": [
+        {
+          "Rs_ohm": null,
+          "Rct_ohm": 0.42,
+          "Cdl_F": null,
+          "sigma_warburg": null,
+          "capacitance_F_g": 78.65,
+          "capacitance_mF_cm2": null,
+          "electrolyte": "3M KOH",
+          "freq_min_Hz": null,
+          "freq_max_Hz": null,
+          "confidence": 0.85
+        }
+      ]
+    },
+    {
+      "id": 2417,
+      "title": "Electrochemical behaviour of vertically aligned carbon nanotubes and graphene oxide nanocomposite as electrode material",
+      "authors": [
+        "T. Silva",
+        "H. Zanin",
+        "E. Saito",
+        "R. A. Medeiros",
+        "F. C. Vicentini",
+        "E. Corat",
+        "O. Fatibello‐Filho"
+      ],
+      "doi": "10.1016/J.ELECTACTA.2013.12.024",
+      "arxiv_id": null,
+      "year": 2014,
+      "journal": null,
+      "application": null,
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/efd8bce244ecfd36270f040e3df659d92b03a5b9",
+      "materials": [
+        {
+          "component": "graphene_oxide",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "graphene",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        },
+        {
+          "component": "CNT",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [],
+      "eis_data": []
+    },
+    {
+      "id": 2418,
+      "title": "In Situ Electrochemical Impedance Measurements of α-Fe2O3 Nanofibers: Unravelling the Li-Ion Conduction Mechanism in Li-Ion Batteries",
+      "authors": [
+        "Jinhyun Hwang",
+        "Dolly Yadav",
+        "Hang Yang",
+        "Injun Jeon",
+        "Dingcheng Yang",
+        "Jang-Won Seo",
+        "M. Kang",
+        "Se-Young Jeong",
+        "C. Cho"
+      ],
+      "doi": "10.3390/batteries8050044",
+      "arxiv_id": null,
+      "year": 2022,
+      "journal": "Batteries",
+      "application": "battery",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/1dda94d17ccc35686e27c35fd79defc1771d4036",
+      "materials": [
+        {
+          "component": "Fe2O3",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.95
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "annealing",
+          "temperature_C": 700.0,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.7
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2419,
+      "title": "Facile synthesis of monodispersed α-Fe2O3 cubes as a high-performance anode material for lithium-ion batteries",
+      "authors": [
+        "Xiuying Jin",
+        "Yanwei Li",
+        "Jiqiong Jiang",
+        "S. Xiao",
+        "Jianwen Yang",
+        "Jin-huan Yao"
+      ],
+      "doi": "10.1007/s11581-021-04128-4",
+      "arxiv_id": null,
+      "year": 2021,
+      "journal": "Ionics (Kiel)",
+      "application": "battery",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/3c84bbb9719f736e713a107e477afc1c4c49c0c1",
+      "materials": [
+        {
+          "component": "Fe2O3",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.6
+        }
+      ],
+      "synthesis": [],
+      "eis_data": []
+    },
+    {
+      "id": 2420,
+      "title": "Synthesis of Rhombohedral-like Fe2O3 Nanoparticles for Iron–Air Battery Anodes",
+      "authors": [
+        "T. Trinh",
+        "T. Bui"
+      ],
+      "doi": "10.1109/EEE-AM66675.2025.11473428",
+      "arxiv_id": null,
+      "year": 2025,
+      "journal": "2025 Asia Meeting on Environment and Electrical Engineering (EEE-AM)",
+      "application": "battery",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/ee253eec89261d2cf29e086648f399e6dbc328bb",
+      "materials": [
+        {
+          "component": "Fe2O3",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.9
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "hydrothermal",
+          "temperature_C": null,
+          "duration_hours": 8.0,
+          "pH": null,
+          "confidence": 0.75
+        }
+      ],
+      "eis_data": []
+    },
+    {
+      "id": 2421,
+      "title": "Fabrication and characterization of double protective carbon aerogel (CA)/α-Fe2O3@Polypyrrole (PPy) composites as an anode material for high performance lithium ion batteries",
+      "authors": [
+        "Dawei Luo",
+        "Suishan Liu",
+        "Feng Lin",
+        "Lihong Yu",
+        "Jiajin Zhang"
+      ],
+      "doi": "10.1016/J.SSI.2018.03.027",
+      "arxiv_id": null,
+      "year": 2018,
+      "journal": "Solid State Ionics",
+      "application": "fuel_cell",
+      "source_api": "semantic_scholar",
+      "url": "https://www.semanticscholar.org/paper/561c457eff7587349c88c2b9d1cc30bf3ea0e1dc",
+      "materials": [
+        {
+          "component": "Fe2O3",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.95
+        },
+        {
+          "component": "polypyrrole",
+          "ratio_value": null,
+          "ratio_unit": null,
+          "confidence": 0.95
+        }
+      ],
+      "synthesis": [
+        {
+          "method": "solvothermal",
+          "temperature_C": null,
+          "duration_hours": null,
+          "pH": null,
+          "confidence": 0.6
+        }
+      ],
+      "eis_data": []
     }
   ],
-  "count": 2399
+  "count": 2421
 }

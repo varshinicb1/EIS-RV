@@ -23,6 +23,8 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
+from .differentiable_physics import get_neural_operator
+
 
 # ── Open Circuit Voltage Models ────────────────────────────────────
 # OCV(SOC) polynomials fitted from literature data
@@ -126,6 +128,9 @@ class BatteryConfig:
     C_rate: float = 0.5                          # Discharge rate
     cutoff_V: float = 0.9
     max_V: float = 1.6
+    
+    # Advanced AI Integration
+    use_neural_operator: bool = False            # Use fast PDE foundation model surrogate
 
 
 @dataclass
@@ -314,44 +319,65 @@ def _calculate_internal_resistance(config: BatteryConfig) -> float:
 def _simulate_discharge(
     perf: BatteryPerformance, config: BatteryConfig, R_int: float
 ):
-    """Simulate galvanostatic discharge using Single Particle Model."""
+    """Simulate galvanostatic discharge using Single Particle Model or Neural Operator."""
     Q = perf.theoretical_capacity_mAh  # mAh
     I = Q * config.C_rate / 1000  # Discharge current in A
 
     n_steps = 500
-    soc = np.linspace(0.99, 0.01, n_steps)
-
-    # OCV at each SOC
-    V_ocv = ocv_from_soc(soc, config.chemistry) * config.n_cells_series
-
-    # Overpotential: η = I·R + η_activation + η_concentration
-    eta_ohmic = I * R_int
-
-    # Activation overpotential (Butler-Volmer linearized at low η)
-    RT_F = 0.0257
-    j = I / config.electrode_area_cm2
-    j0 = config.exchange_current_density_A_cm2
-    eta_activation = RT_F * np.arcsinh(j / (2 * j0))
-
-    # Concentration overpotential (increases at low SOC)
-    eta_concentration = 0.05 * (1 / (soc + 0.01) - 1)
-    eta_concentration = np.clip(eta_concentration, 0, 0.5)
-
-    # Terminal voltage
-    V_terminal = V_ocv - eta_ohmic - eta_activation - eta_concentration
-
-    # Find cutoff
-    cutoff_idx = np.where(V_terminal < config.cutoff_V)[0]
-    if len(cutoff_idx) > 0:
-        end_idx = cutoff_idx[0]
+    
+    if config.use_neural_operator:
+        no = get_neural_operator()
+        result = no.simulate_discharge(
+            Q=Q, I=I, R_int=R_int, 
+            D_solid=config.D_solid_cm2_s,
+            C_rate=config.C_rate,
+            cutoff_V=config.cutoff_V,
+            time_steps=n_steps
+        )
+        soc_used = np.array(result["soc"])
+        V_used = np.array(result["voltage"])
+        t_array = np.array(result["time_h"]) * 60 # Convert h to min
+        
+        Q_delivered = Q * (0.99 - soc_used[-1]) if len(soc_used) > 1 else 0
+        end_idx = len(soc_used)
     else:
-        end_idx = n_steps
+        soc = np.linspace(0.99, 0.01, n_steps)
 
-    soc_used = soc[:end_idx]
-    V_used = V_terminal[:end_idx]
+    if not config.use_neural_operator:
+        # OCV at each SOC
+        V_ocv = ocv_from_soc(soc, config.chemistry) * config.n_cells_series
+    
+        # Overpotential: η = I·R + η_activation + η_concentration
+        eta_ohmic = I * R_int
+    
+        # Activation overpotential (Butler-Volmer linearized at low η)
+        RT_F = 0.0257
+        j = I / config.electrode_area_cm2
+        j0 = config.exchange_current_density_A_cm2
+        eta_activation = RT_F * np.arcsinh(j / (2 * j0))
+    
+        # Concentration overpotential (increases at low SOC)
+        eta_concentration = 0.05 * (1 / (soc + 0.01) - 1)
+        eta_concentration = np.clip(eta_concentration, 0, 0.5)
+    
+        # Terminal voltage
+        V_terminal = V_ocv - eta_ohmic - eta_activation - eta_concentration
+    
+        # Find cutoff
+        cutoff_idx = np.where(V_terminal < config.cutoff_V)[0]
+        if len(cutoff_idx) > 0:
+            end_idx = cutoff_idx[0]
+        else:
+            end_idx = n_steps
+    
+        soc_used = soc[:end_idx]
+        V_used = V_terminal[:end_idx]
+    
+        # Time and capacity
+        Q_delivered = Q * (0.99 - soc_used[-1]) if end_idx > 1 else 0
+        t_total_h = Q_delivered / (I * 1000) if I > 0 else 0
+        t_array = np.linspace(0, t_total_h * 60, end_idx)  # minutes
 
-    # Time and capacity
-    Q_delivered = Q * (0.99 - soc_used[-1]) if end_idx > 1 else 0
     perf.delivered_capacity_mAh = Q_delivered
     perf.utilization_pct = (Q_delivered / Q) * 100 if Q > 0 else 0
 

@@ -11,6 +11,7 @@ id,paper_title,doi,Rs_ohm,Rct_ohm,Cdl_F,sigma_warburg,capacitance_F_g,capacitanc
 17,Impedance spectroscopy and equivalent circuit modelling of SrZrS3 chalcogenide perovskite solar cells,10.1016/j.solener.2025.114136,3.0,,,,,,,,,0.85
 18,Quantifying the intrinsic surface charge density and charge-transfer resistance of the graphene-solution interface through bias-free low-level charge measurement,10.1063/1.4955404,,6.5,,,,,,,,0.85
 19,MEMS Impedance Biosensor for accurate and rapid detection of E.coli 0157:H7,10.32469/10355/57140,,,,,,,,100.0,1000000.0,0.85
+23,Electrochemical analysis on SnSeO3/ZnSeO3 nanocomposite,10.15251/cl.2024.219.729,,0.42,,,78.65,,3M KOH,,,0.85
 6,Precise control on morphology of ultrafine LiMn2O4 nanorods as supercapacitor electrode via two-step hydrothermal method,10.1039/C8CE01029C,10.0,,,,653.5,,,,,0.82
 1,Preparation of Ag-CNTs and Ag-Graphene nanocomposite and their combination with MnO2 bath deposition for flexible supercapacitor development.,10.58837/chula.the.2019.375,,,,,,677.12,,,,0.8
 3,New Electrochemical Characterization Methods for Nanocomposite Supercapacitor Electrodes,,,,,,345.0,,,,,0.8
@@ -19,3 +20,5 @@ id,paper_title,doi,Rs_ohm,Rct_ohm,Cdl_F,sigma_warburg,capacitance_F_g,capacitanc
 13,Highly porous carbonaceous aerogel for symmetric supercapacitor with dual-redox active electrolyte revealing high performance pseudo-capacitance,10.21203/rs.3.rs-4357023/v1,,,,,560.0,,,,,0.8
 15,A cellulose-based hybrid 2D material aerogel for a flexible all-solid-state supercapacitor with high specific capacitance,10.1039/c7ra07908g,,,,,916.42,,,,,0.8
 16,Three-dimensional aerogel on sulfonyldibenzene derivative functionalized reduced graphene oxide for aqueous supercapacitor,10.22541/au.171040521.17556047/v1,,,,,388.0,,,,,0.8
+21,α-Manganese Dioxide (α-MnO2) Coated with Polyaniline (PANI) and Reduced Graphene Oxide (rGO)-Based Nanocomposite for Supercapacitor Application,10.3390/jcs7040167,,,,,261.0,,,,,0.8
+22,Hybrid TiO2–RGO nanocomposite as high specific capacitance electrode for supercapacitor,10.1088/1361-6528/ad6a6a,,,,,152.0,,,,,0.8

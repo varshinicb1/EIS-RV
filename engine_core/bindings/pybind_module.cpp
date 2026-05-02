@@ -20,6 +20,8 @@
 #include "raman/eis_solver.hpp"
 #include "raman/cv_solver.hpp"
 #include "raman/diffusion_solver.hpp"
+#include "raman/drt_solver.hpp"
+#include "raman/circuit_fitter.hpp"
 
 namespace py = pybind11;
 
@@ -172,4 +174,87 @@ PYBIND11_MODULE(raman_core, m) {
         py::arg("n_radial"), py::arg("n_time"),
         py::arg("dt_s"), py::arg("surface_flux"),
         "Spherical diffusion solver (battery SPM).");
+
+    // ── DRT Parameters ────────────────────────────────────
+    py::class_<DRTParams>(m, "DRTParams",
+        "Parameters for DRT (Tikhonov regularization).")
+        .def(py::init<>())
+        .def_readwrite("lambda_",      &DRTParams::lambda,       "Regularization parameter")
+        .def_readwrite("n_tau",         &DRTParams::n_tau,        "Number of τ grid points")
+        .def_readwrite("tau_min",       &DRTParams::tau_min,      "Minimum relaxation time (s)")
+        .def_readwrite("tau_max",       &DRTParams::tau_max,      "Maximum relaxation time (s)")
+        .def_readwrite("non_negative",  &DRTParams::non_negative, "Enforce γ(τ) ≥ 0")
+        .def_readwrite("max_iter",      &DRTParams::max_iter,     "Max NNLS iterations");
+
+    // ── DRT Result ────────────────────────────────────────
+    py::class_<DRTResult>(m, "DRTResult",
+        "DRT computation result with γ(τ) distribution.")
+        .def_readonly("tau",          &DRTResult::tau)
+        .def_readonly("gamma",        &DRTResult::gamma)
+        .def_readonly("Z_fit_real",   &DRTResult::Z_fit_real)
+        .def_readonly("Z_fit_imag",   &DRTResult::Z_fit_imag)
+        .def_readonly("R_inf",        &DRTResult::R_inf)
+        .def_readonly("R_pol",        &DRTResult::R_pol)
+        .def_readonly("residual",     &DRTResult::residual)
+        .def_readonly("lambda_used",  &DRTResult::lambda_used);
+
+    // ── DRT Functions ─────────────────────────────────────
+    m.def("compute_drt", &compute_drt,
+        py::arg("frequencies"),
+        py::arg("Z_real"),
+        py::arg("Z_imag"),
+        py::arg("params") = DRTParams(),
+        R"doc(
+            Compute Distribution of Relaxation Times via Tikhonov regularization.
+
+            Args:
+                frequencies: Frequency array (Hz), numpy 1D
+                Z_real: Real impedance array (Ω)
+                Z_imag: Imaginary impedance array (Ω)
+                params: DRTParams object (optional)
+
+            Returns:
+                DRTResult with tau, gamma, fitted impedance, etc.
+        )doc");
+
+    m.def("kramers_kronig_test", &kramers_kronig_test,
+        py::arg("frequencies"),
+        py::arg("Z_real"),
+        py::arg("Z_imag"),
+        py::arg("n_rc") = 0,
+        R"doc(
+            Kramers-Kronig consistency test (Lin-KK method).
+            Small residual = data is K-K compliant = valid for fitting.
+        )doc");
+
+    // ── Circuit Fitter ────────────────────────────────────
+    py::enum_<CircuitType>(m, "CircuitType")
+        .value("RANDLES", CircuitType::RANDLES)
+        .value("R_RC", CircuitType::R_RC)
+        .value("R_RC_RC", CircuitType::R_RC_RC);
+
+    py::class_<FitParams>(m, "FitParams")
+        .def(py::init<>())
+        .def_readwrite("circuit",     &FitParams::circuit)
+        .def_readwrite("max_iter",    &FitParams::max_iter)
+        .def_readwrite("tol",         &FitParams::tol)
+        .def_readwrite("lambda_init", &FitParams::lambda_init);
+
+    py::class_<FitResult>(m, "FitResult")
+        .def_readonly("params",         &FitResult::params)
+        .def_readonly("errors",         &FitResult::errors)
+        .def_readonly("Z_fit_real",     &FitResult::Z_fit_real)
+        .def_readonly("Z_fit_imag",     &FitResult::Z_fit_imag)
+        .def_readonly("chi_squared",    &FitResult::chi_squared)
+        .def_readonly("reduced_chi_sq", &FitResult::reduced_chi_sq)
+        .def_readonly("iterations",     &FitResult::iterations)
+        .def_readonly("converged",      &FitResult::converged);
+
+    m.def("fit_circuit", &fit_circuit,
+        py::arg("frequencies"),
+        py::arg("Z_real"),
+        py::arg("Z_imag"),
+        py::arg("initial"),
+        py::arg("params") = FitParams(),
+        "CNLS circuit fitting via Levenberg-Marquardt.");
 }

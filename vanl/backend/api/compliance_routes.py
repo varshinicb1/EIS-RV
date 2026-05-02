@@ -44,10 +44,11 @@ router = APIRouter(prefix="/api/compliance", tags=["compliance"])
 
 class GenerateReportRequest(BaseModel):
     """Generate report request."""
-    resource_type: str = Field(..., description="experiment, batch_job, audit_log")
+    resource_type: str = Field(..., description="experiment, batch_job, audit_log, custom")
     resource_id: str = Field(..., description="Resource ID")
     format: ReportFormat = Field(ReportFormat.PDF, description="Report format")
     include_signatures: bool = Field(True, description="Include electronic signatures")
+    custom_data: Optional[Dict[str, Any]] = Field(None, description="Custom data for report generation")
 
 
 @router.post("/reports/generate")
@@ -125,6 +126,25 @@ async def generate_report(
             }
             
             report_bytes = generate_batch_report(batch_data, request.format)
+        elif request.resource_type == "custom":
+            if not request.custom_data:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="custom_data is required for custom reports"
+                )
+            
+            # Use experiment generator but with custom data
+            experiment_data = {
+                "name": request.custom_data.get("title", "Custom Report"),
+                "technique": request.custom_data.get("type", "Custom"),
+                "parameters": request.custom_data.get("params", {}),
+                "results": request.custom_data.get("results", {}),
+                "metadata": {
+                    "authors": request.custom_data.get("authors", ""),
+                    "affiliation": request.custom_data.get("affiliation", "")
+                }
+            }
+            report_bytes = generate_experiment_report(experiment_data, request.format)
         
         else:
             raise HTTPException(

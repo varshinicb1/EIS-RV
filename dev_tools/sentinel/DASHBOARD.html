@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RĀMAN Sentinel</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #09090b; color: #a1a1aa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #27272a; }
+h1 { color: #fafafa; font-size: 20px; font-weight: 700; }
+h1 span { color: #52525b; font-weight: 400; font-size: 12px; margin-left: 8px; }
+.meta { font-size: 11px; color: #52525b; font-family: 'SF Mono', 'Fira Code', monospace; }
+.stats { display: flex; gap: 24px; margin-bottom: 32px; }
+.stat { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px 20px; flex: 1; }
+.stat-value { color: #fafafa; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.stat-label { font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; }
+.controls { display: flex; gap: 8px; margin-bottom: 32px; }
+.btn { padding: 8px 16px; border-radius: 6px; border: 1px solid #27272a; background: #18181b; color: #fafafa; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn:hover { background: #27272a; }
+.btn-primary { background: #fafafa; color: #09090b; border-color: #fafafa; }
+.btn-primary:hover { background: #e4e4e7; }
+.btn-danger { color: #ef4444; border-color: #7f1d1d; }
+.btn-danger:hover { background: #7f1d1d; }
+h2 { color: #fafafa; font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+h2::before { content: ''; width: 6px; height: 6px; background: #3b82f6; border-radius: 50%; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; transition: border-color 0.15s; }
+.card:hover { border-color: #3f3f46; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.date { font-size: 10px; color: #52525b; font-family: monospace; }
+.card-title { color: #fafafa; font-size: 13px; font-weight: 600; text-decoration: none; display: block; margin-bottom: 6px; line-height: 1.4; }
+.card-title:hover { color: #60a5fa; }
+.card-summary { font-size: 12px; color: #71717a; line-height: 1.5; }
+.log { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; margin-top: 32px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #52525b; white-space: pre-wrap; }
+@media (max-width: 768px) { .grid { grid-template-columns: 1fr; } .stats { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>RĀMAN Sentinel<span>v2.0</span></h1>
+        <div class="meta">Last sync: 2026-05-03 02:50:23</div>
+    </header>
+
+    <div class="stats">
+        <div class="stat"><div class="stat-value">34</div><div class="stat-label">Total Intel</div></div>
+        <div class="stat"><div class="stat-value">15</div><div class="stat-label">Papers</div></div>
+        <div class="stat"><div class="stat-value">19</div><div class="stat-label">Repositories</div></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" onclick="location.reload()">Refresh</button>
+    </div>
+
+    <h2>Intelligence Feed</h2>
+    <div class="grid">
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-29</span>
+            </div>
+            <a href="https://github.com/varshinicb1/EIS-RV" target="_blank" class="card-title">varshinicb1/EIS-RV</a>
+            <p class="card-summary">VANL — Virtual Autonomous Nanomaterials Lab: Physics-informed digital twin for printed electronics (EIS, CV, GCD, Ink, Supercapacitor, Battery, Biosensor)</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-29</span>
+            </div>
+            <a href="https://github.com/neuwinmanasseh95-lab/AI-Based-Smart-Self-Grid-system" target="_blank" class="card-title">neuwinmanasseh95-lab/AI-Based-Smart-Self-Grid-system</a>
+            <p class="card-summary">This project is a high-fidelity, full-stack Battery Management System (BMS) and Smart Home Energy Simulator. It creates a "Digital Twin" of a complex energy ecosystem, allowing for real-time monitorin...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-30</span>
+            </div>
+            <a href="https://github.com/Melving123code/digital-twin-battery-degradation" target="_blank" class="card-title">Melving123code/digital-twin-battery-degradation</a>
+            <p class="card-summary">This project develops a hybrid digital twin model to predict lithium-ion battery degradation using NASA data. A physics-based model estimates battery capacity, while a neural network learns the residu...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-01</span>
+            </div>
+            <a href="https://github.com/DiyaSNS/Digital-Twin-BESS-implementation" target="_blank" class="card-title">DiyaSNS/Digital-Twin-BESS-implementation</a>
+            <p class="card-summary">Digital Twin of Battery Energy Storage System | Python, Kalman Filter, MPC, Scikit-learn</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-01</span>
+            </div>
+            <a href="https://github.com/sarfaraz2041/Data-Science-Enabled-Digital-Twin-for-Battery-Health-Forecasting" target="_blank" class="card-title">sarfaraz2041/Data-Science-Enabled-Digital-Twin-for-Battery-Health-Forecasting</a>
+            <p class="card-summary">Smart battery monitoring system using Machine Learning and Digital Twin technology. Predicts battery health, Remaining Useful Life (RUL), and detects faults using real-time data. Improves battery life...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-29</span>
+            </div>
+            <a href="https://github.com/SciML/NeuralPDE.jl" target="_blank" class="card-title">SciML/NeuralPDE.jl</a>
+            <p class="card-summary">Physics-Informed Neural Networks (PINN) Solvers of (Partial) Differential Equations for Scientific Machine Learning (SciML) accelerated simulation</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-27</span>
+            </div>
+            <a href="https://github.com/npicchiarelli/p01_optimization" target="_blank" class="card-title">npicchiarelli/p01_optimization</a>
+            <p class="card-summary">First PhD project: optimization. Experiment with several optimizers for simple problems (supervised, PDEs) solved with Neural Networks.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-29</span>
+            </div>
+            <a href="https://github.com/m9h/spinning-up-in-pde" target="_blank" class="card-title">m9h/spinning-up-in-pde</a>
+            <p class="card-summary">Spinning Up in PDE Solvers — community-science curriculum tracing computational PDE solvers from finite differences to neural operators</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-29</span>
+            </div>
+            <a href="https://github.com/Tripudium/neuropaths" target="_blank" class="card-title">Tripudium/neuropaths</a>
+            <p class="card-summary">Transition Operators via Neural PDE Solvers</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-29</span>
+            </div>
+            <a href="https://github.com/Wang-Ruocheng/QuanONet" target="_blank" class="card-title">Wang-Ruocheng/QuanONet</a>
+            <p class="card-summary">Official implementation of QuanONet: A pure quantum neural operator framework for solving PDEs/ODEs with adaptive frequency strategies.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-25</span>
+            </div>
+            <a href="https://github.com/Prateek-Physics/Physics-simulations" target="_blank" class="card-title">Prateek-Physics/Physics-simulations</a>
+            <p class="card-summary">This is the main repository where you can find python codes to solve various types of physics problems from differentiation,integration, differential equations to simulating damped spring pendulums. I...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-30</span>
+            </div>
+            <a href="https://github.com/gbionics/jaxsim" target="_blank" class="card-title">gbionics/jaxsim</a>
+            <p class="card-summary">A differentiable physics engine and multibody dynamics library for control and robot learning.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-29</span>
+            </div>
+            <a href="https://github.com/JustinSasek/Physcial-Simulation-Final-Project" target="_blank" class="card-title">JustinSasek/Physcial-Simulation-Final-Project</a>
+            <p class="card-summary">A Python mass-spring physics simulator with PyTorch-based differentiable physics and a pygame UI. Simulate soft body dynamics and optimize parameters through gradient-based learning.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-30</span>
+            </div>
+            <a href="https://github.com/daubners/evoxels" target="_blank" class="card-title">daubners/evoxels</a>
+            <p class="card-summary">Differentiable physics framework for voxel-based microstructure simulations</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-01</span>
+            </div>
+            <a href="https://github.com/liblaf/apple" target="_blank" class="card-title">liblaf/apple</a>
+            <p class="card-summary">🍎 A JAX and Warp library for differentiable physics simulation, featuring elastic energy models and finite element methods.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2025-11-07</span>
+            </div>
+            <a href="https://github.com/yezhanwo/battery-PINN-trials" target="_blank" class="card-title">yezhanwo/battery-PINN-trials</a>
+            <p class="card-summary">just a leaner's trials</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2025-10-15</span>
+            </div>
+            <a href="https://github.com/scuzyq/PINNACLE" target="_blank" class="card-title">scuzyq/PINNACLE</a>
+            <p class="card-summary">Physics-Informed Neural Networks Analyzing Corrsosion Layers in Electrochemistry</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-01-07</span>
+            </div>
+            <a href="https://github.com/Feugmo-Group/PINNACLE" target="_blank" class="card-title">Feugmo-Group/PINNACLE</a>
+            <p class="card-summary">Physics-Informed Neural Networks Analyzing Corrsosion Layers in Electrochemistry</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-21</span>
+            </div>
+            <a href="https://github.com/Tianyi-Q/pemfc-degradation-pgml" target="_blank" class="card-title">Tianyi-Q/pemfc-degradation-pgml</a>
+            <p class="card-summary">This hobby project is a Physics Guided Machine Learning pipeline enforcing thermodynamic constraints via PyTorch to forecast PEMFC degradation kinetics.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2022-12-16</span>
+            </div>
+            <a href="https://arxiv.org/abs/2212.08403v1" target="_blank" class="card-title">LiFe-net: Data-driven Modelling of Time-dependent Temperatures and Charging Statistics Of Tesla's LiFePo4 EV Battery</a>
+            <p class="card-summary">Modelling the temperature of Electric Vehicle (EV) batteries is a fundamental task of EV manufacturing. Extreme temperatures in the battery packs can affect their longevity and power output. Although ...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2025-08-11</span>
+            </div>
+            <a href="https://arxiv.org/abs/2508.08087v1" target="_blank" class="card-title">Fast and Generalizable parameter-embedded Neural Operators for Lithium-Ion Battery Simulation</a>
+            <p class="card-summary">Reliable digital twins of lithium-ion batteries must achieve high physical fidelity with sub-millisecond speed. In this work, we benchmark three operator-learning surrogates for the Single Particle Mo...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2025-08-18</span>
+            </div>
+            <a href="https://arxiv.org/abs/2508.12602v2" target="_blank" class="card-title">A Hybrid Surrogate for Electric Vehicle Parameter Estimation and Power Consumption via Physics-Informed Neural Operators</a>
+            <p class="card-summary">We present a hybrid surrogate model for electric vehicle parameter estimation and power consumption. We combine our novel architecture Spectral Parameter Operator built on a Fourier Neural Operator ba...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2025-10-09</span>
+            </div>
+            <a href="https://arxiv.org/abs/2510.08295v1" target="_blank" class="card-title">Bridging the Physics-Data Gap with FNO-Guided Conditional Flow Matching: Designing Inductive Bias through Hierarchical Physical Constraints</a>
+            <p class="card-summary">Conventional time-series generation often ignores domain-specific physical constraints, limiting statistical and physical consistency. We propose a hierarchical framework that embeds the inherent hier...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2025-12-17</span>
+            </div>
+            <a href="https://arxiv.org/abs/2512.15622v1" target="_blank" class="card-title">Operator-Theoretic Joint Estimation of Aging-Aware State of Charge and Control-Informed State of Health</a>
+            <p class="card-summary">Accurate estimation of a battery's state of charge and state of health is essential for safe and reliable battery management. Existing approaches often decouple these two states, lack stability guaran...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2026-03-16</span>
+            </div>
+            <a href="https://arxiv.org/abs/2603.15431v1" target="_blank" class="card-title">Physics-informed fine-tuning of foundation models for partial differential equations</a>
+            <p class="card-summary">Foundation models for partial differential equations (PDEs) have emerged as powerful surrogates pre-trained on diverse physical systems, but adapting them to new downstream tasks remains challenging d...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2026-03-18</span>
+            </div>
+            <a href="https://arxiv.org/abs/2603.17499v5" target="_blank" class="card-title">A Tutorial on Learning-Based Radio Map Construction: Data, Paradigms, and Physics-Awarenes</a>
+            <p class="card-summary">The integration of artificial intelligence into next-generation wireless networks necessitates the accurate construction of radio maps (RMs) as a foundational prerequisite for electromagnetic digital ...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2026-03-19</span>
+            </div>
+            <a href="https://arxiv.org/abs/2603.22309v1" target="_blank" class="card-title">UniFluids: Unified Neural Operator Learning with Conditional Flow-matching</a>
+            <p class="card-summary">Partial differential equation (PDE) simulation holds extensive significance in scientific research. Currently, the integration of deep neural networks to learn solution operators of PDEs has introduce...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2026-03-23</span>
+            </div>
+            <a href="https://arxiv.org/abs/2603.21534v1" target="_blank" class="card-title">Generalization Limits of In-Context Operator Networks for Higher-Order Partial Differential Equations</a>
+            <p class="card-summary">We investigate the generalization capabilities of In-Context Operator Networks (ICONs), a new class of operator networks that build on the principles of in-context learning, for higher-order partial d...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2026-04-11</span>
+            </div>
+            <a href="https://arxiv.org/abs/2604.10099v1" target="_blank" class="card-title">Quantum Error Mitigation Strategies for Variational PDE-Constrained Circuits on Noisy Hardware</a>
+            <p class="card-summary">Variational quantum circuits (VQCs) solving partial differential equations (PDEs) on near-term quantum hardware face a critical challenge: hardware noise degrades solution fidelity and disrupts conver...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">arXiv</span>
+                <span class="date">2026-04-11</span>
+            </div>
+            <a href="https://arxiv.org/abs/2604.11825v1" target="_blank" class="card-title">Quantum algorithms for Young measures: applications to nonlinear partial differential equations</a>
+            <p class="card-summary">Many nonlinear PDEs have singular or oscillatory solutions or may exhibit physical instabilities or uncertainties. This requires a suitable concept of physically relevant generalized solutions. Dissip...</p>
+        </div>
+    </div>
+
+    <div class="log" id="log">Loading log...</div>
+</div>
+<script>
+fetch('autonomous.log').then(r=>r.text()).then(t=>{
+    document.getElementById('log').textContent = t.split('\n').slice(-20).join('\n');
+}).catch(()=>{document.getElementById('log').textContent='Log file not accessible (open via local server).';});
+</script>
+</body>
+</html>

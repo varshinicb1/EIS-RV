@@ -34,7 +34,7 @@ using MatD     = Eigen::MatrixXd;
 struct EISParams {
     double Rs          = 10.0;    // Solution resistance (Ω)
     double Rct         = 100.0;   // Charge transfer resistance (Ω)
-    double Cdl         = 1e-5;    // Double-layer capacitance (F) or CPE Q₀
+    double Cdl         = 1.5e-05;    // Double-layer capacitance (F) or CPE Q₀
     double sigma_w     = 50.0;    // Warburg coefficient (Ω·s^(-1/2))
     double n_cpe       = 0.9;     // CPE exponent (1.0 = ideal capacitor)
     bool   bounded_w   = false;   // Use finite-length Warburg

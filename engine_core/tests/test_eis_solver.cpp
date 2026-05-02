@@ -12,10 +12,11 @@
  */
 
 #include "raman/eis_solver.hpp"
+#include "raman/cv_solver.hpp"
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include <iomanip>
+
 
 using namespace raman;
 
@@ -123,9 +124,11 @@ void test_randles_sevcik() {
     // ip = 0.4463 * 1^1.5 * 96485^1.5 * 1 * 1e-6 * sqrt(7.6e-6 * 0.1 / 8.314 / 298.15)
     // ≈ 2.69e-5 * sqrt(0.1) * sqrt(7.6e-6) * 1e-6 ... let's compute
     double ip = randles_sevcik_ip(1, 1.0, 1e-3, 7.6e-6, 0.1, 298.15);
-    // Expected: ~ 2.7e-5 A (27 µA) for these standard conditions
-    ASSERT_NEAR(ip * 1e6, 27.0, 10.0,
-                "Randles-Sevcik: ip ~ 27 µA for standard conditions");
+    // ip = 0.4463 * n^1.5 * F^1.5 * A * (C*1e-3) * sqrt(D*v/(R*T))
+    // With n=1, A=1 cm², C=1mM, D=7.6e-6 cm²/s, v=0.1 V/s:
+    // ip ≈ 2.34e-4 A (234 µA)
+    ASSERT_NEAR(ip * 1e6, 234.0, 30.0,
+                "Randles-Sevcik: ip ~ 234 µA for standard conditions");
 }
 
 
