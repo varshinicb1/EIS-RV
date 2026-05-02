@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prajna — Physics-Informed Digital Twin for Printed Electronics</title>
-    <meta name="description" content="Prajna: Physics-based digital twin platform for printed electronics. Quantum-accurate EIS, CV, GCD, biosensor, battery, supercapacitor simulation with real-time 3D crystal rendering.">
+    <title>RĀMAN Studio — The Digital Twin for Your Potentiostat</title>
+    <meta name="description" content="RĀMAN Studio: AI-powered desktop companion for VidyuthLabs AnalyteX devices. Professional electrochemical analysis, simulation, and reporting.">
     <meta name="keywords" content="electrochemistry, EIS, biosensor, printed electronics, digital twin, materials science, India, research">
     <!-- Plotly for electrochemical charts -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
@@ -12,6 +12,8 @@
     <script src="https://3dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
     <!-- Three.js for custom 3D device stack rendering -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.min.js"></script>
+    <!-- Crystal 3D viewer -->
+    <script src="/static/crystal3d.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -20,8 +22,8 @@
     <!-- ═══ Top Bar ═══ -->
     <header id="topbar">
         <div class="topbar-left">
-            <span class="brand-mark">PRAJNA</span>
-            <span class="brand-sub">Physics-Informed Digital Twin · Printed Electronics · India</span>
+            <span class="brand-mark">RĀMAN Studio</span>
+            <span class="brand-sub">The Digital Twin for Your Potentiostat · VidyuthLabs · India</span>
         </div>
         <div class="topbar-right">
             <span id="api-status" class="status-badge offline">API Offline</span>
@@ -645,7 +647,7 @@
     </main>
 
     <footer id="footer">
-        <span>Prajna v2.0 — Physics-informed digital twin · VidyuthLabs · India</span>
+        <span>RĀMAN Studio v1.0 — The Digital Twin for Your Potentiostat · VidyuthLabs · India</span>
         <span>Engines: EIS · CV · GCD · Ink · Supercap · Battery · Biosensor · 3D Crystal · Noise · ALCHEMI</span>
     </footer>
 

@@ -1,0 +1,129 @@
+{
+  "name": "raman-studio",
+  "productName": "RĀMAN Studio",
+  "version": "1.0.0",
+  "description": "The Digital Twin for Your Potentiostat - AI-powered electrochemical analysis by VidyuthLabs",
+  "main": "src/desktop/main.js",
+  "author": {
+    "name": "VidyuthLabs",
+    "email": "support@vidyuthlabs.com",
+    "url": "https://vidyuthlabs.com"
+  },
+  "license": "Commercial",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder --win --linux",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.1.7",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.vidyuthlabs.raman.studio",
+    "productName": "RĀMAN Studio",
+    "copyright": "Copyright © 2026 VidyuthLabs",
+    "directories": {
+      "output": "build",
+      "buildResources": "resources"
+    },
+    "files": [
+      "src/**/*",
+      "vanl/**/*",
+      "analytex_microwell_designer/**/*",
+      "!**/*.pyc",
+      "!**/__pycache__",
+      "!**/.git",
+      "!**/.venv"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "resources"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "resources/icons/icon.ico",
+      "artifactName": "${productName}-${version}-Setup.${ext}",
+      "publisherName": "VidyuthLabs",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RĀMAN Studio",
+      "license": "LICENSE_COMMERCIAL",
+      "installerIcon": "resources/icons/icon.ico",
+      "uninstallerIcon": "resources/icons/icon.ico",
+      "installerHeaderIcon": "resources/icons/icon.ico"
+    },
+    "msi": {
+      "oneClick": false,
+      "perMachine": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RĀMAN Studio"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "resources/icons/icon.png",
+      "category": "Science",
+      "synopsis": "Orchestrating Atoms, Accelerating Discovery",
+      "description": "The Digital Twin for Your Potentiostat. AI-powered electrochemical analysis by VidyuthLabs.",
+      "desktop": {
+        "Name": "RĀMAN Studio",
+        "Comment": "Desktop Companion for AnalyteX",
+        "Categories": "Science;Education;Engineering;"
+      }
+    },
+    "appImage": {
+      "license": "LICENSE_COMMERCIAL"
+    },
+    "deb": {
+      "depends": [
+        "gconf2",
+        "gconf-service",
+        "libnotify4",
+        "libappindicator1",
+        "libxtst6",
+        "libnss3"
+      ]
+    },
+    "publish": null
+  }
+}

@@ -764,3 +764,99 @@ function sci(v) {
     if (typeof v !== 'number') return String(v);
     return v.toExponential(3);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+//   CRYSTAL 3D VIEWER
+// ═══════════════════════════════════════════════════════════════════
+
+let crystalViewer = null;
+
+async function loadCrystalStructure() {
+    const formula = document.getElementById('crystal-material').value;
+    const style = document.getElementById('crystal-style').value;
+    
+    // Show loading
+    document.getElementById('crystal-info').innerHTML = '<p style="color:#58a6ff;">⏳ Generating crystal structure...</p>';
+    
+    try {
+        // Initialize viewer if not already done
+        if (!crystalViewer) {
+            const container = document.getElementById('crystal-3d-viewer');
+            container.innerHTML = ''; // Clear placeholder
+            crystalViewer = new Crystal3DViewer('crystal-3d-viewer');
+        }
+        
+        // Load structure from API
+        const structure = await crystalViewer.loadStructure(formula);
+        
+        // Apply style
+        crystalViewer.setStyle(style);
+        
+        // Show info
+        const info = `
+            <h3 style="color:#58a6ff;margin:0 0 8px 0;">Crystal Structure</h3>
+            <table style="width:100%;font-size:11px;">
+                <tr><td>Formula:</td><td><strong>${structure.formula}</strong></td></tr>
+                <tr><td>Lattice a:</td><td>${structure.lattice.a.toFixed(2)} Å</td></tr>
+                <tr><td>Lattice b:</td><td>${structure.lattice.b.toFixed(2)} Å</td></tr>
+                <tr><td>Lattice c:</td><td>${structure.lattice.c.toFixed(2)} Å</td></tr>
+                <tr><td>Atoms:</td><td>${structure.atoms.length}</td></tr>
+                <tr><td>Source:</td><td>${structure.source === 'NVIDIA' ? '✓ NVIDIA ALCHEMI' : '⚠ Fallback'}</td></tr>
+            </table>
+            <p style="margin-top:8px;font-size:10px;color:#8b949e;">
+                💡 Left-click drag: rotate | Scroll: zoom | Right-click drag: pan
+            </p>
+        `;
+        document.getElementById('crystal-info').innerHTML = info;
+        
+        // Get properties from NVIDIA if available
+        await getCrystalProperties(formula);
+        
+    } catch (error) {
+        console.error('Crystal loading error:', error);
+        document.getElementById('crystal-info').innerHTML = `<p style="color:#f85149;">❌ Error: ${error.message}</p>`;
+    }
+}
+
+async function getCrystalProperties(formula) {
+    try {
+        const response = await fetch('/api/nvidia/predict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                formula: formula,
+                properties: ['band_gap', 'formation_energy', 'stability']
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            let propsHTML = '<h3 style="color:#58a6ff;margin:12px 0 8px 0;">Predicted Properties</h3><table style="width:100%;font-size:11px;">';
+            
+            if (data.band_gap) propsHTML += `<tr><td>Band Gap:</td><td>${data.band_gap.toFixed(2)} eV</td></tr>`;
+            if (data.formation_energy) propsHTML += `<tr><td>Formation Energy:</td><td>${data.formation_energy.toFixed(2)} eV/atom</td></tr>`;
+            if (data.stability) propsHTML += `<tr><td>Stability:</td><td>${data.stability}</td></tr>`;
+            
+            propsHTML += '</table>';
+            document.getElementById('crystal-properties').innerHTML = propsHTML;
+        }
+    } catch (error) {
+        console.log('Property prediction not available:', error);
+    }
+}
+
+// Initialize on tab switch
+document.addEventListener('DOMContentLoaded', () => {
+    const crystal3dTab = document.querySelector('[data-tab="crystal3d"]');
+    if (crystal3dTab) {
+        crystal3dTab.addEventListener('click', () => {
+            // Load default structure when tab is opened
+            setTimeout(() => {
+                if (!crystalViewer) {
+                    loadCrystalStructure();
+                }
+            }, 100);
+        });
+    }
+});
