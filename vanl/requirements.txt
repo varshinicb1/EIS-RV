@@ -58,3 +58,4 @@ python-dotenv>=1.0.0
 # NVIDIA ALCHEMI (Optional - for quantum-accurate predictions)
 # Install separately: pip install nvalchemi-toolkit ase
 # Requires Python 3.11, 3.12, or 3.13 (NOT 3.14+)
+torch>=2.0.0
