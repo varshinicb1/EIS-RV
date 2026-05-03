@@ -580,6 +580,28 @@ try:
 except ImportError as e:
     logger.warning("Supercap router unavailable: %s", e)
 
+# Printed-electronics simulation routes (ink, supercap device, battery, biosensor).
+try:
+    from src.backend.api.v1_routes.pe_routes import router as pe_router
+    app.include_router(pe_router)
+except ImportError as e:
+    logger.warning("PE simulation router unavailable: %s", e)
+
+# Quantum chemistry routes — NVIDIA ALCHEMI delegate; works in placeholder mode
+# without ALCHEMI / ASE installed.
+try:
+    from src.backend.api.v1_routes.quantum_routes import router as quantum_router
+    app.include_router(quantum_router)
+except ImportError as e:
+    logger.warning("Quantum router unavailable: %s", e)
+
+# NVIDIA Intelligence + Paper Validation routes.
+try:
+    from src.backend.api.v1_routes.nvidia_routes import router as nvidia_router
+    app.include_router(nvidia_router)
+except ImportError as e:
+    logger.warning("NVIDIA Intelligence router unavailable: %s", e)
+
 
 # ── NVIDIA Alchemi (chat + materials lookup) ────────────────────
 #
