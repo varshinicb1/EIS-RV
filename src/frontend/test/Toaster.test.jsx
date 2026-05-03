@@ -29,7 +29,8 @@ describe('Toaster', () => {
     const text = screen.getByText('Boom');
     // Walk up to the toast container — checks border-color is the err red.
     const container = text.parentElement;
-    expect(container.style.border).toMatch(/255, *107, *107/);
+    // Error toasts use Apple-style red (255, 69, 58) at 0.35 alpha.
+    expect(container.style.border).toMatch(/255, *69, *58/);
   });
 
   it('dismisses on click', async () => {

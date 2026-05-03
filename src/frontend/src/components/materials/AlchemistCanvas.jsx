@@ -399,7 +399,7 @@ export default function AlchemistCanvas() {
       const chatResp = await callBackend('/api/v2/alchemi/chat', {
         method: 'POST',
         body: {
-          question: JSON.stringify(promptObj),
+          prompt: JSON.stringify(promptObj),
           system: 'You are a synthesis chemist. Reply with one valid JSON object matching the requested shape. No prose, no markdown fences.',
         },
       });

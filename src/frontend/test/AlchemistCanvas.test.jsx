@@ -5,7 +5,7 @@ import AlchemistCanvas from '../src/components/materials/AlchemistCanvas';
 
 /**
  * Minimal contract test: the panel hits the two backend endpoints when the
- * user clicks "INITIALIZE GENERATION", and surfaces a license-required error
+ * user clicks "Plan synthesis", and surfaces a license-required error
  * when the backend returns 403 (the most likely state for an unactivated
  * researcher).
  */
@@ -13,7 +13,7 @@ describe('AlchemistCanvas', () => {
   it('renders the formula input and run button', () => {
     render(<AlchemistCanvas />);
     expect(screen.getByPlaceholderText(/Target formula/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /INITIALIZE GENERATION/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Plan synthesis/i })).toBeInTheDocument();
   });
 
   it('surfaces an error when /properties fails', async () => {
@@ -28,7 +28,7 @@ describe('AlchemistCanvas', () => {
     });
 
     render(<AlchemistCanvas />);
-    const button = screen.getByRole('button', { name: /INITIALIZE GENERATION/i });
+    const button = screen.getByRole('button', { name: /Plan synthesis/i });
     fireEvent.click(button);
 
     await waitFor(() => {
@@ -37,7 +37,14 @@ describe('AlchemistCanvas', () => {
   });
 
   it('hits both alchemi endpoints on success', async () => {
+    // The panel also hits /api/v2/alchemi/status on mount (to label the
+    // planner node with the live NIM model name). Mock that first, then
+    // the two click-driven calls.
     const fetchMock = vi.fn()
+      .mockResolvedValueOnce({   // /api/v2/alchemi/status (mount)
+        ok: true, status: 200,
+        json: async () => ({ configured: true, default_model: 'meta/llama-3.3-70b-instruct' }),
+      })
       .mockResolvedValueOnce({   // /api/v2/alchemi/properties
         ok: true, status: 200,
         json: async () => ({
@@ -56,15 +63,17 @@ describe('AlchemistCanvas', () => {
     globalThis.fetch = fetchMock;
 
     render(<AlchemistCanvas />);
-    const button = screen.getByRole('button', { name: /INITIALIZE GENERATION/i });
+    const button = screen.getByRole('button', { name: /Plan synthesis/i });
     await act(async () => {
       fireEvent.click(button);
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      // Status (mount) + properties + chat = 3
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
-    expect(fetchMock.mock.calls[0][0]).toContain('/api/v2/alchemi/properties');
-    expect(fetchMock.mock.calls[1][0]).toContain('/api/v2/alchemi/chat');
+    expect(fetchMock.mock.calls[0][0]).toContain('/api/v2/alchemi/status');
+    expect(fetchMock.mock.calls[1][0]).toContain('/api/v2/alchemi/properties');
+    expect(fetchMock.mock.calls[2][0]).toContain('/api/v2/alchemi/chat');
   });
 });

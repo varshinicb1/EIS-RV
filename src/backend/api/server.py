@@ -25,12 +25,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 # Load .env file if available
+# Load .env. We pass override=True so that an empty NVIDIA_API_KEY set by
+# the Electron parent (which always exports NVIDIA_API_KEY=process.env.NVIDIA_API_KEY||'')
+# doesn't shadow the real value sitting in .env. Without this, a fresh
+# Electron launch under a clean systemd unit ends up with an empty key
+# even though .env is correct.
 try:
     from dotenv import load_dotenv
     env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), ".env")
-    load_dotenv(env_path)
+    load_dotenv(env_path, override=True)
 except ImportError:
-    # Fallback: parse .env manually
+    # Fallback: parse .env manually with the same override semantics.
     try:
         env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), ".env")
         if os.path.exists(env_path):
@@ -38,10 +43,12 @@ except ImportError:
                 for line in f:
                     if line.strip() and not line.startswith("#") and "=" in line:
                         k, v = line.strip().split("=", 1)
-                        if k not in os.environ:
-                            os.environ[k] = v.strip('\"\'')
+                        v = v.strip('\"\'')
+                        # Override if existing value is empty; otherwise leave it.
+                        if not os.environ.get(k):
+                            os.environ[k] = v
     except Exception:
-        logger.warning("%s:%d swallowed exception", __name__, 43, exc_info=False)
+        pass
 
 from src.backend.core.hardware_bridge import bridge as hw_bridge
 
