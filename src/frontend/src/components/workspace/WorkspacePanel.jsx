@@ -115,7 +115,7 @@ export default function WorkspacePanel() {
                     {new Date(p.modified).toLocaleDateString()} · {p.simulations?.length || 0} simulations
                   </div>
                 </div>
-                <span style={{ width: 6, height: 6, borderRadius: 3, background: p.status === 'active' ? '#76b900' : '#ffa726' }} />
+                <span style={{ width: 6, height: 6, borderRadius: 3, background: p.status === 'active' ? 'var(--color-success)' : 'var(--color-warning)' }} />
               </div>
             </div>
           ))}
@@ -171,7 +171,7 @@ export default function WorkspacePanel() {
             <div style={{ display: 'flex', gap: 6 }}>
               <button className="btn btn-sm btn-ghost" onClick={() => duplicateProject(active.id)}>Duplicate</button>
               <button className="btn btn-sm" onClick={() => deleteProject(active.id)}
-                style={{ background: 'rgba(239,83,80,0.1)', color: '#ef5350', border: '1px solid #ef535033' }}>Delete</button>
+                style={{ background: 'rgba(239,83,80,0.1)', color: 'var(--color-error)', border: '1px solid #ef535033' }}>Delete</button>
             </div>
           </div>
 
@@ -179,8 +179,8 @@ export default function WorkspacePanel() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
               ['Simulations', active.simulations?.length || 0, '#4a9eff'],
-              ['Status', active.status, '#76b900'],
-              ['Template', active.template?.replace(/-/g, ' '), '#ffa726'],
+              ['Status', active.status, 'var(--color-success)'],
+              ['Template', active.template?.replace(/-/g, ' '), 'var(--color-warning)'],
             ].map(([l, v, c]) => (
               <div key={l} className="card" style={{ textAlign: 'center', padding: 14 }}>
                 <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: 'var(--font-data)', textTransform: 'capitalize' }}>{v}</div>

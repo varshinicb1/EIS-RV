@@ -40,9 +40,9 @@ const STATUS_LABEL = {
 function colorForStatus(status) {
   switch (status) {
     case 'ok':
-      return '#76b900';
+      return 'var(--color-success)';
     case 'trial':
-      return '#76b900';
+      return 'var(--color-success)';
     default:
       return '#f87171';
   }
@@ -389,7 +389,7 @@ export default function UserProfilePanel() {
           </div>
         </div>
 
-        <button className="btn btn-primary" onClick={handleSave} style={{ width: '100%', marginTop: 8, background: savedToast ? '#76b900' : 'linear-gradient(135deg, var(--accent), #76b900)', transition: 'all 0.3s' }}>
+        <button className="btn btn-primary" onClick={handleSave} style={{ width: '100%', marginTop: 8, background: savedToast ? 'var(--color-success)' : 'linear-gradient(135deg, var(--accent), #76b900)', transition: 'all 0.3s' }}>
           {savedToast ? '✓ Saved' : 'Save profile'}
         </button>
       </div>

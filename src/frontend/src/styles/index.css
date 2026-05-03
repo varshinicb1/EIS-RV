@@ -1,73 +1,76 @@
 /*
- * RĀMAN Studio — Design System v3 (Industrial)
- * ============================================
- * High-fidelity scientific instrumentation suite.
- * Inspired by: Blackmagic Design, COMSOL, Leica Biosystems, SpaceX Starlink UI.
- *
- * Design language: "Midnight Instrumentation"
- * - Deep contrast neutral palette (Midnight Black)
- * - Glassmorphism & backdrop filters for premium depth
- * - Data-focused layouts with high information density
- * - Dynamic telemetry-driven animations (Scanlines, Pulses)
- * - Typography: Inter (UI) & JetBrains Mono (Telemetry)
+ * RĀMAN Studio — Design tokens
+ * ============================
+ * Calm, neutral palette appropriate for a scientific tool that
+ * researchers stare at for hours. Single restrained accent (steel
+ * blue), normal sentence-case labels, no glows or scanlines, no
+ * monospace where regular text reads better. Mono is reserved for
+ * actual numeric data and code.
  */
 
-/* ── Design Tokens ────────────────────────────────────── */
 :root {
-  /* Midnight Black Palette */
-  --bg-primary:       #020204;
-  --bg-secondary:     #08080c;
-  --bg-tertiary:      #0e0e12;
-  --bg-elevated:      #141418;
-  --bg-surface:       rgba(15, 15, 20, 0.6);
-  --bg-input:         #050507;
+  /* Surfaces — neutral charcoal, no blue tint */
+  --bg-primary:       #0d0d10;
+  --bg-secondary:     #121217;
+  --bg-tertiary:      #16161c;
+  --bg-elevated:      #1c1c24;
+  --bg-surface:       #1a1a22;
+  --bg-input:         #0f0f14;
+  --bg-hover:         rgba(255, 255, 255, 0.04);
 
-  /* Glassmorphism & Depth */
-  --glass-bg:         rgba(15, 15, 20, 0.75);
-  --glass-border:     rgba(255, 255, 255, 0.08);
-  --glass-blur:       blur(12px);
+  /* Glassmorphism — kept but subdued */
+  --glass-bg:         rgba(22, 22, 28, 0.85);
+  --glass-border:     rgba(255, 255, 255, 0.06);
+  --glass-blur:       blur(8px);
 
-  /* Accents — Vibrant Instrumentation */
-  --accent:           #00f2ff; /* Cyber Cyan */
-  --accent-hover:     #4df7ff;
-  --accent-muted:     rgba(0, 242, 255, 0.08);
-  --accent-glow:      0 0 15px rgba(0, 242, 255, 0.25);
-  --accent-border:    rgba(0, 242, 255, 0.15);
+  /* Accent — a calm steel blue, used sparingly. Never neon. */
+  --accent:           #4a8eff;
+  --accent-hover:     #6ba2ff;
+  --accent-muted:     rgba(74, 142, 255, 0.10);
+  --accent-glow:      none;
+  --accent-border:    rgba(74, 142, 255, 0.30);
 
-  /* Semantic Telemetry */
-  --color-success:    #00ff9d;
-  --color-warning:    #ffb800;
-  --color-error:      #ff3e3e;
-  --color-info:       #00b2ff;
-  --color-standby:    #55606e;
+  /* Semantic colors — Apple-style, easy on the eyes */
+  --color-success:    #34c759;
+  --color-warning:    #ff9f0a;
+  --color-error:      #ff453a;
+  --color-info:       #4a8eff;
+  --color-standby:    #6e6e76;
 
-  /* Text — High Contrast */
-  --text-primary:     #f8f9fa;
-  --text-secondary:   #9ca3af;
-  --text-tertiary:    #64748b;
-  --text-disabled:    #334155;
-  --text-value:       #e2e8f0;
+  /* Text */
+  --text-primary:     #ededf0;
+  --text-secondary:   #aaaab2;
+  --text-tertiary:    #6e6e76;
+  --text-disabled:    #3e3e44;
+  --text-value:       #d8d8dc;
 
-  /* Borders — Precision Thin */
-  --border-primary:   rgba(255, 255, 255, 0.05);
-  --border-secondary: rgba(255, 255, 255, 0.1);
+  /* Borders */
+  --border-primary:   rgba(255, 255, 255, 0.06);
+  --border-secondary: rgba(255, 255, 255, 0.10);
   --border-default:   rgba(255, 255, 255, 0.07);
 
   /* Layout */
-  --sidebar-width:    220px;
-  --sidebar-collapsed: 52px;
-  --topbar-height:    40px;
-  --statusbar-height: 28px;
+  --sidebar-width:    240px;
+  --sidebar-collapsed: 56px;
+  --topbar-height:    44px;
+  --statusbar-height: 26px;
 
-  /* Typography */
-  --font-ui:          'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-data:        'JetBrains Mono', monospace;
+  /* Typography
+     Inter for body and UI labels (regular, sentence case, no
+     letter-spacing tricks). IBM Plex Mono for numbers, code,
+     and data table cells. We do NOT use mono for prose.
+  */
+  --font-ui:          'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-data:        'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
   /* Effects */
-  --radius-sm:        2px;
-  --radius-md:        4px;
-  --radius-lg:        8px;
-  --transition:       200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --radius-sm:        4px;
+  --radius-md:        6px;
+  --radius-lg:        10px;
+  --transition:       150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-sm:        0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md:        0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg:        0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Reset ────────────────────────────────────────────── */
@@ -80,10 +83,15 @@ html, body, #root {
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-ui);
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';  /* nicer Inter glyphs */
 }
+
+/* Tabular numbers for any element with a data-number attribute. */
+.num, [data-number] { font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
@@ -488,12 +496,23 @@ html, body, #root {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); }
-  50% { opacity: 0.7; filter: drop-shadow(0 0 8px var(--accent)); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-.animate-in { animation: fadeIn 300ms cubic-bezier(0.4, 0, 0.2, 1) both; }
-.animate-pulse-glow { animation: pulse-glow 2s infinite ease-in-out; }
+@keyframes raman-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.85); }
+}
+
+@keyframes raman-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.raman-spin { animation: raman-spin 0.9s linear infinite; }
+
+.animate-in { animation: fadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+.animate-pulse-glow { animation: pulse-glow 1.6s infinite ease-in-out; }
 
 .glass-panel {
   background: var(--glass-bg);

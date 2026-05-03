@@ -155,14 +155,21 @@ function createWindow() {
             responseHeaders: {
                 ...details.responseHeaders,
                 'Content-Security-Policy': [
+                    // Tightened: scripts only from app, fonts/styles bundled,
+                    // network limited to local sidecar + NVIDIA NIM. The
+                    // earlier policy whitelisted localhost:5173 (Vite dev),
+                    // raw.githack/raw.githubusercontent (no longer used) and
+                    // omitted the WebSocket scheme on 127.0.0.1 — which is
+                    // why telemetry was rejected. Fonts now ship offline via
+                    // @fontsource so we don't need fonts.googleapis.com.
                     "default-src 'self'; " +
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://3Dmol.csb.pitt.edu; " +
-                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                    "img-src 'self' data: blob: https:; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                    "style-src 'self' 'unsafe-inline'; " +
+                    "img-src 'self' data: blob:; " +
                     "worker-src 'self' blob:; " +
                     "child-src 'self' blob:; " +
-                    "connect-src 'self' http://localhost:8000 http://localhost:5173 http://127.0.0.1:8000 http://127.0.0.1:5173 ws://localhost:5173 https://license.vidyuthlabs.co.in https://raw.githack.com https://raw.githubusercontent.com; " +
-                    "font-src 'self' data: https://fonts.gstatic.com; " +
+                    "connect-src 'self' http://127.0.0.1:8000 ws://127.0.0.1:8000 http://localhost:8000 ws://localhost:8000 http://localhost:5173 ws://localhost:5173 https://integrate.api.nvidia.com https://license.vidyuthlabs.co.in; " +
+                    "font-src 'self' data:; " +
                     "object-src 'none'; " +
                     "base-uri 'self'; " +
                     "form-action 'self'; " +

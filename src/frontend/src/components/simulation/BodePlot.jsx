@@ -47,7 +47,7 @@ export default function BodePlot({ data }) {
     ctx.stroke();
 
     // Phase trace (right axis)
-    ctx.strokeStyle = '#ffa726'; ctx.lineWidth = 1.5; ctx.beginPath();
+    ctx.strokeStyle = 'var(--color-warning)'; ctx.lineWidth = 1.5; ctx.beginPath();
     logF.forEach((lf, i) => i === 0 ? ctx.moveTo(sx(lf), syP(phase[i])) : ctx.lineTo(sx(lf), syP(phase[i])));
     ctx.stroke();
 
@@ -69,7 +69,7 @@ export default function BodePlot({ data }) {
     ctx.textAlign = 'center'; ctx.fillText('log |Z| / Ω', 0, 0); ctx.restore();
 
     // Right axis (phase) labels
-    ctx.fillStyle = '#ffa726'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
+    ctx.fillStyle = 'var(--color-warning)'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
     for (let i = 0; i <= 4; i++) {
       const v = yMinP + yRP / 4 * i;
       ctx.fillText(`${v.toFixed(0)}°`, pad.l + pw + 4, syP(v) + 3);
@@ -81,7 +81,7 @@ export default function BodePlot({ data }) {
     ctx.textAlign = 'left'; ctx.font = '9px monospace';
     ctx.fillStyle = '#4a9eff'; ctx.fillRect(pad.l + 8, pad.t + 6, 14, 3);
     ctx.fillStyle = '#aaa'; ctx.fillText('|Z|', pad.l + 26, pad.t + 10);
-    ctx.fillStyle = '#ffa726'; ctx.fillRect(pad.l + 8, pad.t + 18, 14, 3);
+    ctx.fillStyle = 'var(--color-warning)'; ctx.fillRect(pad.l + 8, pad.t + 18, 14, 3);
     ctx.fillStyle = '#aaa'; ctx.fillText('Phase', pad.l + 26, pad.t + 22);
   }, [data]);
 

@@ -1,14 +1,10 @@
-import React, { useState, lazy, Suspense } from 'react';
-// Guided tour temporarily disabled — react-joyride 2.9.3 bundles is-lite in a
-// way Vite's chunk-splitting trips over (TDZ / undefined plainObject). Stub
-// keeps the codepath while we land a known-good version.
-const Joyride = () => null;
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import { ThemeProvider } from './hooks/useTheme.jsx';
-import useGuidedTour from './hooks/useGuidedTour.jsx';
 import Sidebar from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import StatusBar from './components/layout/StatusBar';
+import OfflineBanner from './components/layout/OfflineBanner';
 import Toaster from './components/layout/Toaster';
 // Eager: dashboard + alchemi (default landing) + lightweight panels
 import DashboardPanel from './components/simulation/DashboardPanel';
@@ -59,36 +55,40 @@ const PANELS = {
 };
 
 function AppContent() {
-  const [activePanel, setActivePanel] = useState('alchemi');
+  const [activePanel, setActivePanel] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [backendStatus, setBackendStatus] = useState('connecting');
-  const { runTour, handleTourCallback, tourSteps, tourStyles } = useGuidedTour();
+  const [licenseInfo, setLicenseInfo] = useState(null);
+  const [nimConfigured, setNimConfigured] = useState(null);
 
   useKeyboardShortcuts(setActivePanel, () => setSidebarCollapsed(c => !c));
 
   const ActiveComponent = PANELS[activePanel]?.component || DashboardPanel;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const nav = (e) => setActivePanel(e.detail);
     window.addEventListener('NAVIGATE_PANEL', nav);
-    
-    const check = async () => {
+
+    let aborted = false;
+    const probe = async () => {
       try {
         const api = window.raman?.api;
-        if (api) {
-          await api.get('/api/health');
-          setBackendStatus('connected');
-        } else {
-          const res = await fetch(`${BACKEND_URL}/api/health`);
-          if (res.ok) setBackendStatus('connected');
-        }
+        const get = (p) => api ? api.get(p) : fetch(`${BACKEND_URL}${p}`).then(r => r.ok ? r.json() : Promise.reject(r));
+        await get('/api/health');
+        if (aborted) return;
+        setBackendStatus('connected');
+        // Pull license + NIM status (these are lightweight; no auth needed).
+        try { setLicenseInfo(await get('/api/v2/auth/license')); } catch { /* ignore */ }
+        try { const s = await get('/api/v2/alchemi/status'); setNimConfigured(!!s?.configured); }
+          catch { setNimConfigured(false); }
       } catch {
-        setBackendStatus('disconnected');
+        if (!aborted) setBackendStatus('disconnected');
       }
     };
-    check();
-    const interval = setInterval(check, 15000);
+    probe();
+    const interval = setInterval(probe, 5000);
     return () => {
+      aborted = true;
       clearInterval(interval);
       window.removeEventListener('NAVIGATE_PANEL', nav);
     };
@@ -96,14 +96,6 @@ function AppContent() {
 
   return (
     <div className="app-shell">
-      {/* Tour stubbed out — see Joyride import note above. */}
-      {false && runTour && (
-        <Joyride
-          steps={tourSteps}
-          run={runTour}
-          callback={handleTourCallback}
-        />
-      )}
       <Toaster />
       <Sidebar
         panels={PANELS}
@@ -111,30 +103,39 @@ function AppContent() {
         onSelect={setActivePanel}
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        backendStatus={backendStatus}
       />
-      <div className="app-main scanline-container">
+      <div className="app-main">
+        <OfflineBanner backendStatus={backendStatus} />
         <TopBar
-          title={PANELS[activePanel]?.label || 'RAMAN Studio'}
+          title={PANELS[activePanel]?.label || 'RĀMAN Studio'}
           backendStatus={backendStatus}
+          licenseInfo={licenseInfo}
         />
         <div className="app-content animate-in">
-          <Suspense fallback={
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              height: '100%', color: '#00f2ff', fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '11px', letterSpacing: '2px', opacity: 0.6
-            }}>
-              LOADING_MODULE...
-            </div>
-          }>
+          <Suspense fallback={<PanelLoading />}>
             <ActiveComponent />
           </Suspense>
         </div>
         <StatusBar
           backendStatus={backendStatus}
+          licenseInfo={licenseInfo}
+          nimConfigured={nimConfigured}
           activePanel={activePanel}
         />
       </div>
+    </div>
+  );
+}
+
+function PanelLoading() {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100%', color: 'var(--text-tertiary)',
+      fontSize: 12, fontWeight: 400,
+    }}>
+      Loading…
     </div>
   );
 }

@@ -92,7 +92,7 @@ export default function CircuitFittingPanel() {
 
     // Fit line
     if (Zfr.length) {
-      ctx.beginPath(); ctx.strokeStyle = '#ef5350'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.strokeStyle = 'var(--color-error)'; ctx.lineWidth = 2;
       const sorted = Zfr.map((r, i) => [r, negZfi[i]]).sort((a, b) => a[0] - b[0]);
       sorted.forEach(([r, i], idx) => idx === 0 ? ctx.moveTo(toX(r), toY(i)) : ctx.lineTo(toX(r), toY(i)));
       ctx.stroke();
@@ -108,7 +108,7 @@ export default function CircuitFittingPanel() {
     ctx.textAlign = 'left'; ctx.font = '9px system-ui';
     ctx.fillStyle = '#4a9eff'; ctx.fillRect(w - 120, pad.t + 5, 8, 8);
     ctx.fillStyle = '#8b949e'; ctx.fillText('Data', w - 108, pad.t + 13);
-    ctx.fillStyle = '#ef5350'; ctx.fillRect(w - 120, pad.t + 20, 8, 8);
+    ctx.fillStyle = 'var(--color-error)'; ctx.fillRect(w - 120, pad.t + 20, 8, 8);
     ctx.fillStyle = '#8b949e'; ctx.fillText('Fit', w - 108, pad.t + 28);
 
     ctx.font = 'bold 11px system-ui'; ctx.fillStyle = '#c9d1d9'; ctx.textAlign = 'left';

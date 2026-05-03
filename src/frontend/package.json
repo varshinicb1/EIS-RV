@@ -11,6 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/inter": "^5.2.8",
     "@react-three/drei": "^10.0.6",
     "@react-three/fiber": "^9.1.0",
     "jspdf": "^2.5.2",

@@ -108,7 +108,7 @@ function DataPreviewPlot({ data, xCol, yCol }) {
 
     // Data points
     const step = Math.max(1, Math.floor(xArr.length / 2000));
-    ctx.fillStyle = '#ffa726';
+    ctx.fillStyle = 'var(--color-warning)';
     for (let i = 0; i < xArr.length; i += step) {
       const x = pad.l + ((xArr[i] - xMin) / xRange) * pw;
       const y = pad.t + ((yMax - yArr[i]) / yRange) * ph;
@@ -116,7 +116,7 @@ function DataPreviewPlot({ data, xCol, yCol }) {
     }
 
     // Connect with line
-    ctx.strokeStyle = '#ffa726'; ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = 'var(--color-warning)'; ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
     ctx.beginPath();
     for (let i = 0; i < xArr.length; i += step) {
       const x = pad.l + ((xArr[i] - xMin) / xRange) * pw;

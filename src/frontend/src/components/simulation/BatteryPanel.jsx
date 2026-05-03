@@ -14,10 +14,10 @@ import {
 } from 'lucide-react';
 
 const THEME = {
-  cyan: '#00f2ff',
+  cyan: 'var(--accent)',
   bg: '#020204',
   cardBg: 'rgba(5, 5, 5, 0.8)',
-  accentMuted: 'rgba(0, 242, 255, 0.1)',
+  accentMuted: 'rgba(74, 142, 255, 0.1)',
   success: '#00ff95',
   border: 'rgba(255, 255, 255, 0.08)',
   textPrimary: '#ffffff',
@@ -220,8 +220,8 @@ function DischargePlot({ data }) {
 
     // Gradient fill
     const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ph);
-    grad.addColorStop(0, 'rgba(0, 242, 255, 0.1)');
-    grad.addColorStop(1, 'rgba(0, 242, 255, 0)');
+    grad.addColorStop(0, 'rgba(74, 142, 255, 0.1)');
+    grad.addColorStop(1, 'rgba(74, 142, 255, 0)');
     ctx.fillStyle = grad;
     ctx.lineTo(pad.l + ((xArr[xArr.length-1] - xMin) / (xMax - xMin)) * pw, pad.t + ph);
     ctx.lineTo(pad.l, pad.t + ph);
@@ -297,7 +297,7 @@ function RagonePlot({ data }) {
     ctx.restore();
 
     // Line
-    ctx.strokeStyle = '#ef5350';
+    ctx.strokeStyle = 'var(--color-error)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let i = 0; i < logE.length; i++) {
@@ -308,7 +308,7 @@ function RagonePlot({ data }) {
     ctx.stroke();
 
     // Data points
-    ctx.fillStyle = '#ef5350';
+    ctx.fillStyle = 'var(--color-error)';
     for (let i = 0; i < logE.length; i++) {
       const x = pad.l + ((logP[i] - xMin) / (xMax - xMin)) * pw;
       const y = pad.t + ((yMax - logE[i]) / (yMax - yMin)) * ph;
@@ -459,7 +459,7 @@ export default function BatteryPanel() {
                   padding: '8px',
                   color: THEME.textPrimary,
                   fontSize: '12px',
-                  fontFamily: THEME.fontMono,
+                  fontFamily: 'var(--font-data)',
                   borderRadius: '2px'
                 }}
               />
@@ -531,7 +531,7 @@ export default function BatteryPanel() {
             <div style={{ height: '12px', width: '1px', background: THEME.border }} />
             <div style={{ fontSize: '10px', fontWeight: 'bold', color: THEME.textSecondary }}>ENGINE: <span style={{ color: THEME.cyan }}>{result?.engine || 'N/A'}</span></div>
           </div>
-          <div style={{ fontSize: '10px', color: THEME.textTertiary, fontFamily: THEME.fontMono }}>
+          <div style={{ fontSize: '10px', color: THEME.textTertiary, fontFamily: 'var(--font-data)' }}>
             {new Date().toISOString().split('T')[1].split('.')[0]} // SYS_ID: BATT_77
           </div>
         </div>
@@ -558,7 +558,7 @@ export default function BatteryPanel() {
               <div style={{ fontSize: '9px', fontWeight: 'bold', color: THEME.textSecondary, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <stat.icon size={10} color={THEME.cyan} /> {stat.label}
               </div>
-              <div style={{ fontSize: '20px', fontWeight: '900', color: THEME.cyan, fontFamily: THEME.fontMono }}>
+              <div style={{ fontSize: '20px', fontWeight: '900', color: THEME.cyan, fontFamily: 'var(--font-data)' }}>
                 {stat.value} <span style={{ fontSize: '10px', fontWeight: 'normal', color: THEME.textSecondary }}>{stat.unit}</span>
               </div>
             </div>
@@ -635,7 +635,7 @@ export default function BatteryPanel() {
               ].map((item, i) => (
                 <div key={i}>
                   <div style={{ fontSize: '8px', color: THEME.textTertiary, marginBottom: '4px' }}>{item.label}</div>
-                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: THEME.textPrimary, fontFamily: THEME.fontMono }}>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: THEME.textPrimary, fontFamily: 'var(--font-data)' }}>
                     {item.value} <span style={{ fontSize: '9px', color: THEME.textSecondary }}>{item.unit}</span>
                   </div>
                 </div>

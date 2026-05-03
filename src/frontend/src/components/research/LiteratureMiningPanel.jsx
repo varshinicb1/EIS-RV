@@ -75,7 +75,7 @@ export default function LiteratureMiningPanel() {
           </button>
           {runResult && (
             <div className="animate-in" style={{ marginTop: 8, fontSize: 10, padding: 8, borderRadius: 6, background: runResult.status === 'completed' ? 'rgba(102,187,106,0.1)' : 'rgba(239,83,80,0.1)', border: `1px solid ${runResult.status === 'completed' ? '#66bb6a33' : '#ef535033'}` }}>
-              <div style={{ fontWeight: 600, color: runResult.status === 'completed' ? '#66bb6a' : '#ef5350' }}>
+              <div style={{ fontWeight: 600, color: runResult.status === 'completed' ? 'var(--color-success)' : 'var(--color-error)' }}>
                 {runResult.status === 'completed' ? 'Pipeline Complete' : 'Error'}
               </div>
               {runResult.papers_fetched != null && (
@@ -84,7 +84,7 @@ export default function LiteratureMiningPanel() {
                   <br />Materials: {runResult.materials_extracted} · EIS: {runResult.eis_records_extracted} · {runResult.elapsed_seconds}s
                 </div>
               )}
-              {runResult.error && <div style={{ color: '#ef5350' }}>{runResult.error}</div>}
+              {runResult.error && <div style={{ color: 'var(--color-error)' }}>{runResult.error}</div>}
             </div>
           )}
         </div>

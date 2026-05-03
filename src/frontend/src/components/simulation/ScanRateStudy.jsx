@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Download, Plus, X, BarChart2, Table as TableIcon, Activity } from 'lucide-react';
 
 const THEME = {
-  primary: '#00f2ff',
+  primary: 'var(--accent)',
   secondary: '#7000ff',
   accent: '#0062ff',
   background: '#020204',
   surface: 'rgba(5, 5, 5, 0.8)',
-  border: 'rgba(0, 242, 255, 0.2)',
+  border: 'rgba(74, 142, 255, 0.2)',
   text: '#e0e0e0',
   textSecondary: '#a0a0a0',
   grid: 'rgba(255, 255, 255, 0.05)',
@@ -81,7 +81,7 @@ function OverlayPlot({ studies }) {
     }
     ctx.strokeStyle = THEME.border; ctx.lineWidth = 1; ctx.strokeRect(pad.l, pad.t, pw, ph);
 
-    const colors = ['#00f2ff', '#0062ff', '#7000ff', '#ff00ff', '#ff0055', '#ffaa00', '#aaff00', '#00ffaa'];
+    const colors = ['var(--accent)', '#0062ff', '#7000ff', '#ff00ff', '#ff0055', '#ffaa00', '#aaff00', '#00ffaa'];
     studies.forEach((s, idx) => {
       ctx.strokeStyle = colors[idx % colors.length]; ctx.lineWidth = 2;
       ctx.beginPath();
@@ -149,7 +149,7 @@ function IpVsSqrtVPlot({ studies }) {
     ctx.strokeStyle = THEME.border; ctx.lineWidth = 1; ctx.strokeRect(pad.l, pad.t, pw, ph);
 
     // Linear fit line
-    ctx.strokeStyle = 'rgba(0, 242, 255, 0.3)'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = 'rgba(74, 142, 255, 0.3)'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
     ctx.beginPath(); ctx.moveTo(sx(0), sy(0)); ctx.lineTo(sx(xs[xs.length-1]), sy(ys_rs[ys_rs.length-1])); ctx.stroke(); ctx.setLineDash([]);
 
     // Points
@@ -254,14 +254,14 @@ export default function ScanRateStudy({ baseParams }) {
         <div style={{ marginTop: 15, display: 'flex', gap: 10, alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', flex: 1 }}>
             {rates.map(r => (
-              <div key={r} style={{ background: 'rgba(0,242,255,0.1)', border: `1px solid ${THEME.border}`, padding: '4px 8px', fontSize: 9, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div key={r} style={{ background: 'rgba(74, 142, 255, 0.1)', border: `1px solid ${THEME.border}`, padding: '4px 8px', fontSize: 9, display: 'flex', alignItems: 'center', gap: 5 }}>
                 {r >= 1 ? `${r} V/s` : `${(r * 1000).toFixed(0)} mV/s`}
                 <X size={10} style={{ cursor: 'pointer' }} onClick={() => setRates(rates.filter(x => x !== r))} />
               </div>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 5 }}>
-            <input type="number" value={customRate} onChange={e => setCustomRate(e.target.value)} placeholder="ADD V/s" style={{ width: 80, background: 'rgba(255,255,255,0.05)', border: `1px solid ${THEME.border}`, color: THEME.primary, padding: '6px', fontSize: 10, fontFamily: THEME.fontMono }} />
+            <input type="number" value={customRate} onChange={e => setCustomRate(e.target.value)} placeholder="ADD V/s" style={{ width: 80, background: 'rgba(255,255,255,0.05)', border: `1px solid ${THEME.border}`, color: THEME.primary, padding: '6px', fontSize: 10, fontFamily: 'var(--font-data)' }} />
             <button onClick={addRate} style={{ background: THEME.surface, border: `1px solid ${THEME.border}`, color: THEME.primary, padding: '6px', cursor: 'pointer' }}><Plus size={14} /></button>
             <button onClick={runStudy} style={{ background: THEME.primary, color: '#000', border: 'none', padding: '6px 15px', fontWeight: 800, fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}><Play size={12} fill="#000" /> RECOMPUTE</button>
           </div>
@@ -291,7 +291,7 @@ export default function ScanRateStudy({ baseParams }) {
           <div style={{ height: '100%', overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
               <thead>
-                <tr style={{ background: 'rgba(0,242,255,0.1)', color: THEME.primary }}>
+                <tr style={{ background: 'rgba(74, 142, 255, 0.1)', color: THEME.primary }}>
                   {['ν (V/s)', '√ν', 'ipa (µA)', '|ipc| (µA)', 'Epa (V)', 'Epc (V)', 'ΔEp (mV)', 'ip(RS)'].map(h => (
                     <th key={h} style={{ padding: '10px', textAlign: 'left', borderBottom: `1px solid ${THEME.border}` }}>{h}</th>
                   ))}

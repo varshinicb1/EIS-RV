@@ -1,288 +1,134 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Activity, Cpu, Database, ShieldCheck, 
-  Settings, User, Bell, Search, 
-  Terminal, Globe, Zap, ChevronRight
-} from 'lucide-react';
+import React from 'react';
+import { Settings, HelpCircle } from 'lucide-react';
 
-// Backend metrics endpoint added in Phase 4. Returns real psutil
-// measurements where available; the fields we read here are nullable.
-async function fetchSystemMetrics() {
-  try {
-    const r = await fetch('http://127.0.0.1:8000/api/v2/system/metrics', { cache: 'no-store' });
-    if (!r.ok) return null;
-    return await r.json();
-  } catch {
-    return null;
-  }
-}
-
-export default function TopBar({ title, backendStatus }) {
-  // Uptime is real (a per-mount counter). CPU load is real (psutil via the
-  // backend) — null while offline. Session id is a deterministic short
-  // marker derived from mount time + window.crypto if available; the
-  // earlier random hex-string was cosmetic and labelled as a real session
-  // identifier, which it wasn't.
-  const [uptime, setUptime] = useState(0);
-  const [load, setLoad] = useState(null);
-  const [sessionId] = useState(() => {
-    const arr = new Uint8Array(4);
-    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-      crypto.getRandomValues(arr);
-    } else {
-      for (let i = 0; i < arr.length; i++) arr[i] = (Date.now() >> (8 * i)) & 0xff;
-    }
-    return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-  });
-
-  useEffect(() => {
-    const timer = setInterval(() => setUptime(prev => prev + 1), 1000);
-    let cancelled = false;
-    const tick = async () => {
-      const m = await fetchSystemMetrics();
-      if (!cancelled) setLoad(m?.cpu_percent ?? null);
-    };
-    tick();
-    const loadTimer = setInterval(tick, 3000);
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-      clearInterval(loadTimer);
-    };
-  }, []);
-
-  const formatTime = (s) => {
-    const h = String(Math.floor(s / 3600)).padStart(2, '0');
-    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-    const sec = String(s % 60).padStart(2, '0');
-    return `${h}:${m}:${sec}`;
-  };
-
-  const THEME = {
-    cyan: '#00f2ff',
-    bg: '#020204',
-    text: '#a0a0a0',
-    muted: 'rgba(255, 255, 255, 0.08)',
-    fontMono: '"JetBrains Mono", monospace'
-  };
-
+/**
+ * TopBar — application-wide chrome.
+ *
+ *   [ Panel title    ]                                           [ License pill ] [ ⚙ ] [ ? ]
+ *
+ * No drag region (we run windowed-default), no scanline, no mono caps. The
+ * title comes from the active panel's metadata. Status info that's repeated
+ * elsewhere (sidebar status pill, status bar) is intentionally NOT mirrored
+ * here — keeping each surface single-purpose.
+ */
+export default function TopBar({ title, licenseInfo }) {
   return (
-    <div className="topbar" style={{
-      height: '64px',
-      background: 'rgba(2, 2, 4, 0.9)',
-      backdropFilter: 'blur(16px) saturate(180%)',
-      borderBottom: `1px solid ${THEME.muted}`,
+    <header style={{
+      height: 'var(--topbar-height)',
+      flexShrink: 0,
+      background: 'var(--bg-secondary)',
+      borderBottom: '1px solid var(--border-primary)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 24px',
-      position: 'relative',
-      overflow: 'hidden',
-      zIndex: 1000
+      padding: '0 16px',
     }}>
-      {/* Scanline Overlay */}
       <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))',
-        backgroundSize: '100% 2px, 3px 100%',
-        pointerEvents: 'none',
-        zIndex: 10
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '10%',
-        background: `linear-gradient(to bottom, transparent, ${THEME.cyan}22, transparent)`,
-        animation: 'scan 8s linear infinite',
-        pointerEvents: 'none',
-        zIndex: 11
-      }} />
-
-      {/* Instrumentation Border Bottom */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '1px',
-        background: `linear-gradient(90deg, transparent, ${THEME.cyan}, transparent)`,
-        opacity: 0.5,
-        boxShadow: `0 0 10px ${THEME.cyan}`
-      }} />
-
-      {/* Left: Branding & Breadcrumbs */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px', zIndex: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ 
-            width: '36px', 
-            height: '36px', 
-            background: 'rgba(0, 242, 255, 0.05)',
-            border: `1px solid ${THEME.cyan}`,
-            borderRadius: '2px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: `0 0 15px rgba(0, 242, 255, 0.2)`,
-            position: 'relative'
-          }}>
-            <Zap size={20} color={THEME.cyan} fill={THEME.cyan} style={{ filter: `drop-shadow(0 0 5px ${THEME.cyan})` }} />
-            {/* Corner Accents */}
-            <div style={{ position: 'absolute', top: -1, left: -1, width: 4, height: 4, borderTop: `1px solid ${THEME.cyan}`, borderLeft: `1px solid ${THEME.cyan}` }} />
-            <div style={{ position: 'absolute', bottom: -1, right: -1, width: 4, height: 4, borderBottom: `1px solid ${THEME.cyan}`, borderRight: `1px solid ${THEME.cyan}` }} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ 
-              fontSize: '15px', 
-              fontWeight: '900', 
-              letterSpacing: '2px', 
-              color: '#fff',
-              textTransform: 'uppercase',
-              lineHeight: 1,
-              textShadow: '0 0 10px rgba(255,255,255,0.3)'
-            }}>
-              RĀMAN STUDIO
-            </span>
-            <span style={{ fontSize: '9px', color: THEME.cyan, fontFamily: THEME.fontMono, marginTop: '2px', textShadow: `0 0 5px ${THEME.cyan}` }}>
-              v1.0.0 · session {sessionId}
-            </span>
-          </div>
-        </div>
-
-        <div style={{ width: '1px', height: '32px', background: THEME.muted }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: THEME.text, fontFamily: THEME.fontMono }}>
-          <Globe size={14} color={THEME.cyan} />
-          <span style={{ opacity: 0.5 }}>ROOT_NODE</span>
-          <ChevronRight size={10} style={{ opacity: 0.3 }} />
-          <span style={{ color: '#fff', fontWeight: '600', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{title.toUpperCase()}</span>
-        </div>
-      </div>
-
-      {/* Middle: System Telemetry */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '32px',
-        padding: '8px 24px',
-        borderRadius: '2px',
-        background: 'rgba(0, 0, 0, 0.6)',
-        border: `1px solid ${THEME.muted}`,
-        boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.8)',
-        position: 'relative',
-        zIndex: 20
+        fontSize: 14,
+        fontWeight: 500,
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.005em',
       }}>
-        {/* Corner Accents for Telemetry */}
-        <div style={{ position: 'absolute', top: -1, left: -1, width: 3, height: 3, borderTop: `1px solid ${THEME.cyan}`, borderLeft: `1px solid ${THEME.cyan}` }} />
-        <div style={{ position: 'absolute', bottom: -1, right: -1, width: 3, height: 3, borderBottom: `1px solid ${THEME.cyan}`, borderRight: `1px solid ${THEME.cyan}` }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Cpu size={14} color={THEME.cyan} style={{ filter: `drop-shadow(0 0 5px ${THEME.cyan})` }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '8px', color: THEME.text, textTransform: 'uppercase' }}>CPU</span>
-            <span style={{ fontSize: '11px', fontFamily: THEME.fontMono, color: '#fff' }}>
-              {load === null ? '—' : `${load.toFixed(1)}`}<span style={{ fontSize: '8px', opacity: 0.5 }}>%</span>
-            </span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Activity size={14} color={THEME.cyan} style={{ filter: `drop-shadow(0 0 5px ${THEME.cyan})` }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '8px', color: THEME.text, textTransform: 'uppercase' }}>CORE_UPTIME</span>
-            <span style={{ fontSize: '11px', fontFamily: THEME.fontMono, color: '#fff' }}>{formatTime(uptime)}</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Database size={14} color={THEME.cyan} style={{ filter: `drop-shadow(0 0 5px ${THEME.cyan})` }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '8px', color: THEME.text, textTransform: 'uppercase' }}>BACKEND</span>
-            <span style={{
-              fontSize: '11px', fontFamily: THEME.fontMono,
-              color: backendStatus === 'online' ? THEME.cyan : '#ff5050',
-            }}>
-              {backendStatus === 'online' ? 'ONLINE' : 'OFFLINE'}
-            </span>
-          </div>
-        </div>
+        {title}
       </div>
 
-      {/* Right: User & Status */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', zIndex: 20 }}>
-        <div style={{ 
-          padding: '4px 12px', 
-          borderRadius: '2px', 
-          background: backendStatus === 'online' ? 'rgba(0, 242, 255, 0.1)' : 'rgba(255, 80, 80, 0.1)',
-          border: `1px solid ${backendStatus === 'online' ? THEME.cyan : '#ff5050'}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          boxShadow: backendStatus === 'online' ? `0 0 10px rgba(0, 242, 255, 0.2)` : 'none'
-        }}>
-          <div className="pulse" style={{ 
-            width: '6px', 
-            height: '6px', 
-            borderRadius: '50%', 
-            background: backendStatus === 'online' ? THEME.cyan : '#ff5050',
-            boxShadow: `0 0 8px ${backendStatus === 'online' ? THEME.cyan : '#ff5050'}`
-          }} />
-          <span style={{ 
-            fontSize: '10px', 
-            fontWeight: '900', 
-            color: backendStatus === 'online' ? THEME.cyan : '#ff5050',
-            fontFamily: THEME.fontMono
-          }}>
-            {backendStatus.toUpperCase()}
-          </span>
-        </div>
-
-        <div style={{ width: '1px', height: '32px', background: THEME.muted }} />
-
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button style={{ background: 'none', border: 'none', color: THEME.text, cursor: 'pointer', padding: '6px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = THEME.cyan} onMouseLeave={e => e.currentTarget.style.color = THEME.text}>
-            <Bell size={18} />
-          </button>
-          <button style={{ background: 'none', border: 'none', color: THEME.text, cursor: 'pointer', padding: '6px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = THEME.cyan} onMouseLeave={e => e.currentTarget.style.color = THEME.text}>
-            <Settings size={18} />
-          </button>
-        </div>
-
-        <div style={{ 
-          width: '36px', 
-          height: '36px', 
-          borderRadius: '4px', 
-          background: 'rgba(255,255,255,0.03)', 
-          border: `1px solid ${THEME.muted}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}>
-          <User size={20} color={THEME.text} />
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <LicensePill info={licenseInfo} />
+        <IconBtn label="Help" onClick={() => window.open('https://github.com/varshinicb1/EIS-RV/blob/master/README.md', '_blank', 'noopener')}>
+          <HelpCircle size={16} strokeWidth={1.75} />
+        </IconBtn>
+        <IconBtn label="Settings" onClick={() => window.dispatchEvent(new CustomEvent('NAVIGATE_PANEL', { detail: 'profile' }))}>
+          <Settings size={16} strokeWidth={1.75} />
+        </IconBtn>
       </div>
+    </header>
+  );
+}
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes scan {
-          0% { top: -10%; opacity: 0; }
-          50% { opacity: 0.5; }
-          100% { top: 110%; opacity: 0; }
-        }
-        .pulse {
-          animation: pulse-glow 2s infinite ease-in-out;
-        }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(0.8); }
-        }
-      `}} />
-    </div>
+function LicensePill({ info }) {
+  if (!info) return null;
+  const status = info.status;
+  const days = info.days_remaining ?? null;
+  const plan = info.plan || 'unknown';
+
+  let kind = 'neutral';
+  let label = plan;
+  if (status === 'ok' && plan && plan !== 'trial') {
+    label = `${plan.charAt(0).toUpperCase() + plan.slice(1)} licence`;
+    kind = 'ok';
+  } else if (status === 'trial') {
+    label = `Trial · ${days ?? '—'}d left`;
+    kind = days != null && days <= 3 ? 'warning' : 'ok';
+  } else if (status === 'trial_expired') {
+    label = 'Trial expired';
+    kind = 'error';
+  } else if (status === 'expired') {
+    label = 'Licence expired';
+    kind = 'error';
+  } else if (status === 'hardware_mismatch') {
+    label = 'Hardware mismatch';
+    kind = 'error';
+  } else {
+    label = 'Activate licence';
+    kind = 'warning';
+  }
+
+  const colors = {
+    ok:      { bg: 'rgba(52, 199, 89, 0.10)',  fg: 'var(--color-success)',  bd: 'rgba(52, 199, 89, 0.25)' },
+    warning: { bg: 'rgba(255, 159, 10, 0.10)', fg: 'var(--color-warning)',  bd: 'rgba(255, 159, 10, 0.25)' },
+    error:   { bg: 'rgba(255, 69, 58, 0.10)',  fg: 'var(--color-error)',    bd: 'rgba(255, 69, 58, 0.25)' },
+    neutral: { bg: 'var(--bg-tertiary)',        fg: 'var(--text-secondary)', bd: 'var(--border-primary)' },
+  }[kind];
+
+  return (
+    <button
+      onClick={() => window.dispatchEvent(new CustomEvent('NAVIGATE_PANEL', { detail: 'profile' }))}
+      title={info.message || `Plan: ${plan}`}
+      style={{
+        background: colors.bg,
+        border: `1px solid ${colors.bd}`,
+        color: colors.fg,
+        borderRadius: 'var(--radius-sm)',
+        padding: '4px 10px',
+        fontSize: 11.5,
+        fontWeight: 500,
+        cursor: 'pointer',
+        fontFamily: 'var(--font-ui)',
+        transition: 'background var(--transition)',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function IconBtn({ children, onClick, label }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        color: 'var(--text-tertiary)',
+        padding: 6,
+        borderRadius: 'var(--radius-sm)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        transition: 'color var(--transition), background var(--transition)',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.color = 'var(--text-primary)';
+        e.currentTarget.style.background = 'var(--bg-hover)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.color = 'var(--text-tertiary)';
+        e.currentTarget.style.background = 'transparent';
+      }}
+    >
+      {children}
+    </button>
   );
 }

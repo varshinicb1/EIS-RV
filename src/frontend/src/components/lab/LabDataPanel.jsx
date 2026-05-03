@@ -58,7 +58,7 @@ async function apiDelete(path) {
 // Sub-component: Nyquist mini-plot (pure-SVG, no chart lib)
 // ───────────────────────────────────────────────────────────────────
 
-function NyquistPlot({ zReal, zImag, fitReal, fitImag, height = 220, accent = '#76b900' }) {
+function NyquistPlot({ zReal, zImag, fitReal, fitImag, height = 220, accent = 'var(--color-success)' }) {
   if (!zReal?.length || !zImag?.length) return null;
   const negZi = zImag.map(v => -v);
   const xs = [...zReal, ...(fitReal || [])];
@@ -97,7 +97,7 @@ function NyquistPlot({ zReal, zImag, fitReal, fitImag, height = 220, accent = '#
       {fitReal?.length && (
         <polyline
           points={fitReal.map((r, i) => `${x(r)},${y(-fitImag[i])}`).join(' ')}
-          fill="none" stroke="#ef5350" strokeWidth={1.4}
+          fill="none" stroke="var(--color-error)" strokeWidth={1.4}
         />
       )}
     </svg>
@@ -128,12 +128,12 @@ function CsByMethodChart({ summary, height = 180 }) {
         return (
           <g key={e.k}>
             <text x={pad.l - 8} y={yy + rowH * 0.55} fontSize={10}
-                  fill="#cbd5e1" textAnchor="end" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                  fill="#cbd5e1" textAnchor="end" style={{ fontFamily: 'var(--font-data)' }}>
               {e.k}
             </text>
-            <rect x={pad.l} y={yy} width={w} height={rowH * 0.7} fill="#76b900" opacity="0.85" rx={2} />
+            <rect x={pad.l} y={yy} width={w} height={rowH * 0.7} fill="var(--color-success)" opacity="0.85" rx={2} />
             <text x={pad.l + w + 4} y={yy + rowH * 0.55} fontSize={10}
-                  fill="#9aa4b1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                  fill="#9aa4b1" style={{ fontFamily: 'var(--font-data)' }}>
               {fmtCs(e.v)}
             </text>
           </g>
@@ -165,7 +165,7 @@ function DatasetsList({ datasets, selectedId, onSelect, onRefresh, onCreate, onD
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderBottom: '1px solid var(--border-primary)' }}>
-        <Database size={14} color="#76b900" />
+        <Database size={14} color="var(--color-success)" />
         <div style={{ fontSize: 12, fontWeight: 600 }}>Lab Datasets ({datasets.length})</div>
         <div style={{ flex: 1 }} />
         <button className="btn btn-sm btn-ghost" onClick={onRefresh} title="Refresh">
@@ -216,7 +216,7 @@ function DatasetsList({ datasets, selectedId, onSelect, onRefresh, onCreate, onD
               <button className="btn btn-sm btn-ghost"
                       onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete '${d.name}'?`)) onDelete(d.id); }}
                       title="Delete">
-                <Trash2 size={11} color="#ef5350" />
+                <Trash2 size={11} color="var(--color-error)" />
               </button>
             </div>
             {d.description && (
@@ -285,7 +285,7 @@ function UploadCard({ datasetId, onUploaded, defaults }) {
       <div className="card-header">
         <div>
           <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FileSpreadsheet size={14} color="#76b900" /> Upload AnalyteX xlsx
+            <FileSpreadsheet size={14} color="var(--color-success)" /> Upload AnalyteX xlsx
           </div>
           <div className="card-subtitle">CV + GCD + EIS sheets, multipart upload</div>
         </div>
@@ -301,7 +301,7 @@ function UploadCard({ datasetId, onUploaded, defaults }) {
            }}>
         <Upload size={20} style={{ display: 'block', margin: '0 auto 6px', opacity: 0.7 }} />
         {file
-          ? <><strong style={{ color: '#76b900' }}>{file.name}</strong><br/>{(file.size / 1024).toFixed(1)} kB — click to change</>
+          ? <><strong style={{ color: 'var(--color-success)' }}>{file.name}</strong><br/>{(file.size / 1024).toFixed(1)} kB — click to change</>
           : <>Drop a <code>.xlsx</code> here or click to browse.<br/>Sheets must be named <code>CV</code>, <code>GCD</code>, <code>EIS</code>.</>
         }
         <input type="file" accept=".xlsx" ref={fileInputRef} style={{ display: 'none' }}
@@ -328,7 +328,7 @@ function UploadCard({ datasetId, onUploaded, defaults }) {
       </div>
 
       {error && (
-        <div style={{ fontSize: 11, color: '#ef5350', padding: 8, background: 'rgba(239,83,80,0.06)', borderRadius: 4, marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: 'var(--color-error)', padding: 8, background: 'rgba(239,83,80,0.06)', borderRadius: 4, marginBottom: 8 }}>
           {error}
         </div>
       )}
@@ -408,15 +408,15 @@ function AnalysisCard({ datasetId, defaults }) {
         </button>
       </div>
 
-      {error && <div style={{ fontSize: 11, color: '#ef5350' }}>{error}</div>}
+      {error && <div style={{ fontSize: 11, color: 'var(--color-error)' }}>{error}</div>}
 
       {summary && (
         <>
           {/* Headline numbers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12, marginBottom: 12 }}>
             <Stat label="b-value (Trasatti)" value={fmt(summary.b_value, 3)} sub={`R²=${fmt(summary.b_value_r_squared, 2)}`} />
-            <Stat label="Capacitance retention" value={fmtPct(summary.capacitance_retention_pct)} accent={summary.capacitance_retention_pct < 80 ? '#ef5350' : '#76b900'} />
-            <Stat label="Avg Coulombic η" value={fmtPct(summary.average_coulombic_efficiency_pct)} accent={summary.average_coulombic_efficiency_pct < 90 ? '#f59e0b' : '#76b900'} />
+            <Stat label="Capacitance retention" value={fmtPct(summary.capacitance_retention_pct)} accent={summary.capacitance_retention_pct < 80 ? 'var(--color-error)' : 'var(--color-success)'} />
+            <Stat label="Avg Coulombic η" value={fmtPct(summary.average_coulombic_efficiency_pct)} accent={summary.average_coulombic_efficiency_pct < 90 ? '#f59e0b' : 'var(--color-success)'} />
             <Stat label="Energy density" value={summary.energy_density_Wh_per_kg ? `${fmt(summary.energy_density_Wh_per_kg, 2)} Wh/kg` : '—'} />
           </div>
 
@@ -458,7 +458,7 @@ function AnalysisCard({ datasetId, defaults }) {
 function Stat({ label, value, sub, accent = 'var(--text-primary)' }) {
   return (
     <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)', borderRadius: 6, padding: 8 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: accent, fontFamily: 'JetBrains Mono, monospace' }}>{value}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: accent, fontFamily: 'var(--font-data)' }}>{value}</div>
       <div style={{ fontSize: 9, color: 'var(--text-tertiary)', marginTop: 2 }}>{label}</div>
       {sub && <div style={{ fontSize: 8, color: 'var(--text-tertiary)', marginTop: 1 }}>{sub}</div>}
     </div>
@@ -518,7 +518,7 @@ function SuggestionsCard({ datasetId, defaults }) {
         </button>
       </div>
 
-      {error && <div style={{ fontSize: 11, color: '#ef5350' }}>{error}</div>}
+      {error && <div style={{ fontSize: 11, color: 'var(--color-error)' }}>{error}</div>}
 
       {out && !out.available && (
         <div style={{ padding: 10, background: 'rgba(245,158,11,0.06)', borderRadius: 4, fontSize: 11, color: 'var(--text-secondary)' }}>
@@ -530,7 +530,7 @@ function SuggestionsCard({ datasetId, defaults }) {
         <>
           {out.diagnosis && (
             <div style={{ padding: 10, background: 'rgba(118,185,0,0.05)', border: '1px solid #76b90033', borderRadius: 4, marginBottom: 10, fontSize: 11, lineHeight: 1.5, color: 'var(--text-secondary)' }}>
-              <strong style={{ color: '#76b900' }}>Diagnosis:</strong> {out.diagnosis}
+              <strong style={{ color: 'var(--color-success)' }}>Diagnosis:</strong> {out.diagnosis}
             </div>
           )}
           {(out.suggestions || []).map((s, i) => (
@@ -539,11 +539,11 @@ function SuggestionsCard({ datasetId, defaults }) {
               marginBottom: 8, background: 'var(--bg-elevated)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#76b900' }}>#{i + 1}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-success)' }}>#{i + 1}</span>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>{s.title}</span>
                 <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3,
                                 background: s.risk === 'low' ? 'rgba(118,185,0,0.15)' : s.risk === 'medium' ? 'rgba(245,158,11,0.15)' : 'rgba(239,83,80,0.15)',
-                                color: s.risk === 'low' ? '#76b900' : s.risk === 'medium' ? '#f59e0b' : '#ef5350' }}>
+                                color: s.risk === 'low' ? 'var(--color-success)' : s.risk === 'medium' ? '#f59e0b' : 'var(--color-error)' }}>
                   risk: {s.risk}
                 </span>
                 {s.expected_effect_on_Cs && (
@@ -599,7 +599,7 @@ function RowsCard({ dataset }) {
           </div>
         </div>
       </div>
-      <div style={{ maxHeight: 280, overflowY: 'auto', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}>
+      <div style={{ maxHeight: 280, overflowY: 'auto', fontSize: 10, fontFamily: 'var(--font-data)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr style={{ background: 'var(--bg-elevated)' }}>
             <th style={{ padding: '6px 8px', textAlign: 'left' }}>Name</th>
@@ -702,7 +702,7 @@ export default function LabDataPanel() {
       {/* Right side */}
       <div style={{ overflowY: 'auto', padding: 16 }}>
         {error && (
-          <div style={{ padding: 10, marginBottom: 12, background: 'rgba(239,83,80,0.08)', border: '1px solid #ef535055', borderRadius: 4, fontSize: 11, color: '#ef5350' }}>
+          <div style={{ padding: 10, marginBottom: 12, background: 'rgba(239,83,80,0.08)', border: '1px solid #ef535055', borderRadius: 4, fontSize: 11, color: 'var(--color-error)' }}>
             {error}
           </div>
         )}
@@ -719,12 +719,12 @@ export default function LabDataPanel() {
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <FlaskConical size={20} color="#76b900" />
+              <FlaskConical size={20} color="var(--color-success)" />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>
                   {datasets.find(d => d.id === selectedId)?.name || 'Dataset'}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'JetBrains Mono, monospace' }}>
+                <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-data)' }}>
                   id: {selectedId}
                 </div>
               </div>
@@ -745,7 +745,7 @@ export default function LabDataPanel() {
                         style={{
                           background: 'none', border: 'none', padding: '8px 12px',
                           fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                          color: tab === key ? '#76b900' : 'var(--text-secondary)',
+                          color: tab === key ? 'var(--color-success)' : 'var(--text-secondary)',
                           borderBottom: tab === key ? '2px solid #76b900' : '2px solid transparent',
                           display: 'flex', alignItems: 'center', gap: 6,
                         }}>

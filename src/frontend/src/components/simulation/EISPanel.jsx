@@ -5,10 +5,10 @@ import { generateIEEEReport } from '../../utils/ieeeReportGenerator';
 import { Zap, Download, RefreshCw, Activity, Terminal, Layers, Info } from 'lucide-react';
 
 const THEME = {
-  cyan: '#00f2ff',
+  cyan: 'var(--accent)',
   bg: '#020204',
   cardBg: 'rgba(5, 5, 5, 0.8)',
-  accentMuted: 'rgba(0, 242, 255, 0.1)',
+  accentMuted: 'rgba(74, 142, 255, 0.1)',
   success: '#00ff95',
   border: 'rgba(255, 255, 255, 0.08)',
   textPrimary: '#ffffff',
@@ -180,7 +180,7 @@ export default function EISPanel() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {fields.map(f => (
               <div key={f.key}>
-                <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: THEME.textSecondary, marginBottom: '6px', fontFamily: THEME.fontMono }}>
+                <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: THEME.textSecondary, marginBottom: '6px', fontFamily: 'var(--font-data)' }}>
                   <span>{f.label}</span>
                   <span style={{ color: THEME.cyan }}>[{f.unit}]</span>
                 </label>
@@ -198,7 +198,7 @@ export default function EISPanel() {
                     borderRadius: '2px',
                     fontSize: '13px',
                     outline: 'none',
-                    fontFamily: THEME.fontMono
+                    fontFamily: 'var(--font-data)'
                   }}
                 />
               </div>
@@ -346,7 +346,7 @@ export default function EISPanel() {
                 BODE_ANALYSIS
               </button>
             </div>
-            <div style={{ display: 'flex', gap: '16px', fontSize: '9px', fontFamily: THEME.fontMono, color: THEME.textTertiary }}>
+            <div style={{ display: 'flex', gap: '16px', fontSize: '9px', fontFamily: 'var(--font-data)', color: THEME.textTertiary }}>
               <span>ENGINE: {result?.engine || 'STANDBY'}</span>
               <span>COORD_SYS: ORTHONORMAL</span>
             </div>
@@ -363,7 +363,7 @@ export default function EISPanel() {
                 alignItems: 'center', 
                 justifyContent: 'center',
                 color: THEME.textTertiary,
-                fontFamily: THEME.fontMono,
+                fontFamily: 'var(--font-data)',
                 fontSize: '11px',
                 gap: '16px'
               }}>
@@ -396,7 +396,7 @@ export default function EISPanel() {
                 flexDirection: 'column',
                 gap: '4px'
               }}>
-                <div style={{ fontSize: '9px', color: THEME.textTertiary, fontFamily: THEME.fontMono }}>{stat.label}</div>
+                <div style={{ fontSize: '9px', color: THEME.textTertiary, fontFamily: 'var(--font-data)' }}>{stat.label}</div>
                 <div style={{ fontSize: '20px', fontWeight: '900', color: THEME.cyan }}>
                   {stat.value} <span style={{ fontSize: '10px', fontWeight: 'normal', color: THEME.textSecondary }}>{stat.unit}</span>
                 </div>

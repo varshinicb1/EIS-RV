@@ -12,6 +12,7 @@ scipy>=1.11.0
 fastapi>=0.100.0
 uvicorn[standard]>=0.23.0
 httpx>=0.27.0          # required by fastapi.testclient (used in tests/)
+websockets>=12.0       # uvicorn[standard] WebSocket protocol — needed for /ws/telemetry
 
 # Testing
 pytest>=7.0.0

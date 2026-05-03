@@ -21,7 +21,7 @@ const SAMPLE_PAPERS = [
 ];
 
 function StatusBadge({ status }) {
-  const color = status === 'VALIDATED' ? '#66bb6a' : status === 'RUNNING' ? '#ffa726' : '#ef5350';
+  const color = status === 'VALIDATED' ? 'var(--color-success)' : status === 'RUNNING' ? 'var(--color-warning)' : 'var(--color-error)';
   return (
     <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 4,
       background: `${color}22`, color, fontWeight: 600, fontFamily: 'var(--font-data)' }}>
@@ -125,7 +125,7 @@ export default function ValidationPanel() {
           </button>
           {running && (
             <div style={{ marginTop: 6, height: 4, borderRadius: 2, background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-              <div style={{ width: `${batchProgress}%`, height: '100%', background: '#76b900', transition: 'width 0.3s' }} />
+              <div style={{ width: `${batchProgress}%`, height: '100%', background: 'var(--color-success)', transition: 'width 0.3s' }} />
             </div>
           )}
         </div>
@@ -136,7 +136,7 @@ export default function ValidationPanel() {
             <div className="card-title" style={{ fontSize: 11 }}>Batch Summary</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 6 }}>
               <div style={{ textAlign: 'center', padding: 8, background: 'rgba(102,187,106,0.1)', borderRadius: 6 }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#66bb6a' }}>{totalPassed}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-success)' }}>{totalPassed}</div>
                 <div style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>Papers Validated</div>
               </div>
               <div style={{ textAlign: 'center', padding: 8, background: 'rgba(74,158,255,0.1)', borderRadius: 6 }}>
@@ -212,7 +212,7 @@ export default function ValidationPanel() {
                           <td className="mono">{c.parameter}</td>
                           <td className="mono">{typeof c.expected === 'number' ? c.expected.toPrecision(4) : c.expected}</td>
                           <td className="mono">{typeof c.simulated === 'number' ? c.simulated.toPrecision(4) : c.simulated}</td>
-                          <td className="mono" style={{ color: c.passed ? '#66bb6a' : '#ef5350' }}>{c.error_pct}%</td>
+                          <td className="mono" style={{ color: c.passed ? 'var(--color-success)' : 'var(--color-error)' }}>{c.error_pct}%</td>
                           <td>{c.status}</td>
                         </tr>
                       ))}

@@ -3,12 +3,12 @@ import ScanRateStudy from './ScanRateStudy';
 import { Activity, Shield, Cpu, Terminal, Layers, Info, ChevronRight, Zap } from 'lucide-react';
 
 const THEME = {
-  primary: '#00f2ff',
+  primary: 'var(--accent)',
   secondary: '#7000ff',
   accent: '#0062ff',
   background: '#020204',
   surface: 'rgba(5, 5, 5, 0.8)',
-  border: 'rgba(0, 242, 255, 0.2)',
+  border: 'rgba(74, 142, 255, 0.2)',
   text: '#e0e0e0',
   textSecondary: '#a0a0a0',
   grid: 'rgba(255, 255, 255, 0.05)',
@@ -54,7 +54,7 @@ function CVPlot({ data }) {
     ctx.clearRect(0, 0, w, h);
     
     // Background Grid
-    ctx.strokeStyle = 'rgba(0, 242, 255, 0.05)';
+    ctx.strokeStyle = 'rgba(74, 142, 255, 0.05)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 10; i++) {
       const x = pad.left + (pw / 10) * i;
@@ -208,7 +208,7 @@ export default function CVPanel() {
   ];
 
   return (
-    <div style={{ padding: '20px', background: THEME.background, color: THEME.text, minHeight: '100%', fontFamily: THEME.fontMono }}>
+    <div style={{ padding: '20px', background: THEME.background, color: THEME.text, minHeight: '100%', fontFamily: 'var(--font-data)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: `1px solid ${THEME.border}`, paddingBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Activity size={20} color={THEME.primary} />
@@ -259,7 +259,7 @@ export default function CVPanel() {
                     onChange={e => setParams(p => ({ ...p, [f.key]: parseFloat(e.target.value) || 0 }))}
                     style={{ 
                       background: 'rgba(255,255,255,0.05)', border: `1px solid ${THEME.border}`, 
-                      color: THEME.primary, padding: '8px', fontSize: 12, outline: 'none', fontFamily: THEME.fontMono
+                      color: THEME.primary, padding: '8px', fontSize: 12, outline: 'none', fontFamily: 'var(--font-data)'
                     }}
                   />
                 </div>
@@ -297,7 +297,7 @@ export default function CVPanel() {
                 ))}
               </div>
               <div style={{ 
-                marginTop: 10, padding: 8, background: 'rgba(0,242,255,0.1)', border: `1px solid ${THEME.primary}`,
+                marginTop: 10, padding: 8, background: 'rgba(74, 142, 255, 0.1)', border: `1px solid ${THEME.primary}`,
                 fontSize: 10, textAlign: 'center', fontWeight: 700, color: THEME.primary
               }}>
                 {result.dEp < 0.07 ? 'SYSTEM: FULLY REVERSIBLE' : result.dEp < 0.2 ? 'SYSTEM: QUASI-REVERSIBLE' : 'SYSTEM: IRREVERSIBLE'}

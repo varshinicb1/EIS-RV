@@ -12,11 +12,11 @@ const fmtDate = ts => ts ? new Date(ts * 1000).toLocaleDateString('en-US', {
 }) : '—';
 
 const THEME = {
-  cyan: '#00f2ff',
+  cyan: 'var(--accent)',
   bg: '#020204',
   cardBg: '#050508',
   rackBg: '#0a0a0f',
-  accentMuted: 'rgba(0, 242, 255, 0.1)',
+  accentMuted: 'rgba(74, 142, 255, 0.1)',
   success: '#00ff95',
   border: '#1a1a24',
   textPrimary: '#ffffff',
@@ -27,33 +27,33 @@ const THEME = {
 
 const REPORT_TEMPLATES = {
   eis_analysis: {
-    name: 'EIS_TRANSACTION_REPORT',
+    name: 'EIS analysis report',
     icon: <Zap size={16} />,
-    description: 'IEEE-formatted Electrochemical Impedance Spectroscopy report with Nyquist/Bode telemetry',
+    description: 'IEEE-formatted impedance spectroscopy report with Nyquist and Bode plots.',
     type: 'EIS',
   },
   cv_analysis: {
-    name: 'CV_PUBLICATION_DATA',
+    name: 'Cyclic voltammetry report',
     icon: <RefreshCw size={16} />,
-    description: 'Publication-ready CV analysis with IUPAC-compliant voltammograms',
+    description: 'Publication-ready CV analysis with IUPAC-compliant voltammograms.',
     type: 'CV',
   },
   battery_test: {
-    name: 'CELL_CYCLE_ANALYSIS',
+    name: 'Battery cycle report',
     icon: <Cpu size={16} />,
-    description: 'Galvanostatic charge-discharge analysis with capacity and rate performance',
+    description: 'Galvanostatic charge–discharge with capacity retention and rate performance.',
     type: 'BATTERY',
   },
   biosensor_report: {
-    name: 'SENSOR_ARCH_DESIGN',
+    name: 'Biosensor design report',
     icon: <Microscope size={16} />,
-    description: 'Computational biosensor design with predicted performance metrics',
+    description: 'Computational biosensor design with predicted performance metrics.',
     type: 'BIOSENSOR',
   },
   alchemi_discovery: {
-    name: 'MATERIAL_SYNTH_SPEC',
+    name: 'Materials discovery report',
     icon: <Database size={16} />,
-    description: 'AI-driven materials characterization with quantum simulation results',
+    description: 'AI-grounded materials characterisation summary.',
     type: 'ALCHEMI',
   },
 };
@@ -104,23 +104,15 @@ export default function ReportsPanel() {
 
   const generateReport = useCallback(async () => {
     setGenerating(true);
-    setCompileLogs([
-      '> INIT TEX_ENGINE_V2', 
-      '> ALLOCATING BUFFER CACHE [1024MB]',
-      '> LOADING IEEE_TRANSACTIONS.CLS'
-    ]);
-    
+    // Real, plain-language progress lines (not fake compile logs).
+    setCompileLogs(['Preparing template…']);
+
     let logIndex = 0;
     const additionalLogs = [
-      '> PARSING DOCUMENT STRUCTURE...',
-      '> INJECTING METADATA HEADERS...',
-      '> RESOLVING BIBTEX REFERENCES...',
-      '> GFX: RASTERING CANVAS ELEMENTS...',
-      '> GFX: EMBEDDING HIGH-RES FIGURES...',
-      '> CALCULATING 2-COLUMN LAYOUT...',
-      '> VERIFYING PDF/A COMPLIANCE...',
-      '> WRITING OUTPUT STREAM...',
-      '> COMPILATION COMPLETE [EXIT 0]'
+      'Collecting figures from open panels…',
+      'Embedding bibliography…',
+      'Composing two-column layout…',
+      'Writing PDF stream…',
     ];
 
     const logInterval = setInterval(() => {
@@ -128,7 +120,7 @@ export default function ReportsPanel() {
         setCompileLogs(prev => [...prev, additionalLogs[logIndex]]);
         logIndex++;
       }
-    }, 200);
+    }, 250);
 
     const template = REPORT_TEMPLATES[selectedTemplate];
     const reportTitle = title || template.name;
@@ -183,7 +175,7 @@ export default function ReportsPanel() {
 
     } catch (e) {
       console.error('Report generation failed:', e);
-      setCompileLogs(prev => [...prev, '> SERVER UNAVAILABLE: FALLING BACK TO LOCAL COMPILATION']);
+      setCompileLogs(prev => [...prev, 'Backend unreachable — generating locally instead.']);
       window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
         detail: { kind: 'info', text: 'Backend unreachable — generating locally (no audit trail).' },
       }));
@@ -291,9 +283,9 @@ export default function ReportsPanel() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: generating ? THEME.cyan : THEME.textTertiary, boxShadow: generating ? `0 0 10px ${THEME.cyan}` : 'none', transition: 'all 0.3s' }} />
-            <span style={{ color: THEME.textSecondary, fontFamily: THEME.fontMono, fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>RPT-CNTRL-01</span>
+            <span style={{ color: THEME.textSecondary, fontFamily: 'var(--font-data)', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>RPT-CNTRL-01</span>
           </div>
-          <span style={{ color: THEME.cyan, fontFamily: THEME.fontMono, fontSize: '10px' }}>[SYS_ONLINE]</span>
+          <span style={{ color: THEME.cyan, fontFamily: 'var(--font-data)', fontSize: '10px' }}>[SYS_ONLINE]</span>
         </div>
 
         <div style={{ padding: '24px 36px', flex: 1, display: 'flex', flexDirection: 'column', zIndex: 2, overflowY: 'auto' }}>
@@ -305,7 +297,7 @@ export default function ReportsPanel() {
                 background: activeTab === 'config' ? THEME.accentMuted : 'transparent',
                 color: activeTab === 'config' ? THEME.cyan : THEME.textTertiary,
                 border: `1px solid ${activeTab === 'config' ? THEME.cyan : 'transparent'}`,
-                borderRadius: '2px', fontSize: '11px', fontWeight: '900', fontFamily: THEME.fontMono,
+                borderRadius: '2px', fontSize: '11px', fontWeight: '900', fontFamily: 'var(--font-data)',
                 cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
               }}
             >
@@ -318,7 +310,7 @@ export default function ReportsPanel() {
                 background: activeTab === 'history' ? THEME.accentMuted : 'transparent',
                 color: activeTab === 'history' ? THEME.cyan : THEME.textTertiary,
                 border: `1px solid ${activeTab === 'history' ? THEME.cyan : 'transparent'}`,
-                borderRadius: '2px', fontSize: '11px', fontWeight: '900', fontFamily: THEME.fontMono,
+                borderRadius: '2px', fontSize: '11px', fontWeight: '900', fontFamily: 'var(--font-data)',
                 cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
               }}
             >
@@ -329,7 +321,7 @@ export default function ReportsPanel() {
           {activeTab === 'config' ? (
             <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
               <div className="input-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: THEME.textSecondary, marginBottom: '8px', fontFamily: THEME.fontMono }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: THEME.textSecondary, marginBottom: '8px', fontFamily: 'var(--font-data)' }}>
                   <Layers size={12} color={THEME.cyan} /> TARGET_TEMPLATE
                 </label>
                 <select 
@@ -339,7 +331,7 @@ export default function ReportsPanel() {
                   style={{ 
                     width: '100%', padding: '10px', background: '#000', 
                     border: `1px solid ${THEME.border}`, color: THEME.cyan,
-                    borderRadius: '2px', fontSize: '12px', fontFamily: THEME.fontMono, outline: 'none'
+                    borderRadius: '2px', fontSize: '12px', fontFamily: 'var(--font-data)', outline: 'none'
                   }}
                 >
                   {Object.entries(REPORT_TEMPLATES).map(([k, v]) => (
@@ -349,7 +341,7 @@ export default function ReportsPanel() {
               </div>
 
               <div className="input-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: THEME.textSecondary, marginBottom: '8px', fontFamily: THEME.fontMono }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: THEME.textSecondary, marginBottom: '8px', fontFamily: 'var(--font-data)' }}>
                   <FileText size={12} color={THEME.cyan} /> PAPER_TITLE
                 </label>
                 <input 
@@ -360,13 +352,13 @@ export default function ReportsPanel() {
                   style={{ 
                     width: '100%', padding: '10px', background: '#000', 
                     border: `1px solid ${THEME.border}`, color: '#fff',
-                    borderRadius: '2px', fontSize: '12px', fontFamily: THEME.fontMono, outline: 'none'
+                    borderRadius: '2px', fontSize: '12px', fontFamily: 'var(--font-data)', outline: 'none'
                   }}
                 />
               </div>
 
               <div className="input-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: THEME.textSecondary, marginBottom: '8px', fontFamily: THEME.fontMono }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: THEME.textSecondary, marginBottom: '8px', fontFamily: 'var(--font-data)' }}>
                   <User size={12} color={THEME.cyan} /> CORRESPONDING_AUTHORS
                 </label>
                 <input 
@@ -377,13 +369,13 @@ export default function ReportsPanel() {
                   style={{ 
                     width: '100%', padding: '10px', background: '#000', 
                     border: `1px solid ${THEME.border}`, color: '#fff',
-                    borderRadius: '2px', fontSize: '12px', fontFamily: THEME.fontMono, outline: 'none'
+                    borderRadius: '2px', fontSize: '12px', fontFamily: 'var(--font-data)', outline: 'none'
                   }}
                 />
               </div>
 
               <div className="input-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: THEME.textSecondary, marginBottom: '8px', fontFamily: THEME.fontMono }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: THEME.textSecondary, marginBottom: '8px', fontFamily: 'var(--font-data)' }}>
                   <Globe size={12} color={THEME.cyan} /> INSTITUTIONAL_AFFILIATION
                 </label>
                 <input 
@@ -394,7 +386,7 @@ export default function ReportsPanel() {
                   style={{ 
                     width: '100%', padding: '10px', background: '#000', 
                     border: `1px solid ${THEME.border}`, color: '#fff',
-                    borderRadius: '2px', fontSize: '12px', fontFamily: THEME.fontMono, outline: 'none'
+                    borderRadius: '2px', fontSize: '12px', fontFamily: 'var(--font-data)', outline: 'none'
                   }}
                 />
               </div>
@@ -408,7 +400,7 @@ export default function ReportsPanel() {
                     background: generating ? 'transparent' : THEME.cyan,
                     color: generating ? THEME.cyan : '#000',
                     border: `1px solid ${THEME.cyan}`,
-                    borderRadius: '2px', fontSize: '12px', fontWeight: '900', fontFamily: THEME.fontMono,
+                    borderRadius: '2px', fontSize: '12px', fontWeight: '900', fontFamily: 'var(--font-data)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
                     cursor: generating ? 'not-allowed' : 'pointer',
                     boxShadow: generating ? 'none' : `0 0 15px ${THEME.cyan}44`,
@@ -418,7 +410,7 @@ export default function ReportsPanel() {
                   }}
                 >
                   {generating && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '30%', background: 'rgba(0, 242, 255, 0.2)', animation: 'slideRight 1s infinite linear' }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '30%', background: 'rgba(74, 142, 255, 0.2)', animation: 'slideRight 1s infinite linear' }} />
                   )}
                   {generating ? (
                     <><RefreshCw className="animate-spin" size={16} /> COMPILING_LATEX...</>
@@ -433,7 +425,7 @@ export default function ReportsPanel() {
               {reports.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: THEME.textTertiary }}>
                   <Database size={32} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
-                  <p style={{ fontSize: '11px', fontFamily: THEME.fontMono }}>ARCHIVE_EMPTY</p>
+                  <p style={{ fontSize: '11px', fontFamily: 'var(--font-data)' }}>ARCHIVE_EMPTY</p>
                 </div>
               ) : (
                 reports.map(r => (
@@ -451,11 +443,11 @@ export default function ReportsPanel() {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: viewReport?.id === r.id ? THEME.cyan : '#fff', fontFamily: THEME.fontMono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: viewReport?.id === r.id ? THEME.cyan : '#fff', fontFamily: 'var(--font-data)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {r.title.toUpperCase()}
                       </div>
                     </div>
-                    <div style={{ fontSize: '9px', color: THEME.textTertiary, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: THEME.fontMono }}>
+                    <div style={{ fontSize: '9px', color: THEME.textTertiary, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-data)' }}>
                       <Clock size={10} /> {fmtDate(r.generated).toUpperCase()} [{r.format}]
                     </div>
                   </div>
@@ -498,8 +490,8 @@ export default function ReportsPanel() {
           zIndex: 2
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ color: THEME.textSecondary, fontFamily: THEME.fontMono, fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>RPT-OUTPUT-02</span>
-            <div style={{ padding: '2px 6px', background: 'rgba(0,255,149,0.1)', color: THEME.success, fontSize: '9px', fontFamily: THEME.fontMono, borderRadius: '2px', border: `1px solid ${THEME.success}44` }}>
+            <span style={{ color: THEME.textSecondary, fontFamily: 'var(--font-data)', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>RPT-OUTPUT-02</span>
+            <div style={{ padding: '2px 6px', background: 'rgba(0,255,149,0.1)', color: THEME.success, fontSize: '9px', fontFamily: 'var(--font-data)', borderRadius: '2px', border: `1px solid ${THEME.success}44` }}>
               LATEX_HUD_ACTIVE
             </div>
           </div>
@@ -508,12 +500,12 @@ export default function ReportsPanel() {
               <>
                 <button style={{ 
                   background: 'transparent', border: `1px solid ${THEME.cyan}`, color: THEME.cyan,
-                  padding: '4px 12px', fontSize: '10px', fontFamily: THEME.fontMono, borderRadius: '2px',
+                  padding: '4px 12px', fontSize: '10px', fontFamily: 'var(--font-data)', borderRadius: '2px',
                   display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer'
                 }}><Share2 size={12} /> SHARE</button>
                 <button style={{ 
                   background: THEME.cyan, border: 'none', color: '#000',
-                  padding: '4px 12px', fontSize: '10px', fontWeight: 'bold', fontFamily: THEME.fontMono, borderRadius: '2px',
+                  padding: '4px 12px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'var(--font-data)', borderRadius: '2px',
                   display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer'
                 }}><Download size={12} /> EXPORT_PDF</button>
               </>
@@ -528,7 +520,7 @@ export default function ReportsPanel() {
             <div style={{ 
               flex: 1, background: '#000', margin: '24px 36px', 
               border: `1px solid ${THEME.cyan}33`, borderRadius: '4px',
-              padding: '16px', fontFamily: THEME.fontMono, fontSize: '12px',
+              padding: '16px', fontFamily: 'var(--font-data)', fontSize: '12px',
               color: THEME.cyan, overflowY: 'auto', display: 'flex', flexDirection: 'column',
               boxShadow: `inset 0 0 30px ${THEME.cyan}11`
             }} ref={logContainerRef}>
@@ -593,7 +585,7 @@ export default function ReportsPanel() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'
                   }}>
                     <Zap size={32} style={{ opacity: 0.1 }} />
-                    <div style={{ position: 'absolute', bottom: '8px', right: '8px', fontSize: '8px', color: '#999', fontFamily: THEME.fontMono }}>TELEMETRY_PLOT_PREVIEW</div>
+                    <div style={{ position: 'absolute', bottom: '8px', right: '8px', fontSize: '8px', color: '#999', fontFamily: 'var(--font-data)' }}>TELEMETRY_PLOT_PREVIEW</div>
                   </div>
                   <div style={{ fontSize: '9px', fontStyle: 'italic', textAlign: 'center', color: '#444' }}>Fig. 1. Characterization of {template?.type || 'SYSTEM'} through autonomous synthesis pipeline.</div>
                   
@@ -610,7 +602,7 @@ export default function ReportsPanel() {
               <div style={{ 
                 position: 'absolute', bottom: '20px', left: '40px', right: '40px', 
                 textAlign: 'center', fontSize: '8px', color: '#aaa', borderTop: '0.5px solid #eee', paddingTop: '8px',
-                fontFamily: THEME.fontMono
+                fontFamily: 'var(--font-data)'
               }}>
                 RĀMAN STUDIO // IEEE-COMPLIANT RENDER
               </div>
@@ -618,8 +610,8 @@ export default function ReportsPanel() {
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '24px 36px' }}>
               <ShieldCheck size={48} color={THEME.cyan} style={{ opacity: 0.3, marginBottom: '16px' }} />
-              <div style={{ color: THEME.cyan, fontFamily: THEME.fontMono, fontSize: '12px', letterSpacing: '1px' }}>SYSTEM_STANDBY</div>
-              <div style={{ color: THEME.textTertiary, fontFamily: THEME.fontMono, fontSize: '10px', marginTop: '8px' }}>AWAITING REPORT CONFIGURATION</div>
+              <div style={{ color: THEME.cyan, fontFamily: 'var(--font-data)', fontSize: '12px', letterSpacing: '1px' }}>SYSTEM_STANDBY</div>
+              <div style={{ color: THEME.textTertiary, fontFamily: 'var(--font-data)', fontSize: '10px', marginTop: '8px' }}>AWAITING REPORT CONFIGURATION</div>
             </div>
           )}
         </div>

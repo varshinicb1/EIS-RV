@@ -93,7 +93,7 @@ export default function DRTPanel() {
     ctx.stroke();
 
     // Peak markers
-    const PROC_COLORS = { charge_transfer: '#ef5350', diffusion: '#ffa726', double_layer: '#66bb6a', adsorption: '#ab47bc', unknown: '#78909c' };
+    const PROC_COLORS = { charge_transfer: 'var(--color-error)', diffusion: 'var(--color-warning)', double_layer: 'var(--color-success)', adsorption: '#a78bfa', unknown: '#78909c' };
     (peaks || []).forEach(p => {
       const px = toX(Math.log10(p.tau)); const py = toY(p.gamma);
       ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2);
@@ -123,7 +123,7 @@ export default function DRTPanel() {
     ctx.fillText('Distribution of Relaxation Times', pad.l, 16);
   }, [result]);
 
-  const procColor = { charge_transfer: '#ef5350', diffusion: '#ffa726', double_layer: '#66bb6a', adsorption: '#ab47bc', unknown: '#78909c' };
+  const procColor = { charge_transfer: 'var(--color-error)', diffusion: 'var(--color-warning)', double_layer: 'var(--color-success)', adsorption: '#a78bfa', unknown: '#78909c' };
 
   return (
     <div className="animate-in" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 12, height: '100%' }}>

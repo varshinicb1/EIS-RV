@@ -47,28 +47,27 @@ export default function Toaster() {
           onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
           style={{
             pointerEvents: 'auto', cursor: 'pointer', minWidth: 280, maxWidth: 540,
-            padding: '11px 18px',
-            background: 'rgba(2, 2, 4, 0.97)',
-            backdropFilter: 'blur(20px) saturate(160%)',
+            padding: '10px 16px',
+            background: 'var(--bg-elevated)',
             border: `1px solid ${
-              t.kind === 'ok' ? 'rgba(0, 255, 157, 0.4)' :
-              t.kind === 'err' ? 'rgba(255, 107, 107, 0.4)' :
-              'rgba(0, 242, 255, 0.3)'}`,
-            borderRadius: 4,
-            boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
-            color: t.kind === 'ok' ? '#00ff9d' : t.kind === 'err' ? '#ff6b6b' : '#00f2ff',
-            fontFamily: '"JetBrains Mono", monospace', fontSize: 11,
-            letterSpacing: '0.03em',
+              t.kind === 'ok' ? 'rgba(52, 199, 89, 0.35)' :
+              t.kind === 'err' ? 'rgba(255, 69, 58, 0.35)' :
+              'var(--accent-border)'}`,
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-lg)',
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-ui)', fontSize: 12.5,
             display: 'flex', alignItems: 'center', gap: 10,
           }}
         >
           <span style={{
-            width: 6, height: 6, borderRadius: '50%',
-            background: t.kind === 'ok' ? '#00ff9d' : t.kind === 'err' ? '#ff6b6b' : '#00f2ff',
-            boxShadow: `0 0 8px ${t.kind === 'ok' ? '#00ff9d' : t.kind === 'err' ? '#ff6b6b' : '#00f2ff'}`,
+            width: 7, height: 7, borderRadius: '50%',
+            background: t.kind === 'ok' ? 'var(--color-success)'
+                     : t.kind === 'err' ? 'var(--color-error)'
+                     : 'var(--accent)',
             flexShrink: 0,
           }} />
-          <span style={{ color: '#fff', flex: 1 }}>{t.text}</span>
+          <span style={{ flex: 1 }}>{t.text}</span>
         </div>
       ))}
     </div>

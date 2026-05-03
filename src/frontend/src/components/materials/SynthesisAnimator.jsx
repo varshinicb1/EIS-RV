@@ -20,14 +20,14 @@ import { Activity, Thermometer, Droplets, Gauge, Atom, Zap } from 'lucide-react'
 const T = {
   bg:       '#020204',
   bgPanel:  'rgba(10, 10, 14, 0.88)',
-  accent:   '#00f2ff',
-  warning:  '#ff3e3e',
-  success:  '#00ff9d',
+  accent:   'var(--accent)',
+  warning:  'var(--color-error)',
+  success:  'var(--color-success)',
   amber:    '#ffb800',
   textDim:  'rgba(255, 255, 255, 0.35)',
   textMid:  'rgba(255, 255, 255, 0.6)',
   textHi:   '#ffffff',
-  border:   'rgba(0, 242, 255, 0.15)',
+  border:   'rgba(74, 142, 255, 0.15)',
   font:     '"JetBrains Mono", "Fira Code", monospace',
 };
 
@@ -45,7 +45,7 @@ function drawBeaker(ctx, cx, cy, w, h, fillPct, liquidColor, t) {
 
   // Glass body
   ctx.save();
-  ctx.strokeStyle = 'rgba(0, 242, 255, 0.25)';
+  ctx.strokeStyle = 'rgba(74, 142, 255, 0.25)';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(bx, by);
@@ -217,7 +217,7 @@ function drawLattice(ctx, atoms, cx, cy, scale, angle, active, color) {
 
 function drawGrid(ctx, w, h, t) {
   ctx.save();
-  ctx.strokeStyle = 'rgba(0, 242, 255, 0.03)';
+  ctx.strokeStyle = 'rgba(74, 142, 255, 0.03)';
   ctx.lineWidth = 0.5;
   const spacing = 24;
   for (let x = 0; x < w; x += spacing) {

@@ -69,7 +69,7 @@ function ElectrodeViewer3D({ geometry, coating }) {
             <group position={[-1.5, 0.05, 0]}>
               {Array.from({length: 12}).map((_, i) => (
                 <Box key={i} args={[0.1, 0.1, 2]} position={[i * 0.25, 0, 0]}>
-                  <meshPhysicalMaterial color={i % 2 === 0 ? '#ffa726' : '#42a5f5'} metalness={0.8} roughness={0.2} />
+                  <meshPhysicalMaterial color={i % 2 === 0 ? 'var(--color-warning)' : '#42a5f5'} metalness={0.8} roughness={0.2} />
                 </Box>
               ))}
 
@@ -91,7 +91,7 @@ function ElectrodeViewer3D({ geometry, coating }) {
           {pattern === 'disk' && (
             <group position={[0, 0.05, 0]}>
               <Cylinder args={[1, 1, 0.1, 64]}>
-                <meshPhysicalMaterial color="#ffa726" metalness={0.5} roughness={0.5} />
+                <meshPhysicalMaterial color="var(--color-warning)" metalness={0.5} roughness={0.5} />
               </Cylinder>
               {coating && (
                 <Cylinder args={[0.95, 0.95, 0.02, 64]} position={[0, 0.06, 0]}>
@@ -205,12 +205,12 @@ function ElectrodeViewer3D({ geometry, coating }) {
 }
 
 function FabStep({step, isActive}) {
-  const colors = {true:'#76b900',false:'var(--text-tertiary)'};
+  const colors = {true:'var(--color-success)',false:'var(--text-tertiary)'};
   return (
     <div style={{display:'flex',gap:10,padding:'8px 0',borderBottom:'1px solid var(--border-default)',opacity:isActive?1:0.6}}>
       <div style={{width:24,height:24,borderRadius:12,background:step.critical?'rgba(118,185,0,0.15)':'var(--bg-elevated)',
         display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,
-        color:step.critical?'#76b900':'var(--text-tertiary)',border:`1px solid ${step.critical?'#76b90055':'var(--border-default)'}`}}>
+        color:step.critical?'var(--color-success)':'var(--text-tertiary)',border:`1px solid ${step.critical?'#76b90055':'var(--border-default)'}`}}>
         {step.step}
       </div>
       <div style={{flex:1}}>
@@ -396,7 +396,7 @@ export default function BiosensorPanel() {
 
         {result && (
           <div style={{marginTop:12,padding:10,background:'rgba(118,185,0,0.08)',borderRadius:6,border:'1px solid #76b90033'}}>
-            <div style={{fontSize:11,fontWeight:600,color:'#76b900',marginBottom:6}}>Performance Summary</div>
+            <div style={{fontSize:11,fontWeight:600,color:'var(--color-success)',marginBottom:6}}>Performance Summary</div>
             <div style={{fontSize:10,color:'var(--text-secondary)',lineHeight:1.8,fontFamily:'var(--font-data)'}}>
               Sensitivity: {perf.sensitivity_uA_mM_cm2} μA/mM/cm²<br/>
               LOD: {perf.lod_M} M<br/>
@@ -426,7 +426,7 @@ export default function BiosensorPanel() {
           {[['3d','EIS/CV Sync'],['fab','Fab Protocol'],['report','Report']].map(([k,l])=>(
             <button key={k} onClick={()=>setActiveTab(k)}
               style={{background:'none',border:'none',padding:'10px 14px',
-                color:activeTab===k?'#76b900':'var(--text-secondary)',
+                color:activeTab===k?'var(--color-success)':'var(--text-secondary)',
                 borderBottom:activeTab===k?'2px solid #76b900':'2px solid transparent',
                 cursor:'pointer',fontWeight:600,fontSize:11}}>{l}</button>
           ))}
@@ -449,7 +449,7 @@ export default function BiosensorPanel() {
                   ))}
                 </div>
                 <div style={{background:'rgba(255,167,38,0.08)',borderRadius:8,padding:12,border:'1px solid #ffa72633'}}>
-                  <div style={{fontSize:11,fontWeight:600,color:'#ffa726',marginBottom:8}}>CV Sync Parameters</div>
+                  <div style={{fontSize:11,fontWeight:600,color:'var(--color-warning)',marginBottom:8}}>CV Sync Parameters</div>
                   {ec.cv && Object.entries(ec.cv).map(([k,v])=>(
                     <div key={k} style={{display:'flex',justifyContent:'space-between',fontSize:10,marginBottom:4}}>
                       <span style={{color:'var(--text-tertiary)'}}>{k}</span>
@@ -460,11 +460,11 @@ export default function BiosensorPanel() {
               </div>
               <div style={{marginTop:12,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                 <div style={{background:'var(--bg-elevated)',borderRadius:6,padding:8,textAlign:'center',border:'1px solid var(--border-default)'}}>
-                  <div style={{fontSize:12,fontWeight:600,color:'#ffa726'}}>{result.coating?.thickness_nm} nm</div>
+                  <div style={{fontSize:12,fontWeight:600,color:'var(--color-warning)'}}>{result.coating?.thickness_nm} nm</div>
                   <div style={{fontSize:9,color:'var(--text-tertiary)'}}>Film Thickness</div>
                 </div>
                 <div style={{background:'var(--bg-elevated)',borderRadius:6,padding:8,textAlign:'center',border:'1px solid var(--border-default)'}}>
-                  <div style={{fontSize:12,fontWeight:600,color:'#66bb6a'}}>{result.surface_chemistry?.coverage_molecules_cm2?.toExponential(1)}</div>
+                  <div style={{fontSize:12,fontWeight:600,color:'var(--color-success)'}}>{result.surface_chemistry?.coverage_molecules_cm2?.toExponential(1)}</div>
                   <div style={{fontSize:9,color:'var(--text-tertiary)'}}>SAM Coverage (cm⁻²)</div>
                 </div>
                 <div style={{background:'var(--bg-elevated)',borderRadius:6,padding:8,textAlign:'center',border:'1px solid var(--border-default)'}}>
@@ -522,7 +522,7 @@ export default function BiosensorPanel() {
                 we don't have wired up yet.
               </div>
               <div style={{display:'flex', gap:10, marginTop:12}}>
-                <button className="btn btn-sm" style={{flex:1, background:'#76b90022',color:'#76b900',border:'1px solid #76b90055'}}
+                <button className="btn btn-sm" style={{flex:1, background:'#76b90022',color:'var(--color-success)',border:'1px solid #76b90055'}}
                   onClick={()=>{
                     const profile = JSON.parse(localStorage.getItem('raman_profile') || '{}');
                     generateIEEEReport({

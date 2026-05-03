@@ -227,12 +227,12 @@ function SynthesisProtocol({ material }) {
         Method: {method.replace(/_/g, ' ')}
       </div>
       {steps.map((s, i) => (
-        <div key={i} style={{ color: s.startsWith('Equipment') ? '#76b900' : 'var(--text-secondary)', marginBottom: 3, paddingLeft: s.startsWith('Equipment') ? 0 : 8 }}>
+        <div key={i} style={{ color: s.startsWith('Equipment') ? 'var(--color-success)' : 'var(--text-secondary)', marginBottom: 3, paddingLeft: s.startsWith('Equipment') ? 0 : 8 }}>
           {s}
         </div>
       ))}
       {m.cost != null && (
-        <div style={{ marginTop: 6, color: '#ffa726', fontWeight: 500 }}>
+        <div style={{ marginTop: 6, color: 'var(--color-warning)', fontWeight: 500 }}>
           Material cost: ~${m.cost}/g (research grade)
         </div>
       )}
