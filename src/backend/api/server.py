@@ -677,6 +677,69 @@ async def alchemi_chat(req: _AlchemiChatRequest):
 
 # ── PubChem search (real public API; no fabrication) ────────────
 
+@app.get("/api/v2/alchemi/materials/library",
+         dependencies=[_Depends(verify_license(required_feature="alchemi"))])
+async def alchemi_materials_library():
+    """
+    Curated block library that AlchemistCanvas's combinator works over.
+    Every entry is a real material with measured/literature properties;
+    the canvas only allows compositions of these.
+    """
+    from src.backend.alchemi.combinator import get_library
+    return {"library": get_library()}
+
+
+class _CombinatorRequest(BaseModel):
+    selected:                 list[str] = Field(..., min_length=1, max_length=10)
+    max_components:           int       = Field(3, ge=1, le=5)
+    step_pct:                 int       = Field(25, ge=10, le=50)
+    min_capacitance_F_g:      Optional[float] = Field(None, ge=0, le=10000)
+    min_conductivity_S_m:     Optional[float] = Field(None, ge=0, le=1e9)
+    min_voltage_window_V:     Optional[float] = Field(None, ge=0, le=10)
+    max_cost_relative:        Optional[float] = Field(None, ge=0, le=1.0)
+    max_density_g_cm3:        Optional[float] = Field(None, ge=0, le=30)
+    require_all_selected:     bool      = False
+    top_n:                    int       = Field(20, ge=1, le=100)
+
+
+@app.post("/api/v2/alchemi/materials/combinations",
+          dependencies=[_Depends(verify_license(required_feature="alchemi"))])
+async def alchemi_combinations(req: _CombinatorRequest):
+    """
+    Enumerate every k-component composite (1 ≤ k ≤ max_components) of
+    the selected blocks at the requested mass-fraction granularity,
+    apply user constraints, rank by composite score, and return the
+    top-N candidates with mixture-rule properties.
+
+    Ranks deterministically; no LLM in the loop. The caller can
+    optionally feed the top picks into /api/v2/alchemi/chat to draft a
+    synthesis protocol.
+    """
+    from src.backend.alchemi.combinator import (
+        Constraints, enumerate_candidates, MATERIAL_DATABASE,
+    )
+    unknown = [s for s in req.selected if s not in MATERIAL_DATABASE]
+    if unknown:
+        raise HTTPException(400, f"Unknown materials: {unknown}")
+
+    constraints = Constraints(
+        min_capacitance_F_g=req.min_capacitance_F_g,
+        min_conductivity_S_m=req.min_conductivity_S_m,
+        min_voltage_window_V=req.min_voltage_window_V,
+        max_cost_relative=req.max_cost_relative,
+        max_density_g_cm3=req.max_density_g_cm3,
+        max_components=req.max_components,
+        step_pct=req.step_pct,
+        require_all_selected=req.require_all_selected,
+    )
+    candidates = enumerate_candidates(req.selected, constraints)
+    return {
+        "total_evaluated": len(candidates),
+        "constraints": constraints.to_dict(),
+        "candidates": [c.to_dict() for c in candidates[:req.top_n]],
+    }
+
+
 @app.get("/api/v2/alchemi/search/{query}",
          dependencies=[_Depends(verify_license(required_feature="alchemi"))])
 async def alchemi_search(query: str):
@@ -1082,10 +1145,41 @@ async def list_applications():
 
 @app.get("/api/v2/pipeline/config")
 async def pipeline_config():
-    """Get pipeline configuration."""
-    from src.backend.research.config import SEARCH_QUERIES, MAX_PAPERS_PER_QUERY
-    return {"queries": SEARCH_QUERIES, "max_per_query": MAX_PAPERS_PER_QUERY,
-            "sources": ["arXiv", "CrossRef", "Semantic Scholar"]}
+    """Get pipeline configuration. Returns the active query set
+    (user-overridden if present, otherwise the built-in defaults)."""
+    from src.backend.research.config import (
+        get_search_queries, SEARCH_QUERIES, MAX_PAPERS_PER_QUERY,
+    )
+    active = get_search_queries()
+    return {
+        "queries": active,
+        "default_queries": list(SEARCH_QUERIES),
+        "is_custom": active != list(SEARCH_QUERIES),
+        "max_per_query": MAX_PAPERS_PER_QUERY,
+        "sources": ["arXiv", "CrossRef", "Semantic Scholar"],
+    }
+
+
+class _QueryUpdateRequest(BaseModel):
+    queries: List[str] = Field(..., max_length=200)
+
+
+@app.put("/api/v2/pipeline/config/queries")
+async def update_pipeline_queries(req: _QueryUpdateRequest):
+    """
+    Persist a user-supplied query list. Send ``{"queries": []}`` to clear
+    and revert to the built-in defaults. Each query is trimmed; empty
+    entries are dropped. Returns the active list after the write.
+    """
+    from src.backend.research.config import set_search_queries, SEARCH_QUERIES
+    if any(len(q) > 500 for q in req.queries):
+        raise HTTPException(400, "Each query must be ≤ 500 characters.")
+    active = set_search_queries(req.queries)
+    return {
+        "queries": active,
+        "default_queries": list(SEARCH_QUERIES),
+        "is_custom": active != list(SEARCH_QUERIES),
+    }
 
 
 # ── DRT Analysis ─────────────────────────────────────────────────

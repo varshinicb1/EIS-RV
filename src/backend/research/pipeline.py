@@ -102,7 +102,13 @@ class ResearchPipeline:
         max_per_query: int = MAX_PAPERS_PER_QUERY,
     ):
         self.db_path = db_path
-        self.queries = queries or SEARCH_QUERIES
+        if queries is not None:
+            self.queries = list(queries)
+        else:
+            # Honour the user override (data/datasets/research/user_queries.json)
+            # if present; otherwise the SEARCH_QUERIES default.
+            from src.backend.research.config import get_search_queries
+            self.queries = get_search_queries()
         self.max_per_query = max_per_query
 
         # Initialize database

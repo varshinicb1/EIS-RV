@@ -128,14 +128,16 @@ export default function LiteratureMiningPanel() {
           </div>
         </div>
 
-        {/* Search Queries */}
+        {/* Search Queries — editable */}
         {config && (
-          <div className="card" style={{ flex: 1, overflow: 'auto' }}>
-            <div className="card-title" style={{ fontSize: 11, marginBottom: 6 }}>Search Queries ({config.queries?.length || 0})</div>
-            {(config.queries || []).map((q, i) => (
-              <div key={i} style={{ fontSize: 9, color: 'var(--text-tertiary)', padding: '2px 0', fontFamily: 'var(--font-data)' }}>{q}</div>
-            ))}
-          </div>
+          <QueryEditor
+            initial={config.queries || []}
+            isCustom={config.is_custom}
+            defaults={config.default_queries || []}
+            onSaved={(active) => {
+              setConfig({ ...config, queries: active, is_custom: active.join() !== (config.default_queries || []).join() });
+            }}
+          />
         )}
       </div>
 
@@ -331,6 +333,199 @@ export default function LiteratureMiningPanel() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Editable list of pipeline search queries.
+ *
+ *   - Add a new query (Enter or click +)
+ *   - Remove a query (×)
+ *   - Save persists via PUT /api/v2/pipeline/config/queries
+ *   - "Reset to defaults" sends an empty list, which the backend
+ *     treats as "revert to built-in".
+ */
+function QueryEditor({ initial, isCustom, defaults, onSaved }) {
+  const [queries, setQueries] = React.useState(initial);
+  const [draft, setDraft] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [dirty, setDirty] = React.useState(false);
+
+  React.useEffect(() => {
+    // Sync if parent reloaded.
+    setQueries(initial);
+    setDirty(false);
+  }, [initial]);
+
+  const addQuery = () => {
+    const q = draft.trim();
+    if (!q) return;
+    if (queries.includes(q)) return;
+    setQueries([...queries, q]);
+    setDraft('');
+    setDirty(true);
+  };
+  const removeQuery = (i) => {
+    setQueries(queries.filter((_, j) => j !== i));
+    setDirty(true);
+  };
+  const reset = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${API}/api/v2/pipeline/config/queries`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queries: [] }),
+      });
+      const d = await r.json();
+      setQueries(d.queries);
+      setDirty(false);
+      onSaved?.(d.queries);
+      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+        detail: { kind: 'ok', text: 'Reverted to default queries.' },
+      }));
+    } catch (e) {
+      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+        detail: { kind: 'err', text: `Reset failed: ${e.message}` },
+      }));
+    } finally { setSaving(false); }
+  };
+  const save = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${API}/api/v2/pipeline/config/queries`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queries }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      setQueries(d.queries);
+      setDirty(false);
+      onSaved?.(d.queries);
+      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+        detail: { kind: 'ok', text: `Saved ${d.queries.length} queries.` },
+      }));
+    } catch (e) {
+      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+        detail: { kind: 'err', text: `Save failed: ${e.message}` },
+      }));
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="card" style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <div className="card-title" style={{ fontSize: 12, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+        Search queries
+        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+          ({queries.length})
+        </span>
+        {isCustom && !dirty && (
+          <span style={{
+            marginLeft: 'auto', fontSize: 10, padding: '2px 6px', borderRadius: 99,
+            background: 'var(--accent-muted)', color: 'var(--accent)',
+            border: '1px solid var(--accent-border)',
+          }}>
+            Custom
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <input
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addQuery(); } }}
+          placeholder="Add a query (e.g. perovskite EIS supercapacitor)"
+          style={{
+            flex: 1, fontSize: 11.5,
+            background: 'var(--bg-input)',
+            border: '1px solid var(--border-primary)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '6px 9px',
+            color: 'var(--text-primary)',
+            outline: 'none',
+          }}
+        />
+        <button
+          onClick={addQuery}
+          disabled={!draft.trim()}
+          style={{
+            padding: '6px 12px', fontSize: 11.5, fontWeight: 500,
+            background: 'var(--accent)', color: '#fff', border: 'none',
+            borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+            opacity: draft.trim() ? 1 : 0.5,
+          }}
+        >
+          Add
+        </button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+        {queries.length === 0 && (
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', padding: '12px 4px' }}>
+            No queries — pipeline runs would skip every fetcher. Add one above
+            or reset to defaults.
+          </div>
+        )}
+        {queries.map((q, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '5px 6px',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 11.5,
+            background: i % 2 === 0 ? 'transparent' : 'var(--bg-hover)',
+          }}>
+            <span style={{ flex: 1, color: 'var(--text-primary)' }}>{q}</span>
+            <button
+              onClick={() => removeQuery(i)}
+              title="Remove this query"
+              style={{
+                background: 'transparent', border: 'none',
+                color: 'var(--text-tertiary)', cursor: 'pointer',
+                padding: '0 4px', fontSize: 14, lineHeight: 1,
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-error)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-primary)' }}>
+        <button
+          onClick={save}
+          disabled={!dirty || saving}
+          style={{
+            flex: 1, padding: '6px 10px', fontSize: 11.5, fontWeight: 500,
+            background: dirty ? 'var(--accent)' : 'var(--bg-hover)',
+            color: dirty ? '#fff' : 'var(--text-tertiary)',
+            border: '1px solid ' + (dirty ? 'var(--accent)' : 'var(--border-primary)'),
+            borderRadius: 'var(--radius-sm)',
+            cursor: dirty && !saving ? 'pointer' : 'default',
+          }}
+        >
+          {saving ? 'Saving…' : dirty ? 'Save queries' : 'Saved'}
+        </button>
+        {(isCustom || dirty) && (
+          <button
+            onClick={reset}
+            disabled={saving}
+            title={`Restore ${defaults.length} built-in defaults`}
+            style={{
+              padding: '6px 10px', fontSize: 11.5,
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border-primary)',
+              borderRadius: 'var(--radius-sm)',
+              cursor: saving ? 'default' : 'pointer',
+            }}
+          >
+            Reset
+          </button>
+        )}
       </div>
     </div>
   );

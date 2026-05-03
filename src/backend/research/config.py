@@ -1,7 +1,21 @@
 """
 Configuration for the research pipeline.
+
+The set of search queries used by the literature-mining pipeline is
+exposed two ways:
+
+  - ``SEARCH_QUERIES`` (this module) is the *built-in* default.
+  - ``user_queries.json`` in the data dir overrides it once the user
+    has saved a custom list. ``get_search_queries()`` returns whichever
+    is currently active; the API endpoints in server.py call into
+    ``set_search_queries()`` to persist.
+
+That separation keeps the install-time defaults read-only while still
+letting researchers point the pipeline at their own queries without
+touching the source.
 """
 
+import json
 import os
 
 # Base directories.
@@ -58,3 +72,45 @@ UPDATE_INTERVAL_HOURS = 24
 # Logging
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 LOG_LEVEL = "INFO"
+
+
+# ── User-overridable search queries ────────────────────────────
+
+USER_QUERIES_FILE = os.path.join(DATA_DIR, "user_queries.json")
+
+
+def get_search_queries() -> list[str]:
+    """
+    Return the active search query list. User overrides win; falls
+    back to the built-in ``SEARCH_QUERIES`` constant.
+    """
+    try:
+        if os.path.exists(USER_QUERIES_FILE):
+            with open(USER_QUERIES_FILE) as f:
+                data = json.load(f)
+            qs = data.get("queries") if isinstance(data, dict) else data
+            if isinstance(qs, list) and all(isinstance(q, str) for q in qs):
+                return [q.strip() for q in qs if q.strip()]
+    except Exception:
+        pass
+    return list(SEARCH_QUERIES)
+
+
+def set_search_queries(queries: list[str]) -> list[str]:
+    """
+    Persist a custom query list. Pass ``[]`` to clear and revert to
+    the built-in defaults. Returns the active list after the write.
+    """
+    cleaned = [q.strip() for q in queries if isinstance(q, str) and q.strip()]
+    os.makedirs(DATA_DIR, exist_ok=True)
+    if not cleaned:
+        # Wipe the override file so the constant becomes active again.
+        try: os.remove(USER_QUERIES_FILE)
+        except FileNotFoundError: pass
+        except OSError: pass
+        return list(SEARCH_QUERIES)
+    tmp = USER_QUERIES_FILE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump({"queries": cleaned}, f, indent=2)
+    os.replace(tmp, USER_QUERIES_FILE)
+    return cleaned
