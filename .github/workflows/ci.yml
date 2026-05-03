@@ -50,8 +50,20 @@ jobs:
           print("Python syntax OK across src/, tests/, scripts/")
           PY
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short
+      - name: Run tests with coverage
+        run: |
+          pytest --ignore=tests/integration -v --tb=short \
+            --cov=src/backend --cov=src/ai_engine \
+            --cov-report=term-missing --cov-report=xml \
+            --cov-fail-under=55
+
+      - name: Upload coverage artifact
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-py${{ matrix.python-version }}
+          path: coverage.xml
+          retention-days: 14
 
   cpp-build:
     name: C++ engine
@@ -83,7 +95,7 @@ jobs:
           python3 -c "import raman_core; print(f'{len([x for x in dir(raman_core) if not x.startswith(\"_\")])} exports OK')"
 
   frontend:
-    name: Frontend build
+    name: Frontend build + test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -93,14 +105,16 @@ jobs:
           node-version: '20'
 
       - name: Install
-        run: |
-          cd src/frontend
-          npm ci --ignore-scripts || npm install
+        working-directory: src/frontend
+        run: npm ci --legacy-peer-deps --ignore-scripts || npm install --legacy-peer-deps
+
+      - name: Test (vitest)
+        working-directory: src/frontend
+        run: npm run test
 
       - name: Build
-        run: |
-          cd src/frontend
-          npm run build
+        working-directory: src/frontend
+        run: npm run build
 
   lint:
     name: Lint

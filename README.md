@@ -4,9 +4,12 @@ Desktop application for electrochemical analysis. Imports data from VidyuthLabs
 AnalyteX devices, runs simulation engines (EIS, CV, GCD), and helps researchers
 explore materials.
 
-> **Status**: pre-1.0, work in progress. The product is honest about what it
-> does today; see [What works today](#what-works-today) and [Known
-> limitations](#known-limitations) below.
+> **Status**: 2.1.0 — first release intended for direct use by external
+> researchers. Every panel calls a real backend route; every paid route is
+> license-gated; every error path is sanitized. See
+> [What works today](#what-works-today) and [Known
+> limitations](#known-limitations) below, and `CHANGELOG.md` for the full
+> 2.1.0 release notes.
 
 ---
 

@@ -1,5 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react';
-import { Joyride } from 'react-joyride';
+import Joyride from 'react-joyride';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import useGuidedTour from './hooks/useGuidedTour.jsx';

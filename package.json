@@ -1,8 +1,8 @@
 {
   "name": "raman-studio",
   "productName": "RĀMAN Studio",
-  "version": "1.0.0",
-  "description": "Desktop electrochemical analysis — EIS, CV, GCD — by VidyuthLabs",
+  "version": "2.1.0",
+  "description": "Desktop electrochemical analysis — EIS, CV, GCD, supercapacitor — by VidyuthLabs",
   "main": "src/desktop/main.js",
   "author": {
     "name": "VidyuthLabs",
@@ -14,12 +14,15 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
+    "prebuild": "cd src/frontend && (npm ci --legacy-peer-deps --ignore-scripts || npm install --legacy-peer-deps) && npm run build",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux",
-    "build:all": "electron-builder --win --linux",
+    "build:mac": "electron-builder --mac",
+    "build:all": "electron-builder --win --linux --mac",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
+    "release": "electron-builder --publish always",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
@@ -35,12 +38,12 @@
     "productName": "RĀMAN Studio",
     "copyright": "Copyright © 2026 VidyuthLabs",
     "directories": {
-      "output": "build",
+      "output": "dist-electron",
       "buildResources": "resources"
     },
     "files": [
       "src/**/*",
-      "data/datasets/**/*",
+      "build/renderer/**/*",
       "engine_core/build/**/*",
       "engine_core/include/**/*",
       "!**/*.pyc",
@@ -71,7 +74,7 @@
       "icon": "resources/icons/icon.ico",
       "artifactName": "${productName}-${version}-Setup.${ext}",
       "publisherName": "VidyuthLabs",
-      "verifyUpdateCodeSignature": false
+      "verifyUpdateCodeSignature": true
     },
     "nsis": {
       "oneClick": false,
@@ -116,6 +119,35 @@
         "libnss3"
       ]
     },
-    "publish": null
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ],
+      "icon": "resources/icons/icon.icns",
+      "category": "public.app-category.education",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "resources/entitlements.mac.plist",
+      "entitlementsInherit": "resources/entitlements.mac.plist",
+      "notarize": false
+    },
+    "dmg": {
+      "title": "RĀMAN Studio ${version}",
+      "icon": "resources/icons/icon.icns",
+      "background": null,
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "varshinicb1",
+        "repo": "EIS-RV",
+        "releaseType": "release"
+      }
+    ]
   }
 }

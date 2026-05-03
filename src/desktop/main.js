@@ -211,12 +211,20 @@ function createWindow() {
     if (CONFIG.IS_DEV) {
         mainWindow.loadURL(`http://localhost:${CONFIG.VITE_PORT}`);
     } else {
-        const rendererPath = path.join(__dirname, '../frontend/dist/index.html');
+        // Vite emits the renderer to <repo>/build/renderer/index.html (configured
+        // in src/frontend/vite.config.js). When packaged by electron-builder the
+        // app source is rooted at app.asar/, so resolve relative to __dirname,
+        // which is .../app.asar/src/desktop/.
         const fs = require('fs');
-        if (fs.existsSync(rendererPath)) {
+        const candidates = [
+            path.join(__dirname, '../../build/renderer/index.html'),  // packaged + dev unpacked
+            path.join(__dirname, '../frontend/dist/index.html'),       // legacy fallback
+        ];
+        const rendererPath = candidates.find(p => fs.existsSync(p));
+        if (rendererPath) {
             mainWindow.loadFile(rendererPath);
         } else {
-            // Fallback to backend-served frontend
+            // Last-resort fallback: backend serves the frontend.
             mainWindow.loadURL(`http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`);
         }
     }
