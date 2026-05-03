@@ -331,6 +331,37 @@ function extractJSON(text) {
   return null;
 }
 
+/**
+ * Coerce one synthesis step (or rationale) into a single human-readable
+ * string, regardless of what shape the LLM returned. The model has been
+ * known to use `"Step 1"`, `{step, description, reagents, conditions}`,
+ * `{action, params}`, or just a stringified object — handle them all so
+ * we never put a raw object into JSX.
+ */
+function stepToString(s) {
+  if (s == null) return '';
+  if (typeof s === 'string') return s.trim();
+  if (typeof s === 'number' || typeof s === 'boolean') return String(s);
+  if (Array.isArray(s)) return s.map(stepToString).filter(Boolean).join(' · ');
+  if (typeof s === 'object') {
+    const main =
+      s.action || s.description || s.text || s.detail || s.instruction || s.step;
+    const aux = [];
+    if (s.reagents) aux.push(`reagents: ${stepToString(s.reagents)}`);
+    if (s.conditions) aux.push(`conditions: ${stepToString(s.conditions)}`);
+    if (s.duration_min) aux.push(`${s.duration_min} min`);
+    if (s.temperature_C != null) aux.push(`${s.temperature_C} °C`);
+    const tail = aux.length ? ` (${aux.join(', ')})` : '';
+    if (typeof main === 'string') return main.trim() + tail;
+    // Last-resort: render keys we don't recognise as a compact key=value list.
+    return Object.entries(s)
+      .filter(([, v]) => v != null && (typeof v !== 'object' || Array.isArray(v)))
+      .map(([k, v]) => `${k}: ${stepToString(v)}`)
+      .join(' · ');
+  }
+  return String(s);
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function AlchemistCanvas() {
@@ -411,10 +442,14 @@ export default function AlchemistCanvas() {
 
       const responseText = chatResp.answer || chatResp.response || chatResp.text || '';
       const parsed = extractJSON(responseText);
+      // The model sometimes returns step entries as plain strings, sometimes
+      // as nested objects ({step, description, reagents, conditions}, ...).
+      // React can't render objects as children, so normalize to a single
+      // human-readable string per step before they reach the JSX.
       const steps = parsed?.steps && Array.isArray(parsed.steps)
-        ? parsed.steps.slice(0, 12)
+        ? parsed.steps.slice(0, 12).map(stepToString).filter(Boolean)
         : [responseText.trim() || 'The planner returned an empty response.'];
-      const rationale = parsed?.rationale || '';
+      const rationale = stepToString(parsed?.rationale) || '';
 
       const dbHit = DB.find(m =>
         m.name?.toLowerCase().includes(formula.toLowerCase()) ||
