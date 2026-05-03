@@ -56,7 +56,7 @@ def _env_path() -> Path:
 
 def _read_env() -> str:
     p = _env_path()
-    return p.read_text() if p.exists() else (
+    return p.read_text(encoding="utf-8") if p.exists() else (
         "# RĀMAN Studio — local environment (gitignored).\n"
     )
 
@@ -67,7 +67,7 @@ def _write_env_atomic(text: str) -> None:
     # Atomic write: temp file in the same directory, then rename.
     fd, tmp = tempfile.mkstemp(dir=str(p.parent), prefix=".env.", suffix=".tmp")
     try:
-        with os.fdopen(fd, "w") as fh:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(text)
         os.replace(tmp, p)
         os.chmod(p, 0o600)   # readable only by the user
