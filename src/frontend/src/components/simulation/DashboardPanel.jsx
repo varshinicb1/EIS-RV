@@ -26,7 +26,12 @@ export default function DashboardPanel() {
     let ws;
     const connectWS = () => {
       try {
-        const wsUrl = window.location.hostname === 'localhost' 
+        // In Electron, window.location is file://, so window.location.host is
+        // empty — that's why the WS URL was previously coming out as
+        // "ws://api/v2/ws/telemetry" (missing host) and getting blocked by
+        // the CSP. Always point at the local sidecar in production.
+        const isElectron = window.location.protocol === 'file:' || !!window.raman;
+        const wsUrl = isElectron || window.location.hostname === 'localhost'
           ? 'ws://127.0.0.1:8000/api/v2/ws/telemetry'
           : `ws://${window.location.host}/api/v2/ws/telemetry`;
         ws = new WebSocket(wsUrl);

@@ -207,6 +207,30 @@ function createWindow() {
         mainWindow.show();
     });
 
+    // Forward renderer console + load failures into the main process log so
+    // a blank window on production isn't a black box. Without this every
+    // unhandled JS error stays inside the renderer's DevTools.
+    mainWindow.webContents.on('console-message', (_e, level, message, line, sourceId) => {
+        const tag = ['LOG', 'WARN', 'ERROR', 'INFO'][level] || `L${level}`;
+        console.log(`[Renderer ${tag}] ${message} (${sourceId}:${line})`);
+    });
+    mainWindow.webContents.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL) => {
+        console.error(`[Renderer DID-FAIL-LOAD] ${errorCode} ${errorDescription} for ${validatedURL}`);
+    });
+    mainWindow.webContents.on('render-process-gone', (_e, details) => {
+        console.error(`[Renderer GONE] reason=${details.reason} exitCode=${details.exitCode}`);
+    });
+    mainWindow.webContents.on('preload-error', (_e, preloadPath, error) => {
+        console.error(`[Preload ERROR] ${preloadPath}: ${error.stack || error.message}`);
+    });
+    // Auto-open DevTools when RAMAN_DEVTOOLS=1 — useful for blank-screen debug
+    // without rebuilding. Production users never set this.
+    mainWindow.webContents.once('dom-ready', () => {
+        if (process.env.RAMAN_DEVTOOLS === '1' || process.argv.includes('--devtools')) {
+            mainWindow.webContents.openDevTools({ mode: 'detach' });
+        }
+    });
+
     // Load the application — Vite dev server in dev, built renderer in production
     if (CONFIG.IS_DEV) {
         mainWindow.loadURL(`http://localhost:${CONFIG.VITE_PORT}`);
@@ -501,21 +525,21 @@ function startPythonServer() {
 
         let serverStarted = false;
 
-        pythonProcess.stdout.on('data', (data) => {
+        // Uvicorn writes its startup banner ("Uvicorn running on http://...")
+        // to STDERR, not stdout, so we have to watch both streams to detect
+        // readiness — otherwise createWindow() blocks behind the 30s fallback
+        // timeout and the user stares at a blank screen for half a minute.
+        const onPythonOutput = (data, isErr) => {
             const output = data.toString().trim();
-            console.log(`[Python] ${output}`);
-            
-            // Check if server is ready
+            console.log(`[Python${isErr ? ' Error' : ''}] ${output}`);
             if (output.includes('Uvicorn running') && !serverStarted) {
                 serverStarted = true;
                 console.log('[RAMAN] Python backend server started');
                 resolve();
             }
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            console.error(`[Python Error] ${data.toString().trim()}`);
-        });
+        };
+        pythonProcess.stdout.on('data', (data) => onPythonOutput(data, false));
+        pythonProcess.stderr.on('data', (data) => onPythonOutput(data, true));
 
         pythonProcess.on('error', (error) => {
             console.error('[RAMAN] Failed to start Python server:', error);

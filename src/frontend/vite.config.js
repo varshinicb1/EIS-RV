@@ -28,7 +28,14 @@ export default defineConfig({
           if (id.includes('@reactflow') || id.includes('reactflow')) return 'reactflow-vendor';
           if (id.includes('@theatre')) return 'theatre-vendor';
           if (id.includes('jspdf') || id.includes('html2canvas')) return 'pdf-vendor';
-          if (id.includes('react-joyride') || id.includes('@gilbarbara') || id.includes('@floating-ui')) return 'joyride-vendor';
+          // Joyride pulls in @gilbarbara helpers and is-lite. Keeping those in
+          // the same chunk avoids the cross-chunk default-export interop bug
+          // that surfaces as "Cannot read properties of undefined (reading
+          // 'plainObject')" when is-lite ends up in a different vendor chunk.
+          if (id.includes('react-joyride') || id.includes('@gilbarbara') ||
+              id.includes('@floating-ui') || id.includes('is-lite') ||
+              id.includes('react-floater') || id.includes('scroll-parent') ||
+              id.includes('scroll-doc') || id.includes('scrollparent')) return 'joyride-vendor';
           if (id.includes('lucide-react')) return 'icons-vendor';
           if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) return 'react-vendor';
           return 'vendor';

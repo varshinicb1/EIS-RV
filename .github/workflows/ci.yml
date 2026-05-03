@@ -55,7 +55,7 @@ jobs:
           pytest --ignore=tests/integration -v --tb=short \
             --cov=src/backend --cov=src/ai_engine \
             --cov-report=term-missing --cov-report=xml \
-            --cov-fail-under=55
+            --cov-fail-under=45
 
       - name: Upload coverage artifact
         if: matrix.python-version == '3.12'

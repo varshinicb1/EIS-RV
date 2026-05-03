@@ -1,5 +1,8 @@
 import React, { useState, lazy, Suspense } from 'react';
-import Joyride from 'react-joyride';
+// Guided tour temporarily disabled — react-joyride 2.9.3 bundles is-lite in a
+// way Vite's chunk-splitting trips over (TDZ / undefined plainObject). Stub
+// keeps the codepath while we land a known-good version.
+const Joyride = () => null;
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import useGuidedTour from './hooks/useGuidedTour.jsx';
@@ -93,16 +96,14 @@ function AppContent() {
 
   return (
     <div className="app-shell">
-      <Joyride
-        steps={tourSteps}
-        run={runTour}
-        callback={handleTourCallback}
-        continuous
-        showSkipButton
-        showProgress
-        disableOverlayClose
-        styles={tourStyles}
-      />
+      {/* Tour stubbed out — see Joyride import note above. */}
+      {false && runTour && (
+        <Joyride
+          steps={tourSteps}
+          run={runTour}
+          callback={handleTourCallback}
+        />
+      )}
       <Toaster />
       <Sidebar
         panels={PANELS}
