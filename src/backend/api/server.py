@@ -77,11 +77,18 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="RĀMAN Studio v2 API",
     description="High-performance electrochemical simulation engine",
-    version="2.0.0",
+    version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
 )
+
+# Sanitize 5xx responses globally — never leak str(exc) or stack traces.
+# Routes that want to surface a specific error to the user (4xx) keep
+# raising HTTPException directly; the handler passes those through.
+from src.backend.api.error_handlers import install_error_handlers, internal_error
+
+install_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -99,6 +106,18 @@ app.include_router(workspace_routes.router)
 
 @app.websocket("/api/v2/ws/telemetry")
 async def websocket_telemetry(websocket: WebSocket):
+    # License gate — FastAPI's Depends() doesn't apply uniformly to WS in all
+    # ASGI servers, so check explicitly before accepting the upgrade.
+    from src.backend.licensing.license_manager import (
+        get_license_manager,
+        LicenseStatus,
+    )
+    info = get_license_manager().validate_license()
+    if info.status not in (LicenseStatus.OK, LicenseStatus.TRIAL):
+        # 1008 = policy violation
+        await websocket.close(code=1008, reason="license_invalid")
+        return
+
     await websocket.accept()
     active_websockets.append(websocket)
     try:
@@ -106,10 +125,16 @@ async def websocket_telemetry(websocket: WebSocket):
             data = await websocket.receive_text()
             try:
                 cmd = json.loads(data)
-                if "cmd" in cmd:
-                    await hw_bridge.send_command(cmd["cmd"], cmd.get("params"))
+            except json.JSONDecodeError:
+                logger.warning("ws/telemetry: client sent non-JSON frame; ignoring")
+                continue
+            if not isinstance(cmd, dict) or "cmd" not in cmd:
+                logger.warning("ws/telemetry: payload missing 'cmd' field; ignoring")
+                continue
+            try:
+                await hw_bridge.send_command(cmd["cmd"], cmd.get("params"))
             except Exception:
-                pass
+                logger.exception("ws/telemetry: hw_bridge.send_command failed")
     except WebSocketDisconnect:
         if websocket in active_websockets:
             active_websockets.remove(websocket)
@@ -311,7 +336,7 @@ async def simulate_eis(req: EISRequest):
         }
     except Exception as e:
         logger.error("EIS simulation failed: %s", e)
-        raise HTTPException(500, detail=str(e))
+        raise internal_error(e, op="server:339")
 
 
 # ── CV Simulation ───────────────────────────────────────────────
@@ -352,7 +377,7 @@ async def simulate_cv(req: CVRequest):
         }
     except Exception as e:
         logger.error("CV simulation failed: %s", e)
-        raise HTTPException(500, detail=str(e))
+        raise internal_error(e, op="server:380")
 
 
 # ── Battery Simulation ──────────────────────────────────────────
@@ -414,7 +439,7 @@ async def simulate_battery(req: BatteryRequest):
         }
     except Exception as e:
         logger.error("Battery simulation failed: %s", e)
-        raise HTTPException(500, detail=str(e))
+        raise internal_error(e, op="server:442")
 
 
 # ── GCD Simulation ──────────────────────────────────────────────
@@ -481,7 +506,7 @@ async def simulate_gcd(req: GCDRequest):
         }
     except Exception as e:
         logger.error("GCD simulation failed: %s", e)
-        raise HTTPException(500, detail=str(e))
+        raise internal_error(e, op="server:509")
 
 
 # ── Engine Info ─────────────────────────────────────────────────
@@ -1061,7 +1086,7 @@ async def analyze_drt(data: Dict[str, Any]):
         return result.to_dict()
     except Exception as e:
         logger.error("DRT analysis failed: %s", e)
-        raise HTTPException(500, str(e))
+        raise internal_error(e, op="server:1089")
 
 
 # ── Circuit Fitting ──────────────────────────────────────────────
@@ -1097,7 +1122,7 @@ async def fit_circuit(data: Dict[str, Any]):
         return resp
     except Exception as e:
         logger.error("Circuit fitting failed: %s", e)
-        raise HTTPException(500, str(e))
+        raise internal_error(e, op="server:1125")
 
 
 # ── Kramers-Kronig Validation ────────────────────────────────────
@@ -1129,7 +1154,7 @@ async def kk_validate(data: Dict[str, Any]):
         return result.to_dict()
     except Exception as e:
         logger.error("KK validation failed: %s", e)
-        raise HTTPException(500, str(e))
+        raise internal_error(e, op="server:1157")
 
 
 # ── Synthesis Engine ─────────────────────────────────────────────

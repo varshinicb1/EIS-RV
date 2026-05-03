@@ -21,8 +21,12 @@ Endpoints:
 import logging
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from src.backend.api.error_handlers import internal_error
 from pydantic import BaseModel, Field
+
+from src.backend.licensing.license_manager import verify_license
 
 from src.backend.core.engines.materials import (
     MaterialComposition, SynthesisParameters, StructuralDescriptors,
@@ -40,7 +44,11 @@ from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd, rat
 from src.backend.core.engines.materials_db import MATERIALS_DB, list_all_materials, search_materials, get_categories
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api", tags=["vanl"])
+router = APIRouter(
+    prefix="/api",
+    tags=["vanl"],
+    dependencies=[Depends(verify_license())],
+)
 
 # Shared engine instances
 _synthesis_engine = SynthesisEngine()
@@ -179,7 +187,7 @@ async def predict_material(request: PredictRequest):
 
     except Exception as e:
         logger.exception("Prediction failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:188")
 
 
 @router.post("/simulate")
@@ -207,7 +215,7 @@ async def simulate_eis_endpoint(request: SimulateRequest):
 
     except Exception as e:
         logger.exception("Simulation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:216")
 
 
 @router.post("/optimize")
@@ -258,7 +266,7 @@ async def run_optimization(request: OptimizeRequest):
         raise
     except Exception as e:
         logger.exception("Optimization failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:267")
 
 
 @router.get("/synthesis-methods")
@@ -304,7 +312,7 @@ async def validate_kk(request: KKValidateRequest):
         raise
     except Exception as e:
         logger.exception("KK validation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:313")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -335,7 +343,7 @@ async def validate_perovskite(max_spectra: int = 10):
         )
     except Exception as e:
         logger.exception("Perovskite validation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:344")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -378,7 +386,7 @@ async def get_perovskite_data(temperature: Optional[float] = None, limit: int = 
         )
     except Exception as e:
         logger.exception("Failed to load perovskite data")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:387")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -576,7 +584,7 @@ async def simulate_cv_endpoint(request: CVSimRequest):
         return result.to_dict()
     except Exception as e:
         logger.exception("CV simulation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:585")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -624,7 +632,7 @@ async def simulate_gcd_endpoint(request: GCDSimRequest):
         return result.to_dict()
     except Exception as e:
         logger.exception("GCD simulation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:633")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -703,7 +711,7 @@ async def get_external_material_data(formula: str):
         }
     except Exception as e:
         logger.exception("External data fetch failed for %s", formula)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="routes:712")
 
 
 # ══════════════════════════════════════════════════════════════════════

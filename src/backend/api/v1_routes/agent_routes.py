@@ -30,11 +30,17 @@ import os
 import threading
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from src.backend.licensing.license_manager import verify_license
+
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v2/agent", tags=["ai_agent"])
+router = APIRouter(
+    prefix="/api/v2/agent",
+    tags=["ai_agent"],
+    dependencies=[Depends(verify_license())],
+)
 
 
 # ---- Configuration ---------------------------------------------------------

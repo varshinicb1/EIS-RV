@@ -10,11 +10,19 @@ All routes return physics-engine-computed data. No fabricated values.
 import logging
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from src.backend.api.error_handlers import internal_error
 from pydantic import BaseModel, Field
 
+from src.backend.licensing.license_manager import verify_license
+
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/pe", tags=["printed_electronics"])
+router = APIRouter(
+    prefix="/api/pe",
+    tags=["printed_electronics"],
+    dependencies=[Depends(verify_license())],
+)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -69,7 +77,7 @@ async def simulate_ink_endpoint(request: InkFormulationRequest):
 
     except Exception as e:
         logger.exception("Ink simulation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="pe_routes:78")
 
 
 @router.post("/ink/rheology")
@@ -91,7 +99,7 @@ async def ink_rheology_endpoint(request: InkFormulationRequest):
 
     except Exception as e:
         logger.exception("Rheology curve failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="pe_routes:100")
 
 
 @router.post("/ink/percolation")
@@ -105,7 +113,7 @@ async def ink_percolation_endpoint(
         return percolation_curve(filler_material, aspect_ratio)
     except Exception as e:
         logger.exception("Percolation curve failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="pe_routes:114")
 
 
 @router.get("/ink/solvents")
@@ -193,7 +201,7 @@ async def simulate_supercap_endpoint(request: SupercapRequest):
 
     except Exception as e:
         logger.exception("Supercap simulation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="pe_routes:202")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -258,7 +266,7 @@ async def simulate_battery_endpoint(request: BatteryRequest):
 
     except Exception as e:
         logger.exception("Battery simulation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="pe_routes:267")
 
 
 @router.get("/battery/chemistries")
@@ -318,7 +326,7 @@ async def simulate_biosensor_endpoint(request: BiosensorRequest):
 
     except Exception as e:
         logger.exception("Biosensor simulation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="pe_routes:327")
 
 
 @router.get("/biosensor/analytes")
@@ -397,7 +405,7 @@ async def generate_device_structure(request: DeviceStructureRequest):
 
     except Exception as e:
         logger.exception("Device structure generation failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="pe_routes:406")
 
 
 def _get_layer_properties(material: str) -> dict:

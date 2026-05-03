@@ -14,8 +14,12 @@ Author: VidyuthLabs
 Date: May 1, 2026
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+
+from src.backend.api.error_handlers import internal_error
 from pydantic import BaseModel, Field
+
+from src.backend.licensing.license_manager import verify_license
 from typing import List, Optional, Dict, Any, Tuple
 import logging
 import tempfile
@@ -39,7 +43,11 @@ from src.backend.core.engines.drt_analysis import (
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(prefix="/api/data", tags=["data-analysis"])
+router = APIRouter(
+    prefix="/api/data",
+    tags=["data-analysis"],
+    dependencies=[Depends(verify_license())],
+)
 
 # Initialize modules (singletons)
 _data_importer = None
@@ -251,8 +259,12 @@ async def import_data(
                 os.unlink(tmp_path)
     
     except Exception as e:
-        logger.error(f"Data import failed: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.exception("Data import failed")
+        # User input failed — give a brief, non-leaking message
+        raise HTTPException(
+            status_code=400,
+            detail="Could not import this file. Check the format matches the selected potentiostat type.",
+        )
 
 
 @router.post("/fit-circuit", response_model=FitCircuitResponse)
@@ -328,10 +340,12 @@ async def fit_circuit(request: FitCircuitRequest):
         )
     
     except Exception as e:
-        logger.error(f"Circuit fitting failed: {e}")
+        import secrets
+        error_id = secrets.token_hex(6)
+        logger.exception("circuit_fitting_failed error_id=%s", error_id)
         return FitCircuitResponse(
             success=False,
-            error=str(e)
+            error=f"Internal error (error_id={error_id}). Retry; contact support if persistent.",
         )
 
 
@@ -407,10 +421,12 @@ async def calculate_drt(request: DRTRequest):
         )
     
     except Exception as e:
-        logger.error(f"DRT calculation failed: {e}")
+        import secrets
+        error_id = secrets.token_hex(6)
+        logger.exception("drt_calculation_failed error_id=%s", error_id)
         return DRTResponse(
             success=False,
-            error=str(e)
+            error=f"Internal error (error_id={error_id}). Retry; contact support if persistent.",
         )
 
 
@@ -482,7 +498,7 @@ async def optimize_lambda(request: OptimizeLambdaRequest):
     
     except Exception as e:
         logger.error(f"Lambda optimization failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="data_routes:491")
 
 
 @router.get("/examples")

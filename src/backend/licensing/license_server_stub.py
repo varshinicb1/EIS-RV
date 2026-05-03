@@ -47,6 +47,8 @@ from typing import Any, Optional
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi import FastAPI, HTTPException
+
+from src.backend.api.error_handlers import internal_error
 from pydantic import BaseModel, Field
 
 from src.backend.licensing.license_token import issue_token
@@ -127,7 +129,7 @@ def issue(req: IssueRequest) -> IssueResponse:
     try:
         priv = _get_private_key()
     except FileNotFoundError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="license_server_stub:130")
 
     if req.plan not in {"trial", "individual", "lab", "institution"}:
         raise HTTPException(status_code=400,

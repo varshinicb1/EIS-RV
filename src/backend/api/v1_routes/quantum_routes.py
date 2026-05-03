@@ -13,7 +13,9 @@ Author: VidyuthLabs
 Date: May 1, 2026
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+
+from src.backend.api.error_handlers import internal_error
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import logging
@@ -26,12 +28,17 @@ from src.backend.core.engines.quantum_engine import (
     ALCHEMI_AVAILABLE,
     CUDA_AVAILABLE
 )
+from src.backend.licensing.license_manager import verify_license
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(prefix="/api/quantum", tags=["quantum"])
+router = APIRouter(
+    prefix="/api/quantum",
+    tags=["quantum"],
+    dependencies=[Depends(verify_license())],
+)
 
 # Initialize quantum engine (singleton)
 _quantum_engine = None
@@ -166,10 +173,12 @@ async def optimize_geometry(request: OptimizeRequest):
         )
     
     except Exception as e:
-        logger.error(f"Geometry optimization failed: {e}")
+        import secrets
+        error_id = secrets.token_hex(6)
+        logger.exception("geometry_optimization_failed error_id=%s", error_id)
         return QuantumResponse(
             success=False,
-            error=str(e)
+            error=f"Internal error (error_id={error_id}). Please retry; contact support if persistent.",
         )
 
 
@@ -220,10 +229,12 @@ async def calculate_properties(request: PropertiesRequest):
         )
     
     except Exception as e:
-        logger.error(f"Property calculation failed: {e}")
+        import secrets
+        error_id = secrets.token_hex(6)
+        logger.exception("property_calculation_failed error_id=%s", error_id)
         return QuantumResponse(
             success=False,
-            error=str(e)
+            error=f"Internal error (error_id={error_id}). Please retry; contact support if persistent.",
         )
 
 
@@ -279,10 +290,12 @@ async def calculate_band_gap(request: BandGapRequest):
         )
     
     except Exception as e:
-        logger.error(f"Band gap calculation failed: {e}")
+        import secrets
+        error_id = secrets.token_hex(6)
+        logger.exception("band_gap_calculation_failed error_id=%s", error_id)
         return QuantumResponse(
             success=False,
-            error=str(e)
+            error=f"Internal error (error_id={error_id}). Please retry; contact support if persistent.",
         )
 
 
@@ -327,7 +340,7 @@ async def batch_optimize(
     
     except Exception as e:
         logger.error(f"Batch optimization failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="quantum_routes:335")
 
 
 @router.get("/examples")
@@ -496,10 +509,12 @@ async def run_molecular_dynamics(request: MolecularDynamicsRequest):
         )
     
     except Exception as e:
-        logger.error(f"Molecular dynamics failed: {e}")
+        import secrets
+        error_id = secrets.token_hex(6)
+        logger.exception("molecular_dynamics_failed error_id=%s", error_id)
         return QuantumResponse(
             success=False,
-            error=str(e)
+            error=f"Internal error (error_id={error_id}). Please retry; contact support if persistent.",
         )
 
 
@@ -578,8 +593,10 @@ async def calculate_electron_density(request: ElectronDensityRequest):
         )
     
     except Exception as e:
-        logger.error(f"Electron density calculation failed: {e}")
+        import secrets
+        error_id = secrets.token_hex(6)
+        logger.exception("electron_density_calculation_failed error_id=%s", error_id)
         return QuantumResponse(
             success=False,
-            error=str(e)
+            error=f"Internal error (error_id={error_id}). Please retry; contact support if persistent.",
         )

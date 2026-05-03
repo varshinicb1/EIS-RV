@@ -7,14 +7,21 @@ Endpoints for NVIDIA NIM integration and paper validation.
 import logging
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from src.backend.api.error_handlers import internal_error
 from pydantic import BaseModel, Field
 
 from src.backend.core.engines.nvidia_intelligence import get_nvidia_intelligence
 from src.backend.core.engines.paper_validator import get_paper_validator
+from src.backend.licensing.license_manager import verify_license
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/nvidia", tags=["nvidia_intelligence"])
+router = APIRouter(
+    prefix="/api/nvidia",
+    tags=["nvidia_intelligence"],
+    dependencies=[Depends(verify_license())],
+)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -83,7 +90,7 @@ async def predict_material_properties(request: MaterialPredictionRequest):
         return result
     except Exception as e:
         logger.error(f"Material prediction error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="nvidia_routes:91")
 
 
 @router.post("/crystal")
@@ -102,7 +109,7 @@ async def generate_crystal_structure(request: CrystalStructureRequest):
         return result
     except Exception as e:
         logger.error(f"Crystal generation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="nvidia_routes:110")
 
 
 @router.post("/literature")
@@ -121,7 +128,7 @@ async def search_literature(request: LiteratureSearchRequest):
         return {"results": results, "count": len(results)}
     except Exception as e:
         logger.error(f"Literature search error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="nvidia_routes:129")
 
 
 @router.post("/optimize-synthesis")
@@ -140,7 +147,7 @@ async def optimize_synthesis(request: SynthesisOptimizationRequest):
         return result
     except Exception as e:
         logger.error(f"Synthesis optimization error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="nvidia_routes:148")
 
 
 @router.post("/chat")
@@ -159,7 +166,7 @@ async def chat_materials_expert(request: ChatRequest):
         return {"response": response}
     except Exception as e:
         logger.error(f"Chat error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="nvidia_routes:167")
 
 
 @router.get("/status")
@@ -218,7 +225,7 @@ async def validate_property(request: ValidationRequest):
         }
     except Exception as e:
         logger.error(f"Validation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="nvidia_routes:226")
 
 
 @router.post("/validate-eis")
@@ -244,7 +251,7 @@ async def validate_eis_spectrum(request: EISValidationRequest):
         return result
     except Exception as e:
         logger.error(f"EIS validation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise internal_error(e, op="nvidia_routes:252")
 
 
 @router.get("/validation-status")
