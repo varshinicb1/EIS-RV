@@ -6,6 +6,7 @@ import useGuidedTour from './hooks/useGuidedTour.jsx';
 import Sidebar from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import StatusBar from './components/layout/StatusBar';
+import Toaster from './components/layout/Toaster';
 // Eager: dashboard + alchemi (default landing) + lightweight panels
 import DashboardPanel from './components/simulation/DashboardPanel';
 import AlchemiPanel from './components/ai/AlchemiPanel';
@@ -102,6 +103,7 @@ function AppContent() {
         disableOverlayClose
         styles={tourStyles}
       />
+      <Toaster />
       <Sidebar
         panels={PANELS}
         active={activePanel}

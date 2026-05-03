@@ -177,10 +177,16 @@ export default function ReportsPanel() {
       saveReport(record);
       setViewReport(record);
       setGeneratedFilename(record.filename);
+      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+        detail: { kind: 'ok', text: `Report generated: ${record.filename}` },
+      }));
 
     } catch (e) {
       console.error('Report generation failed:', e);
       setCompileLogs(prev => [...prev, '> SERVER UNAVAILABLE: FALLING BACK TO LOCAL COMPILATION']);
+      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+        detail: { kind: 'info', text: 'Backend unreachable — generating locally (no audit trail).' },
+      }));
       
       const canvases = [];
       document.querySelectorAll('.plot-canvas canvas').forEach(c => canvases.push(c));
@@ -211,6 +217,9 @@ export default function ReportsPanel() {
         };
         saveReport(record);
         setViewReport(record);
+        window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+          detail: { kind: 'ok', text: `Local report generated: ${filename}` },
+        }));
       }, 1000);
     }
 

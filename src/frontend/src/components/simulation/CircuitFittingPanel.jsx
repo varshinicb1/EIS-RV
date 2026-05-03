@@ -150,6 +150,31 @@ export default function CircuitFittingPanel() {
           </button>
         </div>
 
+        {/* Backend / fit-failure banner — visible whenever the last attempt did
+            not converge or the sidecar is unreachable, so the user is never
+            staring at a blank Nyquist with no context. */}
+        {fitResult && fitResult.success === false && (
+          <div className="card" style={{
+            border: `1px solid ${fitResult.unreachable ? 'rgba(255, 107, 107, 0.4)' : 'rgba(255, 184, 0, 0.4)'}`,
+            background: fitResult.unreachable ? 'rgba(255, 107, 107, 0.06)' : 'rgba(255, 184, 0, 0.05)',
+          }}>
+            <div className="card-header">
+              <div className="card-title" style={{ color: fitResult.unreachable ? '#ff6b6b' : '#ffb800' }}>
+                {fitResult.unreachable ? 'Backend Unreachable' : 'Fit did not converge'}
+              </div>
+              <span className="tag tag-amber" style={{ fontSize: 9 }}>{fitResult.unreachable ? 'offline' : 'check inputs'}</span>
+            </div>
+            <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              {fitResult.message || 'The optimizer did not find a converged fit. Try a different circuit model, switch to Differential Evolution, or import cleaner EIS data.'}
+            </div>
+            {fitResult.unreachable && (
+              <button className="btn btn-secondary btn-sm" style={{ marginTop: 10 }} onClick={runFit}>
+                Retry Fit
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Fit Results */}
         {fitResult && (
           <div className="card">

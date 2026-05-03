@@ -245,7 +245,12 @@ export default function DataImportPanel() {
                     yLabel: yCol,
                   });
                   sessionStorage.setItem('RAMAN_OVERLAY_DATA', overlayData);
-                  alert(`Data stored for overlay. Switch to the ${dataType} panel to see comparison.`);
+                  window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+                    detail: {
+                      kind: 'ok',
+                      text: `Data stored for overlay. Switch to the ${dataType} panel to see comparison.`,
+                    },
+                  }));
                 }}>
                 Overlay in {dataType || 'Sim'}
               </button>

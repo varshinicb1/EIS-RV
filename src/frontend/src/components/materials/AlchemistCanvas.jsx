@@ -229,10 +229,51 @@ const initialEdges = [
 ];
 
 
+// Resolve backend URL — same convention as App.jsx (Electron preload bridge first).
+const BACKEND_URL = (typeof window !== 'undefined' && window.raman) ? null : 'http://127.0.0.1:8000';
+
+async function callBackend(path, opts = {}) {
+  const api = (typeof window !== 'undefined' && window.raman) ? window.raman.api : null;
+  if (api) {
+    return opts.method === 'POST' ? api.post(path, opts.body) : api.get(path);
+  }
+  const res = await fetch(`${BACKEND_URL}${path}`, {
+    method: opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    const err = new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
+// Strip Markdown code fences and find the first JSON object/array; useful when
+// the LLM returns a fenced block with prose around it.
+function extractJSON(text) {
+  if (!text) return null;
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fenced ? fenced[1] : text;
+  const start = candidate.search(/[\[{]/);
+  if (start < 0) return null;
+  const sliced = candidate.slice(start);
+  try { return JSON.parse(sliced); } catch { /* fallthrough */ }
+  // Try to find a balanced { ... } or [ ... ]
+  for (let end = sliced.length; end > 0; end--) {
+    try { return JSON.parse(sliced.slice(0, end)); } catch { /* keep shrinking */ }
+  }
+  return null;
+}
+
 export default function AlchemistCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [targetFormula, setTargetFormula] = useState('MnO2');
+  const [error, setError] = useState(null);
   const [logs, setLogs] = useState(['[SYSTEM] KERNEL_INIT_OK', '[SYSTEM] Awaiting target specification...']);
 
   const nodeTypes = useMemo(() => ({
@@ -250,55 +291,113 @@ export default function AlchemistCanvas() {
     setLogs(prev => [...prev.slice(-15), `[${timestamp}] ${msg}`]);
   };
 
-  const runSynthesis = () => {
+  const runSynthesis = async () => {
     setIsGenerating(true);
-    addLog('QUERYING_ALCHEMIST_7B...');
+    setError(null);
     setNodes(nds => nds.map(n => n.id === 'llm' ? { ...n, data: { ...n.data, status: 'generating' } } : n));
 
-    setTimeout(() => {
-      addLog('ANALYZING_REAGENT_STABILITY...');
-      setTimeout(() => {
-        addLog('OPTIMIZING_PATHWAY_TRAJECTORY...');
-        setTimeout(() => {
-          const materialName = 'MW-Expanded Graphene Oxide';
-          const materialData = DB.find(m => m.name === materialName);
+    const formula = (targetFormula || '').trim();
+    if (!formula) {
+      setError('Enter a target formula first (e.g. MnO2).');
+      setIsGenerating(false);
+      setNodes(nds => nds.map(n => n.id === 'llm' ? { ...n, data: { ...n.data, status: 'idle' } } : n));
+      return;
+    }
 
-          const newNode1 = {
-            id: 'protocol',
-            type: 'protocol',
-            position: { x: 880, y: 50 },
-            data: {
-              material: materialName,
-              atoms: materialData?.atoms || [],
-              steps: [
-                'Add 2g Graphite to 50ml H2SO4 under ice bath.',
-                'Slowly add 6g KMnO4 (CRITICAL: EXOTHERMIC).',
-                'Neutralize distilled water until pH 7.0.',
-                'Microwave @ 800W / 60s for exfoliation.'
-              ]
-            }
-          };
-          
-          const newNode2 = {
-            id: 'sim',
-            type: 'simulation',
-            position: { x: 880, y: 450 },
-            data: { bandgap: '0.042', capacitance: '210.58' }
-          };
+    try {
+      // Step 1 — material properties via the AlchemiBridge (curated DB → NIM fallback).
+      addLog(`QUERYING_PROPERTIES[${formula}]...`);
+      const props = await callBackend('/api/v2/alchemi/properties', {
+        method: 'POST',
+        body: { formula },
+      });
 
-          setNodes(nds => [...nds.map(n => n.id === 'llm' ? { ...n, data: { ...n.data, status: 'idle' } } : n), newNode1, newNode2]);
-          
-          setEdges(eds => [
-            ...eds,
-            { id: 'e3', source: 'llm', target: 'protocol', animated: true, style: { stroke: THEME.llm, strokeWidth: 2 } },
-            { id: 'e4', source: 'llm', target: 'sim', animated: true, style: { stroke: THEME.llm, strokeWidth: 2 } },
-          ]);
-          
-          addLog('GENERATION_SEQUENCE_COMPLETE.');
-          setIsGenerating(false);
-        }, 1000);
-      }, 800);
-    }, 1200);
+      // Step 2 — synthesis protocol via NIM chat. We ask for strict JSON
+      // and parse what we get back; if parsing fails we surface the raw text.
+      addLog('REQUESTING_SYNTHESIS_PROTOCOL...');
+      const target = nodes.find(n => n.id === 'target')?.data?.objective || '';
+      const inventory = nodes.find(n => n.id === 'inventory')?.data?.inventory || [];
+      const promptObj = {
+        target_formula: formula,
+        target_application: target,
+        available_inventory: inventory,
+        ask: 'Return a JSON object with keys "steps" (array of strings, 4–8 entries, each one concrete experimental step including reagent quantities and conditions) and "rationale" (2–3 sentence justification grounded in literature). No prose outside the JSON.',
+      };
+      const chatResp = await callBackend('/api/v2/alchemi/chat', {
+        method: 'POST',
+        body: {
+          question: JSON.stringify(promptObj),
+          system: 'You are a synthesis chemist. Reply with ONE valid JSON object exactly matching the requested shape. No prose, no markdown fences.',
+        },
+      });
+
+      const responseText = chatResp.answer || chatResp.response || chatResp.text || '';
+      const parsed = extractJSON(responseText);
+      const steps = parsed?.steps && Array.isArray(parsed.steps)
+        ? parsed.steps.slice(0, 12)
+        : [responseText.trim() || '(model returned an empty response)'];
+      const rationale = parsed?.rationale || '';
+
+      // Best-effort: if MaterialsExplorer.DB has atoms for a similar material, reuse them
+      // for the SynthesisAnimator. Otherwise pass empty array — the protocol still renders.
+      const dbHit = DB.find(m => m.name?.toLowerCase().includes(formula.toLowerCase())
+                              || formula.toLowerCase().includes(m.name?.toLowerCase().split(' ')[0]?.toLowerCase()));
+
+      const protocolNode = {
+        id: 'protocol',
+        type: 'protocol',
+        position: { x: 880, y: 50 },
+        data: {
+          material: formula,
+          atoms: dbHit?.atoms || [],
+          steps,
+        },
+      };
+
+      // Step 3 — pull simulated bandgap / capacitance from the properties response.
+      const bandgap = props?.band_gap_ev ?? props?.band_gap ?? props?.properties?.band_gap_ev;
+      const capacitance = props?.specific_capacitance_f_g ?? props?.properties?.specific_capacitance_f_g;
+      const provenance = props?.source ? props.source : 'curated';
+
+      const simNode = {
+        id: 'sim',
+        type: 'simulation',
+        position: { x: 880, y: 450 },
+        data: {
+          bandgap: bandgap != null ? Number(bandgap).toFixed(3) : 'n/a',
+          capacitance: capacitance != null ? Number(capacitance).toFixed(2) : 'n/a',
+          provenance,
+        },
+      };
+
+      setNodes(nds => [
+        ...nds
+          .filter(n => n.id !== 'protocol' && n.id !== 'sim')
+          .map(n => n.id === 'llm' ? { ...n, data: { ...n.data, status: 'idle' } } : n),
+        protocolNode,
+        simNode,
+      ]);
+      setEdges(eds => [
+        ...eds.filter(e => e.id !== 'e3' && e.id !== 'e4'),
+        { id: 'e3', source: 'llm', target: 'protocol', animated: true, style: { stroke: THEME.llm, strokeWidth: 2 } },
+        { id: 'e4', source: 'llm', target: 'sim', animated: true, style: { stroke: THEME.llm, strokeWidth: 2 } },
+      ]);
+
+      if (rationale) addLog(`RATIONALE: ${rationale.slice(0, 90)}${rationale.length > 90 ? '...' : ''}`);
+      addLog(`PROVENANCE: ${provenance.toUpperCase()}`);
+      addLog('GENERATION_SEQUENCE_COMPLETE.');
+    } catch (err) {
+      const msg = err?.status === 403
+        ? 'License required — activate a trial or paid seat to use AlchemistCanvas.'
+        : err?.status === 503 || err?.message?.includes('Cannot reach')
+        ? 'Backend unreachable. Check that the RĀMAN Studio backend is running.'
+        : `Synthesis failed: ${err?.message || 'unknown error'}`;
+      setError(msg);
+      addLog(`ERROR: ${msg}`);
+      setNodes(nds => nds.map(n => n.id === 'llm' ? { ...n, data: { ...n.data, status: 'idle' } } : n));
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -329,24 +428,56 @@ export default function AlchemistCanvas() {
           </div>
         </div>
         
-        <button 
-          onClick={runSynthesis}
-          disabled={isGenerating}
-          className="btn btn-primary"
-          style={{ 
-            padding: '10px 28px', background: isGenerating ? 'transparent' : THEME.accent, 
-            color: '#000', border: isGenerating ? `1px solid ${THEME.accent}44` : 'none',
-            boxShadow: isGenerating ? 'none' : `0 0 30px ${THEME.accent}33`,
-          }}
-        >
-          {isGenerating ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Activity size={14} className="animate-pulse-glow" /> 
-              <span>COMPUTING...</span>
-            </div>
-          ) : 'INITIALIZE GENERATION'}
-        </button>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <input
+            type="text"
+            value={targetFormula}
+            onChange={e => setTargetFormula(e.target.value)}
+            placeholder="Target formula (e.g. MnO2)"
+            disabled={isGenerating}
+            spellCheck={false}
+            style={{
+              fontFamily: THEME.fontMono, fontSize: 11, letterSpacing: '0.05em',
+              background: 'rgba(0,0,0,0.4)', color: '#fff',
+              border: `1px solid ${THEME.accent}33`, borderRadius: 2,
+              padding: '10px 14px', width: 180, outline: 'none',
+            }}
+            onKeyDown={e => { if (e.key === 'Enter' && !isGenerating) runSynthesis(); }}
+          />
+          <button
+            onClick={runSynthesis}
+            disabled={isGenerating}
+            className="btn btn-primary"
+            style={{
+              padding: '10px 28px', background: isGenerating ? 'transparent' : THEME.accent,
+              color: '#000', border: isGenerating ? `1px solid ${THEME.accent}44` : 'none',
+              boxShadow: isGenerating ? 'none' : `0 0 30px ${THEME.accent}33`,
+            }}
+          >
+            {isGenerating ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Activity size={14} className="animate-pulse-glow" />
+                <span>COMPUTING...</span>
+              </div>
+            ) : 'INITIALIZE GENERATION'}
+          </button>
+        </div>
       </div>
+      {error && (
+        <div style={{
+          padding: '10px 24px', background: 'rgba(255, 100, 100, 0.08)',
+          borderBottom: '1px solid rgba(255, 100, 100, 0.25)',
+          color: '#ff6b6b', fontFamily: THEME.fontMono, fontSize: 11,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <span>● {error}</span>
+          <button onClick={() => setError(null)} style={{
+            background: 'transparent', border: '1px solid rgba(255,107,107,0.4)',
+            color: '#ff6b6b', borderRadius: 2, padding: '4px 10px', cursor: 'pointer',
+            fontSize: 9, fontFamily: THEME.fontMono,
+          }}>DISMISS</button>
+        </div>
+      )}
 
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <ReactFlow

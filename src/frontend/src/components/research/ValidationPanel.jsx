@@ -101,7 +101,11 @@ export default function ValidationPanel() {
       const r = await validateSingle(paper);
       r._paper = { ...paper, title: 'Custom Validation' };
       setResults(prev => [...prev, r]);
-    } catch (e) { alert('Invalid JSON: ' + e.message); }
+    } catch (e) {
+      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+        detail: { kind: 'err', text: 'Invalid JSON: ' + e.message },
+      }));
+    }
   }, [customPaper, validateSingle]);
 
   const totalPassed = results.filter(r => r.summary?.verdict === 'VALIDATED').length;

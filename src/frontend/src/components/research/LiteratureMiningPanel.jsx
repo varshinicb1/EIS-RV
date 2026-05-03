@@ -290,7 +290,41 @@ export default function LiteratureMiningPanel() {
                   }}>
                   Use in EIS →
                 </button>
-                <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+                <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}
+                  onClick={() => {
+                    try {
+                      const raw = localStorage.getItem('raman-projects');
+                      const projects = raw ? JSON.parse(raw) : [];
+                      if (projects.length === 0) {
+                        window.dispatchEvent(new CustomEvent('NAVIGATE_PANEL', { detail: 'workspace' }));
+                        window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+                          detail: { kind: 'info', text: 'No project yet — create one in the Workspace panel, then come back to save papers.' }
+                        }));
+                        return;
+                      }
+                      const target = projects[0]; // active = first in list, matches WorkspacePanel ordering
+                      target.saved_papers = target.saved_papers || [];
+                      const already = target.saved_papers.some(p => p.id === selectedPaper.id);
+                      if (!already) {
+                        target.saved_papers.push({
+                          id: selectedPaper.id,
+                          title: selectedPaper.title,
+                          doi: selectedPaper.doi,
+                          year: selectedPaper.year,
+                          saved_at: new Date().toISOString(),
+                        });
+                        target.modified = new Date().toISOString();
+                        localStorage.setItem('raman-projects', JSON.stringify(projects));
+                      }
+                      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+                        detail: { kind: 'ok', text: already ? 'Already saved.' : `Saved to "${target.name}".` }
+                      }));
+                    } catch (err) {
+                      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+                        detail: { kind: 'err', text: 'Could not save (storage error).' }
+                      }));
+                    }
+                  }}>
                   Save to Project
                 </button>
               </div>
