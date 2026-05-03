@@ -1,0 +1,52 @@
+[tool.pytest.ini_options]
+# Make ``import src.backend...`` work without installing the package.
+# Tests live alongside source so we add the repo root to sys.path.
+pythonpath = ["."]
+
+# Default test discovery: tests/ plus engine_core/tests/Python helpers.
+# Integration tests (require ROS / hardware) are excluded from CI by passing
+# --ignore=tests/integration on the command line.
+testpaths = [
+    "tests",
+    "src/backend/research/tests",
+]
+addopts = "--strict-markers"
+
+# Quiet known third-party deprecation warnings without hiding genuine ones.
+filterwarnings = [
+    "ignore::DeprecationWarning:passlib.*",
+    "ignore::pydantic.PydanticDeprecatedSince20:.*",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [
+    "engine_core/build",
+    "build",
+    "dist-electron",
+    "node_modules",
+    ".venv",
+    ".venv_new",
+    "src/frontend/node_modules",
+]
+
+[tool.ruff.lint]
+ignore = ["E501"]  # long lines are caller's call; everything else stays strict
+
+[tool.coverage.run]
+source = ["src/backend", "src/ai_engine"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "src/backend/licensing/license_server_stub.py",  # dev-only stub
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
