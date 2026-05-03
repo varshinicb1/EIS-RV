@@ -189,7 +189,7 @@ export default function GCDPanel() {
     try {
       const api = window.raman?.api;
       if (api) {
-        const res = await api.call('/api/simulate/gcd', params);
+        const res = await api.call('/api/v2/gcd', params);
         setResult(res);
       } else {
         try {

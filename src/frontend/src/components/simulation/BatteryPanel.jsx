@@ -342,8 +342,8 @@ export default function BatteryPanel() {
       // Try backend first
       const api = window.raman?.api;
       if (api) {
-        const res = await api.call('/api/simulate/battery', params);
-        setResult({ ...res, engine: 'V_EMULATOR_PRO' });
+        const res = await api.call('/api/v2/battery', params);
+        setResult({ ...res, engine: 'cpp_or_python' });
       } else {
         setResult(simulateBatteryLocal(params));
       }

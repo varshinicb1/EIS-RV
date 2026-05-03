@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Box, Cylinder, Sphere, Environment, ContactShadows, Grid } from '@react-three/drei';
+import { OrbitControls, Box, Cylinder, Sphere, ContactShadows, Grid } from '@react-three/drei';
 import { Layers, Download } from 'lucide-react';
 import { generateIEEEReport } from '../../utils/ieeeReportGenerator';
 
@@ -22,11 +22,17 @@ function ElectrodeViewer3D({ geometry, coating }) {
     <div style={{ width: '100%', height: '100%', background: 'radial-gradient(circle at center, #0a0a10 0%, #000000 100%)', cursor: 'grab' }}>
       <Canvas camera={{ position: [0, 5, 9], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }} dpr={[1, 2]}>
         {/* Research-grade lighting setup: 3-point lighting for publication renders */}
-        <ambientLight intensity={0.3} />
+        {/* Three-point lighting + a soft hemisphere fill. We don't use
+            <Environment preset="..." /> from drei — it pulls an HDRI from
+            raw.githack.com which the desktop CSP (correctly) blocks, and
+            the missing fetch crashes the WebGL context. The local rig
+            below produces equally good shading for our publication-style
+            scenes without any network dependency. */}
+        <ambientLight intensity={0.55} />
+        <hemisphereLight args={['#cfd9e6', '#1a1a22', 0.55]} />
         <directionalLight position={[8, 12, 6]} intensity={1.8} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
         <directionalLight position={[-5, 8, -4]} intensity={0.6} color="#b0c4de" />
-        <pointLight position={[0, 6, 0]} intensity={0.4} color="#4a9eff" />
-        <Environment preset="city" />
+        <pointLight position={[0, 6, 0]} intensity={0.4} color="#4a8eff" />
         {/* Scale grid for research reference */}
         <Grid position={[0, -0.21, 0]} args={[20, 20]} cellSize={1} cellThickness={0.3} cellColor="#1a1a2e" sectionSize={5} sectionThickness={0.8} sectionColor="#2a2a4e" fadeDistance={25} />
 

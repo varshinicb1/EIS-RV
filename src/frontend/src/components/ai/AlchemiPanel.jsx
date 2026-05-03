@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, Cylinder, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Sphere, Cylinder, ContactShadows } from '@react-three/drei';
 
 // Backend endpoint set in Phase 2/3:
 //   GET  /api/v2/alchemi/status      — model + curated count + online/offline
@@ -113,11 +113,13 @@ function MoleculeViewer3D({ species, positions, bonds, temperature }) {
   return (
     <div style={{ width: '100%', height: '100%', background: 'radial-gradient(circle at center, #080810 0%, #000000 100%)', cursor: 'grab' }}>
       <Canvas camera={{ position: [0, 0, 8], fov: 45 }} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }} dpr={[1, 2]}>
-        <ambientLight intensity={0.6} />
+        {/* Local light rig (no drei <Environment preset/> — that pulls an
+            HDR off raw.githack.com which our CSP correctly blocks). */}
+        <ambientLight intensity={0.7} />
+        <hemisphereLight args={['#cfd9e6', '#1a1a22', 0.5]} />
         <directionalLight position={[10, 15, 10]} intensity={1.5} castShadow />
-        <pointLight position={[-10, -10, -10]} intensity={1} color="#4a9eff" />
-        <pointLight position={[10, -10, 10]} intensity={1} color="var(--color-success)" />
-        <Environment preset="studio" />
+        <pointLight position={[-10, -10, -10]} intensity={1} color="#4a8eff" />
+        <pointLight position={[10, -10, 10]} intensity={1} color="#34c759" />
         <group position={[-com[0], -com[1], -com[2]]}>
           <AnimatedMolecule species={species} positions={positions} bondList={bondList} vibAmplitude={vibAmplitude} />
         </group>

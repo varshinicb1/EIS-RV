@@ -92,11 +92,16 @@ contextBridge.exposeInMainWorld('raman', {
                     body: JSON.stringify(data),
                 });
                 if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
+                    let body = '';
+                    try { body = (await response.text()).slice(0, 300); } catch {}
+                    const err = new Error(`POST ${endpoint} → ${response.status}: ${body}`);
+                    err.status = response.status;
+                    err.url = url;
+                    throw err;
                 }
                 return await response.json();
             } catch (error) {
-                console.error('API call failed:', error);
+                console.error(`API POST ${endpoint} failed:`, error?.message || error);
                 throw error;
             }
         },
@@ -107,9 +112,21 @@ contextBridge.exposeInMainWorld('raman', {
         get: async (endpoint) => {
             const port = 8000;
             const url = `http://127.0.0.1:${port}${endpoint}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`API error: ${response.status}`);
-            return await response.json();
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    let body = '';
+                    try { body = (await response.text()).slice(0, 300); } catch {}
+                    const err = new Error(`GET ${endpoint} → ${response.status}: ${body}`);
+                    err.status = response.status;
+                    err.url = url;
+                    throw err;
+                }
+                return await response.json();
+            } catch (error) {
+                console.error(`API GET ${endpoint} failed:`, error?.message || error);
+                throw error;
+            }
         },
     },
 });
