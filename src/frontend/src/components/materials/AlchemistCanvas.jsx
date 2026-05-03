@@ -296,8 +296,13 @@ const initialEdges = [
 const BACKEND_URL = (typeof window !== 'undefined' && window.raman) ? null : 'http://127.0.0.1:8000';
 
 async function callBackend(path, opts = {}) {
+  // The Electron preload bridge (window.raman.api) exposes `call(path, body)`
+  // for POST and `get(path)` for GET. There's no `post()` — using one was
+  // the source of "d.post is not a function" in earlier builds.
   const api = (typeof window !== 'undefined' && window.raman) ? window.raman.api : null;
-  if (api) return opts.method === 'POST' ? api.post(path, opts.body) : api.get(path);
+  if (api) {
+    return opts.method === 'POST' ? api.call(path, opts.body) : api.get(path);
+  }
   const res = await fetch(`${BACKEND_URL}${path}`, {
     method: opts.method || 'GET',
     headers: { 'Content-Type': 'application/json' },
