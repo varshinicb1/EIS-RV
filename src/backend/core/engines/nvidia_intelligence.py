@@ -144,7 +144,7 @@ class NVIDIAIntelligence:
                 try:
                     conn.close()
                 except Exception:
-                    pass
+                    logger.warning("%s:%d swallowed exception", __name__, 146, exc_info=False)
         except Exception as e:
             logger.warning("Literature search failed: %s", e)
             return []

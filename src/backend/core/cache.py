@@ -95,7 +95,7 @@ def cache_invalidate(pattern: str = "raman:*"):
                 _redis.delete(*keys)
                 logger.info("Invalidated %d cache keys", len(keys))
         except Exception:
-            pass
+            logger.warning("%s:%d swallowed exception", __name__, 97, exc_info=False)
     _mem_cache.clear()
 
 

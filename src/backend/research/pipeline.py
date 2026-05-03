@@ -373,7 +373,7 @@ class ResearchPipeline:
                     )
                     self.conn.commit()
                 except Exception:
-                    pass
+                    logger.warning("%s:%d swallowed exception", __name__, 375, exc_info=False)
 
         logger.info(
             "Processed %d papers: %d materials, %d synthesis, %d EIS records",

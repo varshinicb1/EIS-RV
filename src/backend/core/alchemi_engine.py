@@ -45,7 +45,7 @@ def _load_cache(name: str) -> Optional[dict]:
             if time.time() - data.get("_cached_at", 0) < 604800:
                 return data
         except Exception:
-            pass
+            logger.warning("%s:%d swallowed exception", __name__, 47, exc_info=False)
     return None
 
 
@@ -54,52 +54,74 @@ def _save_cache(name: str, data: dict):
     try:
         _cache_key(name).write_text(json.dumps(data, default=str))
     except Exception:
-        pass
+        logger.warning("%s:%d swallowed exception", __name__, 56, exc_info=False)
 
 
 # ── PubChem Integration ────────────────────────────────────────────
 
+def _pubchem_get(url: str, *, timeout: float = 10.0, retries: int = 3) -> "Optional[Any]":
+    """
+    GET a PubChem URL with retry + exponential backoff. Returns the
+    ``requests.Response`` on success, ``None`` after exhausting retries.
+
+    PubChem occasionally rate-limits or returns transient 5xx; this wrapper
+    treats only retryable failures (timeouts, 429, 5xx) as worth retrying.
+    """
+    import requests
+    backoffs = (0.4, 1.2, 3.0)
+    for attempt in range(retries):
+        try:
+            r = requests.get(url, timeout=timeout)
+        except (requests.Timeout, requests.ConnectionError) as e:
+            logger.warning("pubchem timeout/conn-error attempt %d: %s", attempt + 1, e)
+            if attempt == retries - 1:
+                return None
+            time.sleep(backoffs[min(attempt, len(backoffs) - 1)])
+            continue
+        if r.status_code in (429,) or 500 <= r.status_code < 600:
+            logger.warning("pubchem retryable status %d attempt %d", r.status_code, attempt + 1)
+            if attempt == retries - 1:
+                return r
+            time.sleep(backoffs[min(attempt, len(backoffs) - 1)])
+            continue
+        return r
+    return None
+
+
 def fetch_pubchem(name: str) -> dict:
     """Fetch compound properties from PubChem REST API."""
-    import requests
     cached = _load_cache(f"pubchem_{name}")
     if cached:
         return cached
 
     try:
         # Get CID
-        r = requests.get(f"{PUBCHEM_BASE}/compound/name/{name}/cids/JSON", timeout=10)
-        if r.status_code != 200:
+        r = _pubchem_get(f"{PUBCHEM_BASE}/compound/name/{name}/cids/JSON", timeout=10)
+        if r is None or r.status_code != 200:
             return {"error": f"Compound '{name}' not found in PubChem"}
         cid = r.json()["IdentifierList"]["CID"][0]
 
         # Get properties
         props = "MolecularWeight,MolecularFormula,XLogP,ExactMass,TPSA,Complexity,Charge,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,HeavyAtomCount"
-        r2 = requests.get(f"{PUBCHEM_BASE}/compound/cid/{cid}/property/{props}/JSON", timeout=10)
-        if r2.status_code != 200:
+        r2 = _pubchem_get(f"{PUBCHEM_BASE}/compound/cid/{cid}/property/{props}/JSON", timeout=10)
+        if r2 is None or r2.status_code != 200:
             return {"error": "Failed to fetch properties"}
         data = r2.json()["PropertyTable"]["Properties"][0]
 
-        # Get 3D SDF
+        # Get 3D SDF (best-effort, falls back to 2D, then to empty)
         sdf = ""
-        try:
-            r3 = requests.get(f"{PUBCHEM_BASE}/compound/cid/{cid}/SDF?record_type=3d", timeout=10)
-            if r3.status_code == 200:
-                sdf = r3.text
-            else:
-                r3 = requests.get(f"{PUBCHEM_BASE}/compound/cid/{cid}/SDF?record_type=2d", timeout=10)
-                sdf = r3.text if r3.status_code == 200 else ""
-        except Exception:
-            pass
+        r3 = _pubchem_get(f"{PUBCHEM_BASE}/compound/cid/{cid}/SDF?record_type=3d", timeout=10)
+        if r3 is not None and r3.status_code == 200:
+            sdf = r3.text
+        else:
+            r3 = _pubchem_get(f"{PUBCHEM_BASE}/compound/cid/{cid}/SDF?record_type=2d", timeout=10)
+            sdf = r3.text if (r3 is not None and r3.status_code == 200) else ""
 
         # Get synonyms for display
         synonyms = []
-        try:
-            r4 = requests.get(f"{PUBCHEM_BASE}/compound/cid/{cid}/synonyms/JSON", timeout=5)
-            if r4.status_code == 200:
-                synonyms = r4.json().get("InformationList", {}).get("Information", [{}])[0].get("Synonym", [])[:5]
-        except Exception:
-            pass
+        r4 = _pubchem_get(f"{PUBCHEM_BASE}/compound/cid/{cid}/synonyms/JSON", timeout=5)
+        if r4 is not None and r4.status_code == 200:
+            synonyms = r4.json().get("InformationList", {}).get("Information", [{}])[0].get("Synonym", [])[:5]
 
         result = {
             "source": "PubChem",

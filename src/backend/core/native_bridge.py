@@ -236,7 +236,7 @@ def alchemi_simulate(task: str, req_dict: Dict) -> Dict:
     db_data = MaterialsDatabase.get_compound_data(material)
     
     if "error" in db_data:
-        print(f"[ALCHEMI-ENGINE] {material} not found in PubChem. Using ab-initio fallback.")
+        logger.info("[ALCHEMI-ENGINE] %s not found in PubChem; using ab-initio fallback", material)
         mw = 100.0
         xlogp = 1.0
         tpsa = 50.0

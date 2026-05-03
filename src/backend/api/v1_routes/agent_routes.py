@@ -197,7 +197,7 @@ class _ModelHolder:
         try:
             model.eval()
         except Exception:
-            pass
+            logger.warning("%s:%d swallowed exception", __name__, 199, exc_info=False)
 
         self._tokenizer = tokenizer
         self._model = model

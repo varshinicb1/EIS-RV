@@ -204,8 +204,8 @@ class DataImporter:
                     first_line = f.readline()
                     if "AUTOLAB" in first_line.upper():
                         return "autolab_txt"
-            except:
-                pass
+            except Exception:
+                logger.warning("%s:%d swallowed exception", __name__, 207, exc_info=False)
             return "generic_csv"
         elif file_path.endswith('.csv') or file_path.endswith('.CSV'):
             return "generic_csv"
@@ -555,8 +555,8 @@ class DataImporter:
                         metadata['temperature_C'] = float(line.split('\t')[1])
                     elif line.startswith('Pt\t'):
                         break
-        except:
-            pass
+        except Exception:
+            logger.warning("%s:%d swallowed exception", __name__, 558, exc_info=False)
         
         return metadata
     

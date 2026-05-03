@@ -58,19 +58,13 @@ def run_once(queries=None, max_per_query=10):
         )
         db_stats = pipeline.get_database_stats()
 
-        print("\n" + "=" * 60)
-        print("PIPELINE RUN COMPLETE")
-        print("=" * 60)
-        print(stats)
-        print("\nDatabase Statistics:")
+        logger.info("PIPELINE RUN COMPLETE — stats=%s", stats)
         for k, v in db_stats.items():
             if isinstance(v, dict):
-                print(f"  {k}:")
                 for kk, vv in v.items():
-                    print(f"    {kk}: {vv}")
+                    logger.info("  db_stats: %s.%s = %s", k, kk, vv)
             else:
-                print(f"  {k}: {v}")
-        print("=" * 60)
+                logger.info("  db_stats: %s = %s", k, v)
 
         return stats
     finally:

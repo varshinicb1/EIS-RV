@@ -41,7 +41,7 @@ except ImportError:
                         if k not in os.environ:
                             os.environ[k] = v.strip('\"\'')
     except Exception:
-        pass
+        logger.warning("%s:%d swallowed exception", __name__, 43, exc_info=False)
 
 from src.backend.core.hardware_bridge import bridge as hw_bridge
 
@@ -60,7 +60,7 @@ def broadcast_telemetry(data: dict):
         try:
             asyncio.create_task(ws.send_json(data))
         except Exception:
-            pass
+            logger.warning("%s:%d swallowed exception", __name__, 62, exc_info=False)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -211,7 +211,7 @@ async def health():
         from src.backend.core.native_bridge import get_engine_info
         engine_info = get_engine_info()
     except Exception:
-        pass
+        logger.warning("%s:%d swallowed exception", __name__, 213, exc_info=False)
     cache_info = {}
     try:
         from src.backend.core.cache import get_stats
@@ -520,7 +520,7 @@ async def engine_info():
         ei = get_engine_info()
         info["cpp"] = ei.get("cpp_available", False)
     except Exception:
-        pass
+        logger.warning("%s:%d swallowed exception", __name__, 522, exc_info=False)
 
     info["engines"] = [
         {"id": "eis", "name": "EIS", "status": "ready"},
@@ -1193,13 +1193,13 @@ if __name__ == "__main__":
         try:
             port = int(sys.argv[sys.argv.index("--port") + 1])
         except Exception:
-            pass
+            logger.warning("%s:%d swallowed exception", __name__, 1195, exc_info=False)
     host = "127.0.0.1"
     if "--host" in sys.argv:
         try:
             host = sys.argv[sys.argv.index("--host") + 1]
         except Exception:
-            pass
+            logger.warning("%s:%d swallowed exception", __name__, 1201, exc_info=False)
     uvicorn.run(app, host=host, port=port)
 
 
