@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -6,6 +7,13 @@ export default defineConfig({
   plugins: [react()],
   base: './', // Electron loads from file:// so relative paths
   root: '.',
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./test/setup.js'],
+    include: ['test/**/*.{test,spec}.{js,jsx}', 'src/**/*.{test,spec}.{js,jsx}'],
+    css: false,
+  },
   build: {
     outDir: '../../build/renderer',
     emptyOutDir: true,
