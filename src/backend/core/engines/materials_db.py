@@ -28,9 +28,8 @@ Sources:
     [5] Individual DOIs cited inline
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Optional, List
 from dataclasses import dataclass, field
-import json
 
 
 @dataclass

@@ -21,14 +21,13 @@ Usage:
 import json
 import logging
 import time
-from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 from .config import (
     DB_PATH, EXPORT_DIR, SEARCH_QUERIES,
-    MAX_PAPERS_PER_QUERY, LOG_DIR, LOG_FORMAT, LOG_LEVEL,
+    MAX_PAPERS_PER_QUERY,
 )
-from .schema import init_database, get_connection
+from .schema import init_database
 from .fetchers.base import PaperRecord
 from .fetchers.arxiv_fetcher import ArxivFetcher
 from .fetchers.crossref_fetcher import CrossrefFetcher

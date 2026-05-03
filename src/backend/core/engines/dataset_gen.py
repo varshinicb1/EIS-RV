@@ -19,10 +19,10 @@ import logging
 import numpy as np
 import json
 import os
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 from .materials import (
     MaterialComposition, SynthesisParameters, StructuralDescriptors,
-    EISParameters, SynthesisMethod, Solvent, MATERIAL_DATABASE
+    SynthesisMethod, MATERIAL_DATABASE
 )
 from .synthesis_engine import SynthesisEngine
 from .eis_engine import descriptors_to_eis

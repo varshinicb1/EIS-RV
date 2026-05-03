@@ -12,7 +12,6 @@ stays small and the model has clear ground truth.
 """
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any, Optional
 

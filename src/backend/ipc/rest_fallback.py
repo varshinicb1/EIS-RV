@@ -7,9 +7,8 @@ AI engine (Python 3.13) via local HTTP REST calls.
 This module provides a client that mirrors the ZMQ bridge API.
 """
 
-import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 

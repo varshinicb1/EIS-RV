@@ -15,7 +15,7 @@ Date: May 1, 2026
 
 import numpy as np
 from scipy.optimize import least_squares, differential_evolution
-from typing import Dict, List, Tuple, Optional, Callable
+from typing import Dict, Tuple, Optional
 from dataclasses import dataclass
 import logging
 

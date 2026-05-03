@@ -68,7 +68,7 @@ def build_nuitka(debug=False, onefile=False):
 
     cmd.append(entry)
 
-    print(f"🔨 Nuitka build starting...")
+    print("🔨 Nuitka build starting...")
     print(f"   Entry: {entry}")
     print(f"   Output: {out_dir}")
     print(f"   Mode: {'onefile' if onefile else 'standalone'}")

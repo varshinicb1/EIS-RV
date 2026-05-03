@@ -9,11 +9,10 @@ Date: May 1, 2026
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any, BinaryIO
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 import io
-import base64
 
 logger = logging.getLogger(__name__)
 

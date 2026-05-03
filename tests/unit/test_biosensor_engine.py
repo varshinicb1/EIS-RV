@@ -19,7 +19,6 @@ from src.backend.core.engines.biosensor_engine import (
     BiosensorConfig,
     BiosensorPerformance,
     BiosensorType,
-    AnalyteClass,
     ANALYTE_DB,
     simulate_biosensor,
     michaelis_menten,

@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -149,7 +149,7 @@ async def websocket_telemetry(websocket: WebSocket):
 
 # ── Auth & Licensing ─────────────────────────────────────────────
 
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from src.backend.licensing.license_manager import (
     get_license_manager,
     LicenseStatus,
@@ -1052,7 +1052,7 @@ async def list_extracted_materials():
     try:
         search = _get_search()
         return search.list_materials()
-    except Exception as e:
+    except Exception:
         return []
 
 @app.get("/api/v2/pipeline/methods")
@@ -1061,7 +1061,7 @@ async def list_synthesis_methods():
     try:
         search = _get_search()
         return search.list_methods()
-    except Exception as e:
+    except Exception:
         return []
 
 @app.get("/api/v2/pipeline/applications")
@@ -1070,7 +1070,7 @@ async def list_applications():
     try:
         search = _get_search()
         return search.list_applications()
-    except Exception as e:
+    except Exception:
         return []
 
 @app.get("/api/v2/pipeline/config")

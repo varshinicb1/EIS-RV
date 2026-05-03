@@ -12,7 +12,7 @@ import json
 import sys
 import time
 import requests
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 BASE = "http://127.0.0.1:8000"

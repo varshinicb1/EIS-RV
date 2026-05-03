@@ -21,7 +21,6 @@ from src.backend.core.engines.materials import (
     SynthesisParameters,
     StructuralDescriptors,
     EISParameters,
-    ExperimentRecord,
     SynthesisMethod,
     MATERIAL_DATABASE,
 )

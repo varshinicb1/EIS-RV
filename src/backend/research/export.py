@@ -8,7 +8,6 @@ import csv
 import json
 import os
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

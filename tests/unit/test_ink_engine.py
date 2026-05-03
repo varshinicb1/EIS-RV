@@ -19,7 +19,6 @@ from src.backend.core.engines.ink_engine import (
     InkFormulation,
     InkProperties,
     PrintMethod,
-    SolventType,
     SOLVENT_DB,
     PRINT_WINDOWS,
     simulate_ink,

@@ -5,8 +5,6 @@ Tests for simulation engines, cache, unit converter, and data importer.
 """
 
 import pytest
-import math
-import json
 import os
 import sys
 

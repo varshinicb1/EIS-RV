@@ -17,17 +17,15 @@ import logging
 
 import json
 import os
-import time
 from typing import List, Optional, Dict
 from dataclasses import dataclass, field
 
 from .materials import (
-    MaterialComposition, SynthesisParameters, StructuralDescriptors,
-    EISParameters, ExperimentRecord, SynthesisMethod
+    MaterialComposition, SynthesisParameters, ExperimentRecord, SynthesisMethod
 )
 from .synthesis_engine import SynthesisEngine
 from .eis_engine import descriptors_to_eis, simulate_eis
-from .optimizer import BayesianOptimizer, OptimizationTarget, compute_objective
+from .optimizer import BayesianOptimizer, OptimizationTarget
 
 logger = logging.getLogger(__name__)
 

@@ -19,10 +19,9 @@ All units follow SI + electrochemistry conventions:
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from enum import Enum
 import numpy as np
-import json
 import uuid
 from datetime import datetime
 

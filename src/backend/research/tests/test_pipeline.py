@@ -6,9 +6,7 @@ Tests the scientific parser, deduplication, schema, and search components.
 Run: python -m pytest src/backend/research/tests/test_pipeline.py -v
 """
 
-import json
 import os
-import sqlite3
 import tempfile
 import pytest
 
@@ -16,10 +14,10 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
 from src.backend.research.processors.scientific_parser import (
-    ScientificExtractor, ExtractionResult,
+    ScientificExtractor,
 )
 from src.backend.research.dedup import (
-    Deduplicator, normalize_title, title_tokens, jaccard_similarity,
+    Deduplicator, normalize_title, jaccard_similarity,
 )
 from src.backend.research.schema import init_database
 from src.backend.research.search import DatasetSearch

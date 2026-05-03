@@ -20,10 +20,9 @@ Two modes:
 """
 
 import numpy as np
-from typing import Optional
 from .materials import (
     MaterialComposition, SynthesisParameters, StructuralDescriptors,
-    SynthesisMethod, MATERIAL_DATABASE
+    SynthesisMethod
 )
 
 

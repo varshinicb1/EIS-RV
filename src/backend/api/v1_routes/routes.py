@@ -29,18 +29,17 @@ from pydantic import BaseModel, Field
 from src.backend.licensing.license_manager import verify_license
 
 from src.backend.core.engines.materials import (
-    MaterialComposition, SynthesisParameters, StructuralDescriptors,
-    EISParameters, MATERIAL_DATABASE, SynthesisMethod,
+    MaterialComposition, SynthesisParameters, EISParameters, MATERIAL_DATABASE, SynthesisMethod,
 )
 from src.backend.core.engines.synthesis_engine import SynthesisEngine
-from src.backend.core.engines.eis_engine import simulate_eis, descriptors_to_eis, quick_simulate
+from src.backend.core.engines.eis_engine import simulate_eis
 from src.backend.core.engines.autonomous import AutonomousLab, LabConfig
 from src.backend.core.engines.optimizer import OptimizationTarget
 from src.backend.core.engines.kk_validation import kramers_kronig_validate
 from src.backend.core.engines.uncertainty import predict_with_uncertainty
 from src.backend.core.engines.data_loader import load_perovskite_eis, list_available_datasets
-from src.backend.core.engines.cv_engine import CVParameters, simulate_cv, scan_rate_study
-from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd, rate_capability_study
+from src.backend.core.engines.cv_engine import CVParameters, simulate_cv
+from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd
 from src.backend.core.engines.materials_db import MATERIALS_DB, list_all_materials, search_materials, get_categories
 
 logger = logging.getLogger(__name__)

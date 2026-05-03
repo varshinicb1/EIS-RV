@@ -7,10 +7,8 @@ coating physics (spin/dip/inkjet), and performance prediction.
 """
 import numpy as np
 import time
-import json
 import logging
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass, asdict
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 

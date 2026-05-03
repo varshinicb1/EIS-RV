@@ -172,7 +172,7 @@ async def optimize_geometry(request: OptimizeRequest):
             }
         )
     
-    except Exception as e:
+    except Exception:
         import secrets
         error_id = secrets.token_hex(6)
         logger.exception("geometry_optimization_failed error_id=%s", error_id)
@@ -228,7 +228,7 @@ async def calculate_properties(request: PropertiesRequest):
             }
         )
     
-    except Exception as e:
+    except Exception:
         import secrets
         error_id = secrets.token_hex(6)
         logger.exception("property_calculation_failed error_id=%s", error_id)
@@ -289,7 +289,7 @@ async def calculate_band_gap(request: BandGapRequest):
             }
         )
     
-    except Exception as e:
+    except Exception:
         import secrets
         error_id = secrets.token_hex(6)
         logger.exception("band_gap_calculation_failed error_id=%s", error_id)
@@ -508,7 +508,7 @@ async def run_molecular_dynamics(request: MolecularDynamicsRequest):
             }
         )
     
-    except Exception as e:
+    except Exception:
         import secrets
         error_id = secrets.token_hex(6)
         logger.exception("molecular_dynamics_failed error_id=%s", error_id)
@@ -592,7 +592,7 @@ async def calculate_electron_density(request: ElectronDensityRequest):
             }
         )
     
-    except Exception as e:
+    except Exception:
         import secrets
         error_id = secrets.token_hex(6)
         logger.exception("electron_density_calculation_failed error_id=%s", error_id)

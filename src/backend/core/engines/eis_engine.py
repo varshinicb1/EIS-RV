@@ -26,7 +26,7 @@ Physical constants & conventions:
 """
 
 import numpy as np
-from typing import Tuple, Dict, Optional, List
+from typing import Tuple
 from dataclasses import dataclass
 from .materials import EISParameters, StructuralDescriptors
 

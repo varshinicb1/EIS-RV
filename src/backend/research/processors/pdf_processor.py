@@ -11,7 +11,7 @@ Features:
 
 import logging
 import re
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 from pathlib import Path
 
 # Since this might run in a clean environment, we'll gracefully fallback

@@ -4,9 +4,6 @@ Integration Test — IPC Layer (ZMQ + REST)
 Tests ZeroMQ and REST communication between backend components.
 """
 
-import json
-import threading
-import time
 
 import pytest
 

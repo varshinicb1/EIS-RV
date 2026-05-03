@@ -30,7 +30,7 @@ Usage:
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 
 import numpy as np
 
@@ -39,7 +39,7 @@ from .materials import (
     StructuralDescriptors, EISParameters, MATERIAL_DATABASE,
 )
 from .synthesis_engine import SynthesisEngine
-from .eis_engine import descriptors_to_eis, simulate_eis, EISResult
+from .eis_engine import descriptors_to_eis, simulate_eis
 
 logger = logging.getLogger(__name__)
 

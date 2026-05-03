@@ -7,7 +7,6 @@ identical to the Python reference implementation.
 
 import sys
 import os
-import time
 
 import numpy as np
 import pytest

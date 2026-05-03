@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi import APIRouter, Depends, Security
 from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
 
 from src.backend.core.database import get_db
 from src.backend.core.models import Workspace
-from src.backend.core.rbac import get_current_user_token, require_analyst
+from src.backend.core.rbac import require_analyst
 
 router = APIRouter(prefix="/api/v2/workspaces", tags=["Workspaces"])
 

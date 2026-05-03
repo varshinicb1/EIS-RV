@@ -16,19 +16,21 @@ import { Activity, Thermometer, Droplets, Gauge, Atom, Zap } from 'lucide-react'
  *   - Crystal lattice uses actual atomic coordinate data from MaterialsExplorer DB.
  */
 
-// ── Design Tokens (Midnight Instrumentation) ─────────────────────────────────
+// ── Design tokens — must be hex/rgba literals because this module's
+// values are passed straight to canvas-2D fillStyle/strokeStyle and
+// THREE.Color, neither of which resolve CSS custom properties at use-time.
 const T = {
-  bg:       '#020204',
-  bgPanel:  'rgba(10, 10, 14, 0.88)',
-  accent:   'var(--accent)',
-  warning:  'var(--color-error)',
-  success:  'var(--color-success)',
-  amber:    '#ffb800',
+  bg:       '#0d0d10',
+  bgPanel:  'rgba(28, 28, 36, 0.92)',
+  accent:   '#4a8eff',   // matches --accent
+  warning:  '#ff453a',   // matches --color-error
+  success:  '#34c759',   // matches --color-success
+  amber:    '#ff9f0a',   // matches --color-warning
   textDim:  'rgba(255, 255, 255, 0.35)',
   textMid:  'rgba(255, 255, 255, 0.6)',
-  textHi:   '#ffffff',
+  textHi:   '#ededf0',
   border:   'rgba(74, 142, 255, 0.15)',
-  font:     '"JetBrains Mono", "Fira Code", monospace',
+  font:     'IBM Plex Mono, JetBrains Mono, monospace',
 };
 
 // ── Utility: lerp + clamp ────────────────────────────────────────────────────

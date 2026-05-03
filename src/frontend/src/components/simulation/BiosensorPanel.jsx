@@ -75,7 +75,7 @@ function ElectrodeViewer3D({ geometry, coating }) {
             <group position={[-1.5, 0.05, 0]}>
               {Array.from({length: 12}).map((_, i) => (
                 <Box key={i} args={[0.1, 0.1, 2]} position={[i * 0.25, 0, 0]}>
-                  <meshPhysicalMaterial color={i % 2 === 0 ? 'var(--color-warning)' : '#42a5f5'} metalness={0.8} roughness={0.2} />
+                  <meshPhysicalMaterial color={i % 2 === 0 ? '#ff9f0a' : '#42a5f5'} metalness={0.8} roughness={0.2} />
                 </Box>
               ))}
 
@@ -97,7 +97,7 @@ function ElectrodeViewer3D({ geometry, coating }) {
           {pattern === 'disk' && (
             <group position={[0, 0.05, 0]}>
               <Cylinder args={[1, 1, 0.1, 64]}>
-                <meshPhysicalMaterial color="var(--color-warning)" metalness={0.5} roughness={0.5} />
+                <meshPhysicalMaterial color="#ff9f0a" metalness={0.5} roughness={0.5} />
               </Cylinder>
               {coating && (
                 <Cylinder args={[0.95, 0.95, 0.02, 64]} position={[0, 0.06, 0]}>

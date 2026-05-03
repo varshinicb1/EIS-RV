@@ -32,7 +32,7 @@ References:
 
 import numpy as np
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Tuple
+from typing import List, Dict, Tuple
 
 F = 96485.33212  # C/mol
 R = 8.314462618  # J/(mol·K)

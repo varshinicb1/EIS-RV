@@ -20,7 +20,7 @@ Date: May 1, 2026
 import numpy as np
 from scipy.linalg import solve
 from scipy.signal import find_peaks
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 from dataclasses import dataclass
 import logging
 
@@ -442,13 +442,13 @@ def quick_drt_test():
         lambda_reg=1e-3
     )
     
-    print(f"\n✅ DRT calculation successful!")
+    print("\n✅ DRT calculation successful!")
     print(f"   Number of peaks: {len(result.peaks)}")
     print(f"   Chi-squared: {result.chi_squared:.6f}")
     print(f"   Lambda: {result.lambda_reg:.2e}")
     
     if result.peaks:
-        print(f"\n   Detected processes:")
+        print("\n   Detected processes:")
         for i, peak in enumerate(result.peaks):
             print(f"   {i+1}. τ = {peak['tau']:.2e} s, "
                   f"f = {peak['frequency_Hz']:.2f} Hz, "

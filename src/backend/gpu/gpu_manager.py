@@ -14,7 +14,7 @@ SECURITY FEATURES:
 import torch
 import platform
 import subprocess
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from dataclasses import dataclass
 import logging
 import psutil
@@ -371,19 +371,19 @@ if __name__ == "__main__":
     print("=" * 60)
     
     status = manager.get_status()
-    print(f"\n📊 GPU Status:")
+    print("\n📊 GPU Status:")
     for key, value in status.items():
         print(f"   {key}: {value}")
     
     if manager.is_gpu_available():
-        print(f"\n🏃 Running benchmark...")
+        print("\n🏃 Running benchmark...")
         benchmark = manager.benchmark()
-        print(f"\n📈 Benchmark Results:")
+        print("\n📈 Benchmark Results:")
         for key, value in benchmark.items():
             print(f"   {key}: {value}")
     
     system_info = manager.get_system_info()
-    print(f"\n💻 System Info:")
+    print("\n💻 System Info:")
     for key, value in system_info.items():
         print(f"   {key}: {value}")
     

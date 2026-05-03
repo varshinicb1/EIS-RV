@@ -11,7 +11,7 @@ import json
 import logging
 from typing import List, Optional
 from urllib.request import urlopen, Request
-from urllib.parse import urlencode, quote
+from urllib.parse import urlencode
 from urllib.error import URLError, HTTPError
 
 from .base import BaseFetcher, PaperRecord

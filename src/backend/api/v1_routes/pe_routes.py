@@ -10,7 +10,7 @@ All routes return physics-engine-computed data. No fabricated values.
 import logging
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.backend.api.error_handlers import internal_error
 from pydantic import BaseModel, Field

@@ -32,7 +32,13 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-ignore = ["E501"]  # long lines are caller's call; everything else stays strict
+# Long-line rule is opinionated; everything else stays strict on real
+# correctness issues. The style rules below are common in our patterns:
+#   E402 — late imports in server.py (router-include order matters)
+#   E701/E702 — small one-liners with semicolons in imperative scripts
+#   E741 — `l`, `I` are fine when used locally for indices in math code
+#   E722 — bare except is occasionally correct in cleanup paths
+ignore = ["E501", "E402", "E701", "E702", "E741", "E722"]
 
 [tool.coverage.run]
 source = ["src/backend", "src/ai_engine"]

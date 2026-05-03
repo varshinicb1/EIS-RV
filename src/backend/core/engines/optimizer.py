@@ -20,16 +20,16 @@ Optimization targets:
 import logging
 
 import numpy as np
-from typing import Dict, List, Optional, Tuple, Callable
-from dataclasses import dataclass, field
+from typing import List, Optional, Tuple
+from dataclasses import dataclass
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern, RBF, WhiteKernel
+from sklearn.gaussian_process.kernels import Matern, WhiteKernel
 from scipy.optimize import minimize
 from scipy.stats import norm
 
 from .materials import (
     MaterialComposition, SynthesisParameters, StructuralDescriptors,
-    EISParameters, ExperimentRecord, MATERIAL_DATABASE, SynthesisMethod
+    EISParameters, ExperimentRecord, SynthesisMethod
 )
 from .synthesis_engine import SynthesisEngine
 from .eis_engine import descriptors_to_eis

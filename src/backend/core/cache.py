@@ -20,7 +20,7 @@ import json
 import logging
 import os
 import functools
-from typing import Any, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

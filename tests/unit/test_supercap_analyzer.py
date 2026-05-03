@@ -16,7 +16,6 @@ The math we test here is well-known:
 """
 import math
 
-import pytest
 
 from src.backend.supercap.analyzer import SupercapAnalyzer
 

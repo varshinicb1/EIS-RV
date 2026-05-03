@@ -26,17 +26,13 @@ import tempfile
 import os
 
 from src.backend.core.engines.data_import import (
-    DataImporter,
-    EISData,
-    CVData
+    DataImporter
 )
 from src.backend.core.engines.circuit_fitting import (
-    CircuitFitter,
-    FitResult
+    CircuitFitter
 )
 from src.backend.core.engines.drt_analysis import (
-    DRTAnalyzer,
-    DRTResult
+    DRTAnalyzer
 )
 
 # Configure logging
@@ -258,7 +254,7 @@ async def import_data(
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
     
-    except Exception as e:
+    except Exception:
         logger.exception("Data import failed")
         # User input failed — give a brief, non-leaking message
         raise HTTPException(
@@ -339,7 +335,7 @@ async def fit_circuit(request: FitCircuitRequest):
             result=result.to_dict()
         )
     
-    except Exception as e:
+    except Exception:
         import secrets
         error_id = secrets.token_hex(6)
         logger.exception("circuit_fitting_failed error_id=%s", error_id)
@@ -420,7 +416,7 @@ async def calculate_drt(request: DRTRequest):
             result=result.to_dict()
         )
     
-    except Exception as e:
+    except Exception:
         import secrets
         error_id = secrets.token_hex(6)
         logger.exception("drt_calculation_failed error_id=%s", error_id)

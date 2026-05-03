@@ -26,7 +26,7 @@ Each parser returns a standardized dict:
 import re
 import json
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from pathlib import Path
 
 logger = logging.getLogger(__name__)

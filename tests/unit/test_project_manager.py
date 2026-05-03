@@ -14,10 +14,7 @@ These exercise the actual security guarantees, not just shape:
 from __future__ import annotations
 
 import base64
-import json
-import os
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -25,7 +22,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.backend.projects.project_manager import (  # noqa: E402
-    Project,
     ProjectError,
     ProjectIntegrityError,
     ProjectManager,

@@ -16,14 +16,14 @@ comparisons against real experimental spectra.
 
 import logging
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 
 import numpy as np
 
 from .materials import EISParameters
-from .eis_engine import randles_impedance, simulate_eis
+from .eis_engine import randles_impedance
 from .kk_validation import kramers_kronig_validate, KKValidationResult
-from .data_loader import ExternalEISData, load_perovskite_eis
+from .data_loader import load_perovskite_eis
 
 logger = logging.getLogger(__name__)
 

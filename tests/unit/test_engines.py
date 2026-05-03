@@ -3,8 +3,6 @@ Test FastAPI v2 endpoints — Battery & GCD simulation API.
 Validates that the new server routes return correct data shapes.
 """
 
-import pytest
-import numpy as np
 import sys
 import os
 

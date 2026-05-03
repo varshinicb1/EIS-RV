@@ -33,7 +33,7 @@ from __future__ import annotations
 
 import logging
 import secrets
-from typing import Any, NoReturn, Optional
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse

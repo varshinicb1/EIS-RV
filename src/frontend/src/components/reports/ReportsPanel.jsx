@@ -126,24 +126,23 @@ export default function ReportsPanel() {
     const reportTitle = title || template.name;
     
     try {
-      // Create backend request
-      const response = await fetch(`${API}/api/compliance/reports/generate`, {
+      // The backend handler expects {template, title, simulation_data?}.
+      // The previous request hit /api/compliance/reports/generate which
+      // doesn't exist (404). Real route is /api/v2/reports/generate.
+      const response = await fetch(`${API}/api/v2/reports/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('raman_token') || ''}`
         },
         body: JSON.stringify({
-          resource_type: 'custom',
-          resource_id: 'temp-' + Date.now(),
-          format: 'pdf',
-          include_signatures: true,
-          custom_data: {
-            title: reportTitle,
+          template: selectedTemplate,
+          title: reportTitle,
+          simulation_data: {
             type: template.type,
             authors: authors || 'Research Team',
             affiliation: affiliation || 'VidyuthLabs Pvt. Ltd.',
-          }
+          },
         })
       });
 
