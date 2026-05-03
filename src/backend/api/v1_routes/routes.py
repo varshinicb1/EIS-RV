@@ -75,14 +75,14 @@ class PredictRequest(BaseModel):
 
 
 class SimulateRequest(BaseModel):
-    Rs: float = Field(10.0, description="Solution resistance (Ω)")
-    Rct: float = Field(100.0, description="Charge transfer resistance (Ω)")
-    Cdl: float = Field(1e-5, description="Double layer capacitance (F)")
-    sigma_warburg: float = Field(50.0, description="Warburg coefficient")
-    n_cpe: float = Field(0.9, description="CPE exponent (0.5–1.0)")
-    freq_min: float = Field(0.01, description="Minimum frequency (Hz)")
-    freq_max: float = Field(1e6, description="Maximum frequency (Hz)")
-    n_points: int = Field(100, description="Number of frequency points")
+    Rs: float = Field(10.0, ge=0, le=1e9, description="Solution resistance (Ω)")
+    Rct: float = Field(100.0, ge=0, le=1e9, description="Charge transfer resistance (Ω)")
+    Cdl: float = Field(1e-5, ge=0, le=1e3, description="Double layer capacitance (F)")
+    sigma_warburg: float = Field(50.0, ge=0, le=1e9, description="Warburg coefficient")
+    n_cpe: float = Field(0.9, ge=0.1, le=1.5, description="CPE exponent (0.5–1.0)")
+    freq_min: float = Field(0.01, gt=0, le=1e9, description="Minimum frequency (Hz)")
+    freq_max: float = Field(1e6, gt=0, le=1e9, description="Maximum frequency (Hz)")
+    n_points: int = Field(100, ge=2, le=100000, description="Number of frequency points")
 
 
 class OptimizeRequest(BaseModel):
@@ -90,28 +90,28 @@ class OptimizeRequest(BaseModel):
         default=["graphene", "MnO2", "carbon_black"],
         description="Materials to optimize over",
     )
-    n_iterations: int = Field(30, description="Number of BO iterations")
-    weight_Rct: float = Field(0.4, description="Weight for Rct minimization")
-    weight_Rs: float = Field(0.2, description="Weight for Rs minimization")
-    weight_capacitance: float = Field(0.4, description="Weight for capacitance maximization")
-    max_cost: float = Field(3.0, description="Maximum cost constraint")
+    n_iterations: int = Field(30, ge=1, le=10000, description="Number of BO iterations")
+    weight_Rct: float = Field(0.4, ge=0, le=1, description="Weight for Rct minimization")
+    weight_Rs: float = Field(0.2, ge=0, le=1, description="Weight for Rs minimization")
+    weight_capacitance: float = Field(0.4, ge=0, le=1, description="Weight for capacitance maximization")
+    max_cost: float = Field(3.0, ge=0, le=1e9, description="Maximum cost constraint")
 
 
 class KKValidateRequest(BaseModel):
-    frequencies: List[float] = Field(..., description="Frequency array (Hz)")
-    Z_real: List[float] = Field(..., description="Real impedance (Ω)")
-    Z_imag: List[float] = Field(..., description="Imaginary impedance (Ω)")
+    frequencies: List[float] = Field(..., max_length=100000, description="Frequency array (Hz)")
+    Z_real: List[float] = Field(..., max_length=100000, description="Real impedance (Ω)")
+    Z_imag: List[float] = Field(..., max_length=100000, description="Imaginary impedance (Ω)")
     method: str = Field("lin_kk", description="KK method: 'lin_kk' or 'integral'")
 
 
 class PipelineSearchRequest(BaseModel):
-    material: Optional[str] = Field(None, description="Material component filter")
-    application: Optional[str] = Field(None, description="Application domain filter")
-    method: Optional[str] = Field(None, description="Synthesis method filter")
-    min_capacitance: Optional[float] = Field(None, description="Min capacitance (F/g)")
-    max_Rct: Optional[float] = Field(None, description="Max Rct (Ω)")
-    text_query: Optional[str] = Field(None, description="Free text search")
-    limit: int = Field(50, description="Max results")
+    material: Optional[str] = Field(None, max_length=200, description="Material component filter")
+    application: Optional[str] = Field(None, max_length=500, description="Application domain filter")
+    method: Optional[str] = Field(None, max_length=500, description="Synthesis method filter")
+    min_capacitance: Optional[float] = Field(None, ge=0, le=1e6, description="Min capacitance (F/g)")
+    max_Rct: Optional[float] = Field(None, ge=0, le=1e9, description="Max Rct (Ω)")
+    text_query: Optional[str] = Field(None, max_length=500, description="Free text search")
+    limit: int = Field(50, ge=1, le=10000, description="Max results")
 
 
 # ── Endpoints ──────────────────────────────────────────────────────

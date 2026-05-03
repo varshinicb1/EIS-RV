@@ -31,17 +31,17 @@ router = APIRouter(
 
 class InkFormulationRequest(BaseModel):
     filler_material: str = Field("graphene", description="Conductive filler material")
-    filler_loading_wt_pct: float = Field(5.0, description="Filler loading (wt%)")
-    particle_size_nm: float = Field(500.0, description="Mean particle size (nm)")
-    aspect_ratio: float = Field(100.0, description="Particle aspect ratio (L/d)")
-    particle_density_kg_m3: float = Field(2200.0, description="Filler density (kg/m³)")
+    filler_loading_wt_pct: float = Field(5.0, ge=0, le=100, description="Filler loading (wt%)")
+    particle_size_nm: float = Field(500.0, ge=0, le=1e6, description="Mean particle size (nm)")
+    aspect_ratio: float = Field(100.0, ge=0, le=1e6, description="Particle aspect ratio (L/d)")
+    particle_density_kg_m3: float = Field(2200.0, ge=0, le=1e6, description="Filler density (kg/m³)")
     primary_solvent: str = Field("water", description="Primary solvent")
-    co_solvent: Optional[str] = Field(None, description="Co-solvent")
-    co_solvent_fraction: float = Field(0.0, description="Co-solvent volume fraction")
+    co_solvent: Optional[str] = Field(None, max_length=500, description="Co-solvent")
+    co_solvent_fraction: float = Field(0.0, ge=0, le=1, description="Co-solvent volume fraction")
     binder_type: str = Field("none", description="Binder type")
-    binder_wt_pct: float = Field(0.0, description="Binder loading (wt%)")
-    surfactant: Optional[str] = Field(None, description="Surfactant type")
-    surfactant_wt_pct: float = Field(0.0, description="Surfactant loading (wt%)")
+    binder_wt_pct: float = Field(0.0, ge=0, le=100, description="Binder loading (wt%)")
+    surfactant: Optional[str] = Field(None, max_length=500, description="Surfactant type")
+    surfactant_wt_pct: float = Field(0.0, ge=0, le=100, description="Surfactant loading (wt%)")
     print_method: str = Field("screen_printing", description="Target printing method")
 
 
@@ -137,19 +137,19 @@ async def list_print_methods_endpoint():
 class SupercapRequest(BaseModel):
     # Electrode
     material: str = Field("activated_carbon", description="Electrode material")
-    capacitance_F_g: float = Field(150.0, description="Specific capacitance (F/g)")
-    mass_mg: float = Field(1.0, description="Active material mass (mg)")
-    area_mm2: float = Field(100.0, description="Electrode area (mm²)")
-    thickness_um: float = Field(50.0, description="Film thickness (µm)")
-    conductivity_S_m: float = Field(1e3, description="Electrode conductivity (S/m)")
-    porosity: float = Field(0.4, description="Film porosity")
+    capacitance_F_g: float = Field(150.0, ge=0, le=1e6, description="Specific capacitance (F/g)")
+    mass_mg: float = Field(1.0, ge=0, le=1e6, description="Active material mass (mg)")
+    area_mm2: float = Field(100.0, ge=0, le=1e9, description="Electrode area (mm²)")
+    thickness_um: float = Field(50.0, ge=0, le=1e6, description="Film thickness (µm)")
+    conductivity_S_m: float = Field(1e3, ge=0, le=1e9, description="Electrode conductivity (S/m)")
+    porosity: float = Field(0.4, ge=0, le=1, description="Film porosity")
     # Electrolyte
     electrolyte: str = Field("1M H2SO4", description="Electrolyte name")
-    voltage_V: float = Field(1.0, description="Voltage window (V)")
+    voltage_V: float = Field(1.0, gt=0, le=1e3, description="Voltage window (V)")
     electrolyte_type: str = Field("aqueous", description="Electrolyte type")
     # Device
     is_symmetric: bool = Field(True, description="Symmetric device?")
-    temperature_C: float = Field(25.0, description="Temperature (°C)")
+    temperature_C: float = Field(25.0, ge=-273.15, le=10000, description="Temperature (°C)")
 
 
 @router.post("/supercap/simulate")
@@ -210,13 +210,13 @@ async def simulate_supercap_endpoint(request: SupercapRequest):
 
 class BatteryRequest(BaseModel):
     chemistry: str = Field("zinc_MnO2", description="Battery chemistry")
-    area_cm2: float = Field(1.0, description="Electrode area (cm²)")
-    cathode_thickness_um: float = Field(100.0, description="Cathode thickness (µm)")
-    anode_thickness_um: float = Field(80.0, description="Anode thickness (µm)")
+    area_cm2: float = Field(1.0, ge=0, le=1e6, description="Electrode area (cm²)")
+    cathode_thickness_um: float = Field(100.0, ge=0, le=1e6, description="Cathode thickness (µm)")
+    anode_thickness_um: float = Field(80.0, ge=0, le=1e6, description="Anode thickness (µm)")
     cathode_loading_mg_cm2: float = Field(10.0, description="Cathode loading (mg/cm²)")
     anode_loading_mg_cm2: float = Field(8.0, description="Anode loading (mg/cm²)")
     C_rate: float = Field(0.5, description="Discharge C-rate")
-    temperature_C: float = Field(25.0, description="Temperature (°C)")
+    temperature_C: float = Field(25.0, ge=-273.15, le=10000, description="Temperature (°C)")
     n_cells_series: int = Field(1, description="Number of cells in series")
 
 
@@ -285,11 +285,11 @@ class BiosensorRequest(BaseModel):
     sensor_type: str = Field("amperometric", description="Sensor type")
     electrode_material: str = Field("carbon_black", description="Working electrode material")
     modifier: str = Field("enzyme", description="Surface modification")
-    area_mm2: float = Field(7.07, description="Working electrode area (mm²)")
+    area_mm2: float = Field(7.07, ge=0, le=1e9, description="Working electrode area (mm²)")
     roughness_factor: float = Field(1.5, description="Surface roughness factor")
     enzyme_loading_U_cm2: float = Field(10.0, description="Enzyme loading (U/cm²)")
-    pH: float = Field(7.4, description="Solution pH")
-    temperature_C: float = Field(25.0, description="Temperature (°C)")
+    pH: float = Field(7.4, ge=-2, le=18, description="Solution pH")
+    temperature_C: float = Field(25.0, ge=-273.15, le=10000, description="Temperature (°C)")
     applied_potential_V: float = Field(0.6, description="Applied potential (V)")
     scan_rate_mV_s: float = Field(50.0, description="Scan rate (mV/s)")
 

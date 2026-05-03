@@ -96,9 +96,9 @@ class ImportResponse(BaseModel):
 
 class FitCircuitRequest(BaseModel):
     """Request model for circuit fitting."""
-    frequencies: List[float] = Field(..., description="Frequency array (Hz)")
-    Z_real: List[float] = Field(..., description="Real impedance (Ω)")
-    Z_imag: List[float] = Field(..., description="Imaginary impedance (Ω)")
+    frequencies: List[float] = Field(..., max_length=100000, description="Frequency array (Hz)")
+    Z_real: List[float] = Field(..., max_length=100000, description="Real impedance (Ω)")
+    Z_imag: List[float] = Field(..., max_length=100000, description="Imaginary impedance (Ω)")
     circuit_model: str = Field("randles_cpe", description="Circuit model name")
     method: str = Field("lm", description="Optimization method (lm or de)")
     initial_guess: Optional[Dict[str, float]] = Field(None, description="Initial parameter guess")
@@ -114,13 +114,13 @@ class FitCircuitResponse(BaseModel):
 
 class DRTRequest(BaseModel):
     """Request model for DRT calculation."""
-    frequencies: List[float] = Field(..., description="Frequency array (Hz)")
-    Z_real: List[float] = Field(..., description="Real impedance (Ω)")
-    Z_imag: List[float] = Field(..., description="Imaginary impedance (Ω)")
-    lambda_reg: float = Field(1e-3, description="Regularization parameter")
-    tau_min: float = Field(1e-6, description="Minimum time constant (s)")
-    tau_max: float = Field(1e3, description="Maximum time constant (s)")
-    n_tau: int = Field(100, description="Number of time constant points")
+    frequencies: List[float] = Field(..., max_length=100000, description="Frequency array (Hz)")
+    Z_real: List[float] = Field(..., max_length=100000, description="Real impedance (Ω)")
+    Z_imag: List[float] = Field(..., max_length=100000, description="Imaginary impedance (Ω)")
+    lambda_reg: float = Field(1e-3, ge=0, le=1e2, description="Regularization parameter")
+    tau_min: float = Field(1e-6, gt=0, le=1e6, description="Minimum time constant (s)")
+    tau_max: float = Field(1e3, gt=0, le=1e6, description="Maximum time constant (s)")
+    n_tau: int = Field(100, ge=2, le=10000, description="Number of time constant points")
     method: str = Field("tikhonov", description="Regularization method")
 
 
@@ -133,11 +133,11 @@ class DRTResponse(BaseModel):
 
 class OptimizeLambdaRequest(BaseModel):
     """Request model for lambda optimization."""
-    frequencies: List[float] = Field(..., description="Frequency array (Hz)")
-    Z_real: List[float] = Field(..., description="Real impedance (Ω)")
-    Z_imag: List[float] = Field(..., description="Imaginary impedance (Ω)")
+    frequencies: List[float] = Field(..., max_length=100000, description="Frequency array (Hz)")
+    Z_real: List[float] = Field(..., max_length=100000, description="Real impedance (Ω)")
+    Z_imag: List[float] = Field(..., max_length=100000, description="Imaginary impedance (Ω)")
     lambda_range: Tuple[float, float] = Field((1e-5, 1e-1), description="Lambda range")
-    n_lambda: int = Field(20, description="Number of lambda values to test")
+    n_lambda: int = Field(20, ge=2, le=1000, description="Number of lambda values to test")
 
 
 # ===================================================================

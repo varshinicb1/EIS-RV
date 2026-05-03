@@ -29,7 +29,7 @@ router = APIRouter(
 # ══════════════════════════════════════════════════════════════════════
 
 class MaterialPredictionRequest(BaseModel):
-    formula: str = Field(..., description="Chemical formula (e.g., 'LiFePO4')")
+    formula: str = Field(..., min_length=1, max_length=200, description="Chemical formula (e.g., 'LiFePO4')")
     properties: List[str] = Field(
         ["band_gap", "formation_energy", "stability"],
         description="Properties to predict"
@@ -37,13 +37,13 @@ class MaterialPredictionRequest(BaseModel):
 
 
 class CrystalStructureRequest(BaseModel):
-    formula: str = Field(..., description="Chemical formula")
-    space_group: Optional[int] = Field(None, description="Space group number (1-230)")
+    formula: str = Field(..., min_length=1, max_length=200, description="Chemical formula")
+    space_group: Optional[int] = Field(None, ge=1, le=230, description="Space group number (1-230)")
 
 
 class LiteratureSearchRequest(BaseModel):
-    query: str = Field(..., description="Search query")
-    max_results: int = Field(10, description="Maximum results")
+    query: str = Field(..., min_length=1, max_length=8000, description="Search query")
+    max_results: int = Field(10, ge=1, le=1000, description="Maximum results")
 
 
 class SynthesisOptimizationRequest(BaseModel):
@@ -52,22 +52,22 @@ class SynthesisOptimizationRequest(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    question: str = Field(..., description="Question for materials expert")
+    question: str = Field(..., min_length=1, max_length=8000, description="Question for materials expert")
     context: Optional[Dict] = Field(None, description="Optional context")
 
 
 class ValidationRequest(BaseModel):
-    material: str = Field(..., description="Material name")
-    property_name: str = Field(..., description="Property name")
+    material: str = Field(..., min_length=1, max_length=200, description="Material name")
+    property_name: str = Field(..., min_length=1, max_length=200, description="Property name")
     simulated_value: float = Field(..., description="Simulated value")
-    tolerance: float = Field(0.2, description="Acceptable error tolerance")
+    tolerance: float = Field(0.2, gt=0, le=1e3, description="Acceptable error tolerance")
 
 
 class EISValidationRequest(BaseModel):
-    material: str = Field(..., description="Material name")
-    Z_real: List[float] = Field(..., description="Real impedance")
-    Z_imag: List[float] = Field(..., description="Imaginary impedance")
-    capacitance: Optional[float] = Field(None, description="Capacitance")
+    material: str = Field(..., min_length=1, max_length=200, description="Material name")
+    Z_real: List[float] = Field(..., max_length=100000, description="Real impedance")
+    Z_imag: List[float] = Field(..., max_length=100000, description="Imaginary impedance")
+    capacitance: Optional[float] = Field(None, ge=0, le=1e6, description="Capacitance")
 
 
 # ══════════════════════════════════════════════════════════════════════

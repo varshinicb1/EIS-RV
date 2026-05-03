@@ -59,15 +59,15 @@ def get_quantum_engine() -> QuantumEngine:
 
 class OptimizeRequest(BaseModel):
     """Request model for geometry optimization."""
-    smiles: str = Field(..., description="SMILES string of molecule")
+    smiles: str = Field(..., min_length=1, max_length=200, description="SMILES string of molecule")
     method: str = Field("AIMNet2", description="Calculation method")
-    force_tol: float = Field(0.01, description="Force tolerance (eV/Å)")
-    max_steps: int = Field(200, description="Maximum optimization steps")
+    force_tol: float = Field(0.01, gt=0, le=1e3, description="Force tolerance (eV/Å)")
+    max_steps: int = Field(200, ge=1, le=100000, description="Maximum optimization steps")
 
 
 class PropertiesRequest(BaseModel):
     """Request model for property calculation."""
-    smiles: str = Field(..., description="SMILES string of molecule")
+    smiles: str = Field(..., min_length=1, max_length=200, description="SMILES string of molecule")
     properties: List[str] = Field(
         ["energy", "band_gap"],
         description="Properties to calculate"
@@ -76,7 +76,7 @@ class PropertiesRequest(BaseModel):
 
 class BandGapRequest(BaseModel):
     """Request model for band gap calculation."""
-    smiles: str = Field(..., description="SMILES string of molecule")
+    smiles: str = Field(..., min_length=1, max_length=200, description="SMILES string of molecule")
     method: str = Field("AIMNet2", description="Calculation method")
 
 
@@ -417,18 +417,18 @@ async def health_check():
 
 class MolecularDynamicsRequest(BaseModel):
     """Request model for molecular dynamics simulation."""
-    smiles: str = Field(..., description="SMILES string of molecule")
-    n_steps: int = Field(1000, description="Number of MD steps")
-    timestep_fs: float = Field(0.5, description="Timestep in femtoseconds")
-    temperature_K: float = Field(300.0, description="Temperature in Kelvin")
+    smiles: str = Field(..., min_length=1, max_length=200, description="SMILES string of molecule")
+    n_steps: int = Field(1000, ge=1, le=100000, description="Number of MD steps")
+    timestep_fs: float = Field(0.5, gt=0, le=1e3, description="Timestep in femtoseconds")
+    temperature_K: float = Field(300.0, ge=0, le=1e5, description="Temperature in Kelvin")
     ensemble: str = Field("NVT", description="MD ensemble (NVE, NVT, NPT)")
 
 
 class ElectronDensityRequest(BaseModel):
     """Request model for electron density calculation."""
-    smiles: str = Field(..., description="SMILES string of molecule")
-    grid_spacing: float = Field(0.2, description="Grid spacing in Angstroms")
-    padding: float = Field(3.0, description="Padding around molecule in Angstroms")
+    smiles: str = Field(..., min_length=1, max_length=200, description="SMILES string of molecule")
+    grid_spacing: float = Field(0.2, gt=0, le=1e3, description="Grid spacing in Angstroms")
+    padding: float = Field(3.0, ge=0, le=1e3, description="Padding around molecule in Angstroms")
 
 
 @router.post("/molecular-dynamics", response_model=QuantumResponse)
