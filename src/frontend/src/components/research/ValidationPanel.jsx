@@ -120,7 +120,7 @@ export default function ValidationPanel() {
           <div className="card-title">Paper Validation Engine</div>
           <div className="card-subtitle">Replicate published results with RĀMAN</div>
           <button className="btn btn-primary" onClick={runBatch} disabled={running}
-            style={{ width: '100%', marginTop: 8, background: running ? '#555' : 'linear-gradient(135deg,#76b900,#00a67e)' }}>
+            style={{ width: '100%', marginTop: 8, background: running ? 'var(--text-disabled)' : 'var(--accent)' }}>
             {running ? `Validating... ${batchProgress.toFixed(0)}%` : `Validate ${SAMPLE_PAPERS.length} Papers`}
           </button>
           {running && (

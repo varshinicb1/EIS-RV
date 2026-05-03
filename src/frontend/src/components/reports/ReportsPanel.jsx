@@ -228,7 +228,7 @@ export default function ReportsPanel() {
     <div style={{
       width: '12px', height: '12px',
       borderRadius: '50%',
-      background: 'linear-gradient(135deg, #333, #111)',
+      background: 'var(--bg-elevated)',
       border: '1px solid #444',
       position: 'absolute',
       display: 'flex',
@@ -274,7 +274,7 @@ export default function ReportsPanel() {
         <div style={{
           padding: '16px 36px',
           borderBottom: `1px solid ${THEME.border}`,
-          background: 'linear-gradient(to bottom, #111116, #0a0a0f)',
+          background: 'var(--bg-tertiary)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -482,7 +482,7 @@ export default function ReportsPanel() {
         <div style={{
           padding: '16px 36px',
           borderBottom: `1px solid ${THEME.border}`,
-          background: 'linear-gradient(to bottom, #111116, #0a0a0f)',
+          background: 'var(--bg-tertiary)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',

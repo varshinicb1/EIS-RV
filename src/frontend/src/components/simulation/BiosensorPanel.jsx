@@ -385,11 +385,11 @@ export default function BiosensorPanel() {
 
         <div style={{display:'flex', gap:8, marginTop:12}}>
           <button className="btn btn-primary" onClick={runSimulation} disabled={running || optimizing}
-            style={{flex:1, background:(running||optimizing)?'#555':'linear-gradient(135deg,#76b900 0%,#00a67e 100%)'}}>
+            style={{flex:1, background:(running||optimizing)?'var(--text-disabled)':'var(--accent)'}}>
             {running ? 'Simulating...' : 'Simulate'}
           </button>
           <button className="btn" onClick={optimizeMaterial} disabled={running || optimizing}
-            style={{flex:1, background:(running||optimizing)?'#555':'#42a5f5', color:'#fff', border:'none'}}>
+            style={{flex:1, background:(running||optimizing)?'var(--text-disabled)':'#42a5f5', color:'#fff', border:'none'}}>
             {optimizing ? 'Optimizing...' : 'AI Optimize'}
           </button>
         </div>

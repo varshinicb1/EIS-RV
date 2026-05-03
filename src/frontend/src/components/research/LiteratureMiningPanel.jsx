@@ -70,7 +70,7 @@ export default function LiteratureMiningPanel() {
             </div>
           </div>
           <button className="btn btn-primary" onClick={runPipeline} disabled={running}
-            style={{ width: '100%', marginTop: 8, background: running ? '#555' : 'linear-gradient(135deg, #4a9eff 0%, #7c3aed 100%)' }}>
+            style={{ width: '100%', marginTop: 8, background: running ? 'var(--text-disabled)' : 'var(--accent)' }}>
             {running ? 'Mining Papers...' : 'Run Pipeline'}
           </button>
           {runResult && (
