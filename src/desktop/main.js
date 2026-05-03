@@ -292,69 +292,98 @@ function createWindow() {
 /**
  * Create application menu
  */
+/**
+ * Build the native application menu. The menu sends `menu:<action>` events
+ * to the renderer for app-specific actions; renderer panels subscribe via
+ * window.raman.onMenu(action, cb).
+ *
+ * Native dialogs (open / save) live in this process and are exposed
+ * through ipcMain.handle('fs:*') — see further down — so the renderer
+ * never has direct fs access (sandbox safety).
+ */
 function createMenu() {
+    const isMac = process.platform === 'darwin';
+    const send = (action, payload) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send(`menu:${action}`, payload);
+        }
+    };
+
     const template = [
+        // macOS app menu (Quit etc. live here on Darwin)
+        ...(isMac ? [{
+            label: app.name,
+            submenu: [
+                { role: 'about' }, { type: 'separator' },
+                { role: 'services' }, { type: 'separator' },
+                { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' },
+                { type: 'separator' }, { role: 'quit' },
+            ],
+        }] : []),
+
         {
             label: 'File',
             submenu: [
                 {
-                    label: 'New Project',
+                    label: 'New project',
                     accelerator: 'CmdOrCtrl+N',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-new-project');
-                        }
-                    }
+                    click: () => send('new-project'),
                 },
                 {
-                    label: 'Open Project',
+                    label: 'Open project…',
                     accelerator: 'CmdOrCtrl+O',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-open-project');
-                        }
-                    }
+                    click: () => send('open-project'),
                 },
                 {
-                    label: 'Save Project',
+                    label: 'Save project',
                     accelerator: 'CmdOrCtrl+S',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-save-project');
-                        }
-                    }
+                    click: () => send('save-project'),
+                },
+                {
+                    label: 'Save project as…',
+                    accelerator: 'CmdOrCtrl+Shift+S',
+                    click: () => send('save-project-as'),
                 },
                 { type: 'separator' },
                 {
-                    label: 'Export Results',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-export-results');
-                        }
-                    }
+                    label: 'Open lab data (xlsx / csv)…',
+                    click: () => send('open-lab-data'),
+                },
+                {
+                    label: 'Import EIS / CV data…',
+                    click: () => send('import-data'),
                 },
                 { type: 'separator' },
                 {
-                    label: 'Exit',
-                    accelerator: 'CmdOrCtrl+Q',
-                    click: () => {
-                        app.quit();
-                    }
-                }
-            ]
+                    label: 'Export current report (PDF)',
+                    accelerator: 'CmdOrCtrl+E',
+                    click: () => send('export-report'),
+                },
+                {
+                    label: 'Export plot (PNG)',
+                    accelerator: 'CmdOrCtrl+Shift+E',
+                    click: () => send('export-plot'),
+                },
+                { type: 'separator' },
+                isMac ? { role: 'close' } : { role: 'quit' },
+            ],
         },
+
         {
             label: 'Edit',
             submenu: [
-                { role: 'undo' },
-                { role: 'redo' },
+                { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+                { role: 'cut' }, { role: 'copy' }, { role: 'paste' },
+                { role: 'selectAll' },
                 { type: 'separator' },
-                { role: 'cut' },
-                { role: 'copy' },
-                { role: 'paste' },
-                { role: 'selectAll' }
-            ]
+                {
+                    label: 'Settings…',
+                    accelerator: 'CmdOrCtrl+,',
+                    click: () => send('navigate-panel', 'profile'),
+                },
+            ],
         },
+
         {
             label: 'View',
             submenu: [
@@ -366,108 +395,159 @@ function createMenu() {
                 { role: 'zoomIn' },
                 { role: 'zoomOut' },
                 { type: 'separator' },
-                { role: 'togglefullscreen' }
-            ]
+                { role: 'togglefullscreen' },
+                { type: 'separator' },
+                {
+                    label: 'Light theme',
+                    accelerator: 'CmdOrCtrl+Shift+L',
+                    click: () => send('set-theme', 'light'),
+                },
+                {
+                    label: 'Dark theme',
+                    accelerator: 'CmdOrCtrl+Shift+D',
+                    click: () => send('set-theme', 'dark'),
+                },
+                {
+                    label: 'High-contrast theme',
+                    accelerator: 'CmdOrCtrl+Shift+H',
+                    click: () => send('set-theme', 'hc'),
+                },
+            ],
         },
+
         {
-            label: 'GPU',
+            label: 'Tools',
             submenu: [
-                {
-                    label: 'GPU Status',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-gpu-status');
-                        }
-                    }
-                },
-                {
-                    label: 'Run Benchmark',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-gpu-benchmark');
-                        }
-                    }
-                },
-                {
-                    label: 'Clear GPU Cache',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-gpu-clear-cache');
-                        }
-                    }
-                }
-            ]
+                { label: 'Dashboard',          accelerator: 'CmdOrCtrl+1', click: () => send('navigate-panel', 'dashboard') },
+                { label: 'EIS',                accelerator: 'CmdOrCtrl+2', click: () => send('navigate-panel', 'eis') },
+                { label: 'Cyclic voltammetry', accelerator: 'CmdOrCtrl+3', click: () => send('navigate-panel', 'cv') },
+                { label: 'GCD',                accelerator: 'CmdOrCtrl+4', click: () => send('navigate-panel', 'gcd') },
+                { label: 'DRT',                accelerator: 'CmdOrCtrl+5', click: () => send('navigate-panel', 'drt') },
+                { label: 'Circuit fitting',    accelerator: 'CmdOrCtrl+6', click: () => send('navigate-panel', 'circuit') },
+                { label: 'Biosensor',          accelerator: 'CmdOrCtrl+7', click: () => send('navigate-panel', 'biosensor') },
+                { type: 'separator' },
+                { label: 'Materials AI',       click: () => send('navigate-panel', 'alchemi') },
+                { label: 'Alchemist canvas',   click: () => send('navigate-panel', 'alchemist_canvas') },
+                { label: 'Lab data',           click: () => send('navigate-panel', 'lab') },
+                { label: 'Literature mining',  click: () => send('navigate-panel', 'literature') },
+                { label: 'Reports',            click: () => send('navigate-panel', 'reports') },
+            ],
         },
+
         {
-            label: 'License',
+            role: 'window',
+            label: 'Window',
             submenu: [
-                {
-                    label: 'License Info',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-license-info');
-                        }
-                    }
-                },
-                {
-                    label: 'Activate License',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-activate-license');
-                        }
-                    }
-                },
-                {
-                    label: 'Start Free Trial',
-                    click: () => {
-                        if (mainWindow) {
-                            mainWindow.webContents.send('menu-start-trial');
-                        }
-                    }
-                }
-            ]
+                { role: 'minimize' },
+                { role: 'zoom' },
+                ...(isMac ? [{ type: 'separator' }, { role: 'front' }] : [{ role: 'close' }]),
+            ],
         },
+
         {
             label: 'Help',
             submenu: [
                 {
                     label: 'Documentation',
-                    click: () => {
-                        shell.openExternal('https://vidyuthlabs.co.in/raman-studio/docs');
-                    }
+                    click: () => shell.openExternal('https://github.com/varshinicb1/EIS-RV/blob/master/README.md'),
+                },
+                {
+                    label: 'Report an issue',
+                    click: () => shell.openExternal('https://github.com/varshinicb1/EIS-RV/issues/new'),
                 },
                 {
                     label: 'Support',
-                    click: () => {
-                        shell.openExternal('mailto:support@vidyuthlabs.co.in');
-                    }
+                    click: () => shell.openExternal('mailto:support@vidyuthlabs.co.in?subject=R%C4%80MAN%20Studio%20support'),
                 },
                 { type: 'separator' },
                 {
                     label: 'About',
                     click: () => {
-                        if (mainWindow) {
-                            dialog.showMessageBox(mainWindow, {
-                                type: 'info',
-                                title: 'About RĀMAN Studio',
-                                message: 'RĀMAN Studio v2.0.0',
-                                detail: 'The Digital Twin for Your Potentiostat\n\n' +
-                                       'AI-powered electrochemical analysis by VidyuthLabs.\n' +
-                                       'C++ accelerated · Multi-runtime · Enterprise-grade\n\n' +
-                                       'Honoring Professor CNR Rao\'s legacy in materials science.\n\n' +
-                                       '© 2026 VidyuthLabs\n' +
-                                       'https://vidyuthlabs.co.in',
-                                buttons: ['OK']
-                            });
-                        }
-                    }
-                }
-            ]
-        }
+                        if (!mainWindow) return;
+                        dialog.showMessageBox(mainWindow, {
+                            type: 'info',
+                            title: 'About RĀMAN Studio',
+                            message: 'RĀMAN Studio 2.1.0',
+                            detail:
+                                'Desktop electrochemical analysis suite by VidyuthLabs.\n' +
+                                'EIS · CV · GCD · DRT · biosensor · materials AI.\n\n' +
+                                '© 2026 VidyuthLabs.',
+                            buttons: ['OK'],
+                        });
+                    },
+                },
+            ],
+        },
     ];
 
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
+}
+
+// ── Native dialog IPC handlers ─────────────────────────────────────────
+//
+// Renderer calls window.raman.fs.<x>(...) which goes via these handlers.
+// We never trust paths from the renderer; every dialog runs in this
+// process, returning content (or path + content) back.
+
+function registerFsHandlers() {
+    const fs = require('fs');
+
+    ipcMain.handle('fs:open-project', async () => {
+        const r = await dialog.showOpenDialog(mainWindow, {
+            title: 'Open RĀMAN project',
+            filters: [
+                { name: 'RĀMAN project', extensions: ['raman', 'json'] },
+                { name: 'All files', extensions: ['*'] },
+            ],
+            properties: ['openFile'],
+        });
+        if (r.canceled || !r.filePaths[0]) return null;
+        const p = r.filePaths[0];
+        const content = await fs.promises.readFile(p, 'utf8');
+        return { path: p, content };
+    });
+
+    ipcMain.handle('fs:save-project', async (_e, { content, defaultPath }) => {
+        const r = await dialog.showSaveDialog(mainWindow, {
+            title: 'Save RĀMAN project',
+            defaultPath: defaultPath || 'project.raman',
+            filters: [{ name: 'RĀMAN project', extensions: ['raman', 'json'] }],
+        });
+        if (r.canceled || !r.filePath) return null;
+        await fs.promises.writeFile(r.filePath, content, 'utf8');
+        return { path: r.filePath };
+    });
+
+    ipcMain.handle('fs:open-lab-xlsx', async () => {
+        const r = await dialog.showOpenDialog(mainWindow, {
+            title: 'Open lab data',
+            filters: [
+                { name: 'Lab data', extensions: ['xlsx', 'xls', 'csv', 'json'] },
+                { name: 'All files', extensions: ['*'] },
+            ],
+            properties: ['openFile'],
+        });
+        if (r.canceled || !r.filePaths[0]) return null;
+        const p = r.filePaths[0];
+        const buf = await fs.promises.readFile(p);
+        return { path: p, name: path.basename(p), buffer: buf.toString('base64') };
+    });
+
+    ipcMain.handle('fs:export-report', async (_e, { content, defaultName, mime = 'application/pdf' }) => {
+        const ext = mime === 'application/pdf' ? 'pdf'
+                  : mime === 'image/png'        ? 'png'
+                  : 'bin';
+        const r = await dialog.showSaveDialog(mainWindow, {
+            title: 'Export report',
+            defaultPath: defaultName || `raman-report.${ext}`,
+            filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+        });
+        if (r.canceled || !r.filePath) return null;
+        // content is expected as a base64 string for binary outputs.
+        await fs.promises.writeFile(r.filePath, Buffer.from(content, 'base64'));
+        return { path: r.filePath };
+    });
 }
 
 /**
@@ -740,12 +820,15 @@ ipcMain.handle('show-message-box', async (_event, options) => {
 
 app.whenReady().then(async () => {
     try {
+        // File-system IPC handlers — needed before the renderer fires.
+        registerFsHandlers();
+
         // Start Python backend
         await startPythonServer();
-        
+
         // Wait for server to be fully ready
         await new Promise(resolve => setTimeout(resolve, 3000));
-        
+
         // Create window
         createWindow();
         

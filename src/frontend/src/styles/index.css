@@ -1,15 +1,98 @@
 /*
  * RĀMAN Studio — Design tokens
  * ============================
- * Calm, neutral palette appropriate for a scientific tool that
- * researchers stare at for hours. Single restrained accent (steel
- * blue), normal sentence-case labels, no glows or scanlines, no
- * monospace where regular text reads better. Mono is reserved for
- * actual numeric data and code.
+ *
+ * Themes are switched via the [data-theme] attribute on <html>:
+ *   - default (no attribute)   = light
+ *   - data-theme="dark"
+ *   - data-theme="hc"          (high-contrast)
+ *
+ * Layout / typography / effects do not vary across themes; only colour
+ * tokens do. Components should always read tokens (never inline hex)
+ * unless the value is destined for a non-CSS context (HTML5 canvas
+ * `fillStyle`, THREE.Color, etc) — in which case use the helpers in
+ * src/utils/themeColors.js.
  */
 
+/* ── Light theme (default) ────────────────────────────────────── */
 :root {
-  /* Surfaces — neutral charcoal, no blue tint */
+  /* Surfaces */
+  --bg-primary:       #fbfbfd;          /* page background */
+  --bg-secondary:     #ffffff;          /* sidebar / topbar surface */
+  --bg-tertiary:      #f3f4f6;          /* statusbar, subtle blocks */
+  --bg-elevated:      #ffffff;          /* cards (with shadow for lift) */
+  --bg-surface:       #ffffff;          /* primary card */
+  --bg-input:         #ffffff;
+  --bg-hover:         rgba(0, 0, 0, 0.04);
+
+  /* Glassmorphism — barely used in light, kept for parity */
+  --glass-bg:         rgba(255, 255, 255, 0.85);
+  --glass-border:     rgba(0, 0, 0, 0.06);
+  --glass-blur:       blur(8px);
+
+  /* Accent — slightly deeper than the dark blue so it's WCAG AA on white. */
+  --accent:           #2563eb;
+  --accent-hover:     #1d4ed8;
+  --accent-muted:     rgba(37, 99, 235, 0.08);
+  --accent-glow:      none;
+  --accent-border:    rgba(37, 99, 235, 0.30);
+
+  /* Semantic — readable on white */
+  --color-success:    #16a34a;          /* forest, not neon */
+  --color-warning:    #c2410c;          /* orange-brown */
+  --color-error:      #dc2626;
+  --color-info:       #2563eb;
+  --color-standby:    #94a3b8;
+
+  /* Text */
+  --text-primary:     #18181b;
+  --text-secondary:   #52525b;
+  --text-tertiary:    #71717a;
+  --text-disabled:    #d4d4d8;
+  --text-value:       #27272a;
+
+  /* Borders */
+  --border-primary:   rgba(15, 23, 42, 0.08);
+  --border-secondary: rgba(15, 23, 42, 0.14);
+  --border-default:   rgba(15, 23, 42, 0.10);
+
+  /* Layout */
+  --sidebar-width:    240px;
+  --sidebar-collapsed: 56px;
+  --topbar-height:    44px;
+  --statusbar-height: 26px;
+
+  /* Typography */
+  --font-ui:          'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-data:        'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  /* Serif used for axis labels in MATLAB-style scientific plots. */
+  --font-plot:        'Latin Modern Roman', 'Computer Modern Roman', Georgia, 'Times New Roman', serif;
+
+  /* Effects */
+  --radius-sm:        4px;
+  --radius-md:        6px;
+  --radius-lg:        10px;
+  --transition:       150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-sm:        0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md:        0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg:        0 8px 24px rgba(15, 23, 42, 0.10);
+
+  /* Plot tokens — used by canvas-2D plot helpers */
+  --plot-bg:          #ffffff;
+  --plot-axis:        #1f2937;
+  --plot-grid:        rgba(15, 23, 42, 0.10);
+  --plot-text:        #1f2937;
+  --plot-series-1:    #1f77b4;          /* MATLAB tab10 colours */
+  --plot-series-2:    #ff7f0e;
+  --plot-series-3:    #2ca02c;
+  --plot-series-4:    #d62728;
+  --plot-series-5:    #9467bd;
+  --plot-series-6:    #8c564b;
+  --plot-series-7:    #e377c2;
+}
+
+/* ── Dark theme ──────────────────────────────────────────────── */
+:root[data-theme="dark"] {
   --bg-primary:       #0d0d10;
   --bg-secondary:     #121217;
   --bg-tertiary:      #16161c;
@@ -18,59 +101,93 @@
   --bg-input:         #0f0f14;
   --bg-hover:         rgba(255, 255, 255, 0.04);
 
-  /* Glassmorphism — kept but subdued */
   --glass-bg:         rgba(22, 22, 28, 0.85);
   --glass-border:     rgba(255, 255, 255, 0.06);
-  --glass-blur:       blur(8px);
 
-  /* Accent — a calm steel blue, used sparingly. Never neon. */
   --accent:           #4a8eff;
   --accent-hover:     #6ba2ff;
   --accent-muted:     rgba(74, 142, 255, 0.10);
-  --accent-glow:      none;
   --accent-border:    rgba(74, 142, 255, 0.30);
 
-  /* Semantic colors — Apple-style, easy on the eyes */
   --color-success:    #34c759;
   --color-warning:    #ff9f0a;
   --color-error:      #ff453a;
   --color-info:       #4a8eff;
   --color-standby:    #6e6e76;
 
-  /* Text */
   --text-primary:     #ededf0;
   --text-secondary:   #aaaab2;
   --text-tertiary:    #6e6e76;
   --text-disabled:    #3e3e44;
   --text-value:       #d8d8dc;
 
-  /* Borders */
   --border-primary:   rgba(255, 255, 255, 0.06);
   --border-secondary: rgba(255, 255, 255, 0.10);
   --border-default:   rgba(255, 255, 255, 0.07);
 
-  /* Layout */
-  --sidebar-width:    240px;
-  --sidebar-collapsed: 56px;
-  --topbar-height:    44px;
-  --statusbar-height: 26px;
-
-  /* Typography
-     Inter for body and UI labels (regular, sentence case, no
-     letter-spacing tricks). IBM Plex Mono for numbers, code,
-     and data table cells. We do NOT use mono for prose.
-  */
-  --font-ui:          'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-data:        'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-
-  /* Effects */
-  --radius-sm:        4px;
-  --radius-md:        6px;
-  --radius-lg:        10px;
-  --transition:       150ms cubic-bezier(0.4, 0, 0.2, 1);
   --shadow-sm:        0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md:        0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg:        0 8px 24px rgba(0, 0, 0, 0.5);
+
+  --plot-bg:          #0d0d10;
+  --plot-axis:        #cbd5e1;
+  --plot-grid:        rgba(255, 255, 255, 0.10);
+  --plot-text:        #e2e8f0;
+  --plot-series-1:    #60a5fa;
+  --plot-series-2:    #fb923c;
+  --plot-series-3:    #34d399;
+  --plot-series-4:    #f87171;
+  --plot-series-5:    #c084fc;
+  --plot-series-6:    #a78bfa;
+  --plot-series-7:    #f472b6;
+}
+
+/* ── High-contrast theme (WCAG AAA, accessibility-first) ──────── */
+:root[data-theme="hc"] {
+  --bg-primary:       #ffffff;
+  --bg-secondary:     #ffffff;
+  --bg-tertiary:      #ffffff;
+  --bg-elevated:      #ffffff;
+  --bg-surface:       #ffffff;
+  --bg-input:         #ffffff;
+  --bg-hover:         #ffffaa;
+
+  --accent:           #0000ee;          /* classic link-blue */
+  --accent-hover:     #0000aa;
+  --accent-muted:     #ffff00;          /* yellow as the secondary signal */
+  --accent-border:    #000000;
+
+  --color-success:    #006600;
+  --color-warning:    #b35900;
+  --color-error:      #cc0000;
+  --color-info:       #0000ee;
+  --color-standby:    #404040;
+
+  --text-primary:     #000000;
+  --text-secondary:   #000000;
+  --text-tertiary:    #404040;
+  --text-disabled:    #767676;
+  --text-value:       #000000;
+
+  --border-primary:   #000000;          /* hard borders everywhere */
+  --border-secondary: #000000;
+  --border-default:   #000000;
+
+  --shadow-sm:        none;
+  --shadow-md:        none;
+  --shadow-lg:        0 0 0 2px #000000;
+
+  --plot-bg:          #ffffff;
+  --plot-axis:        #000000;
+  --plot-grid:        #404040;
+  --plot-text:        #000000;
+  --plot-series-1:    #000000;
+  --plot-series-2:    #0000ee;
+  --plot-series-3:    #006600;
+  --plot-series-4:    #cc0000;
+  --plot-series-5:    #b35900;
+  --plot-series-6:    #6600cc;
+  --plot-series-7:    #008888;
 }
 
 /* ── Reset ────────────────────────────────────────────── */
@@ -93,16 +210,15 @@ html, body, #root {
 /* Tabular numbers for any element with a data-number attribute. */
 .num, [data-number] { font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { 
-  background: var(--bg-elevated); 
-  border-radius: 10px;
-  border: 1px solid var(--border-primary);
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--text-disabled);
+  border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
 
-::selection { background: rgba(74, 158, 255, 0.25); }
+::selection { background: var(--accent-muted); color: var(--text-primary); }
 
 /* ── App Shell ────────────────────────────────────────── */
 .app-shell {

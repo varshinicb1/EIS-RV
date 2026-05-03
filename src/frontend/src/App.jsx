@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
-import { ThemeProvider } from './hooks/useTheme.jsx';
+import { ThemeProvider, useTheme } from './hooks/useTheme.jsx';
 import Sidebar from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import StatusBar from './components/layout/StatusBar';
@@ -60,6 +60,7 @@ function AppContent() {
   const [backendStatus, setBackendStatus] = useState('connecting');
   const [licenseInfo, setLicenseInfo] = useState(null);
   const [nimConfigured, setNimConfigured] = useState(null);
+  const { setTheme } = useTheme();
 
   useKeyboardShortcuts(setActivePanel, () => setSidebarCollapsed(c => !c));
 
@@ -93,6 +94,109 @@ function AppContent() {
       window.removeEventListener('NAVIGATE_PANEL', nav);
     };
   }, []);
+
+  // ── Native menu plumbing ────────────────────────────────────
+  // The Electron application menu fires `menu:<action>` events; we
+  // subscribe through the preload bridge and react here. Panel-specific
+  // actions (Open lab data, Export report, ...) re-broadcast as DOM
+  // CustomEvents so individual panels can hook in without coupling
+  // them to the Electron API directly.
+  useEffect(() => {
+    const onMenu = window.raman?.onMenu;
+    if (!onMenu) return;
+    const offs = [];
+
+    offs.push(onMenu('navigate-panel', (panelKey) => {
+      if (panelKey && PANELS[panelKey]) setActivePanel(panelKey);
+    }));
+    offs.push(onMenu('set-theme', (themeId) => setTheme(themeId)));
+
+    offs.push(onMenu('new-project', () => {
+      window.dispatchEvent(new CustomEvent('NAVIGATE_PANEL', { detail: 'workspace' }));
+      window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+        detail: { kind: 'info', text: 'Use "+ New project" in the Workspace panel.' },
+      }));
+    }));
+
+    offs.push(onMenu('open-project', async () => {
+      try {
+        const r = await window.raman.fs.openProject();
+        if (!r) return;
+        window.dispatchEvent(new CustomEvent('RAMAN_PROJECT_OPENED', {
+          detail: { path: r.path, content: r.content },
+        }));
+        window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+          detail: { kind: 'ok', text: `Project loaded: ${r.path.split(/[/\\]/).pop()}` },
+        }));
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+          detail: { kind: 'err', text: `Open failed: ${err.message}` },
+        }));
+      }
+    }));
+
+    const saveCurrentProject = async (askForName) => {
+      try {
+        // The active project lives in localStorage under "raman-projects".
+        const projects = JSON.parse(localStorage.getItem('raman-projects') || '[]');
+        const active = projects[0] || {
+          id: `proj_${Date.now()}`,
+          name: 'Untitled',
+          created: new Date().toISOString(),
+          notes: '',
+        };
+        const payload = {
+          format: 'raman-project-v1',
+          saved_at: new Date().toISOString(),
+          project: active,
+          all_projects: projects,
+          user: JSON.parse(localStorage.getItem('raman-profile') || '{}'),
+        };
+        const r = await window.raman.fs.saveProject(
+          JSON.stringify(payload, null, 2),
+          askForName ? `${active.name || 'project'}.raman` : `${active.name || 'project'}.raman`,
+        );
+        if (!r) return;
+        window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+          detail: { kind: 'ok', text: `Project saved: ${r.path.split(/[/\\]/).pop()}` },
+        }));
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+          detail: { kind: 'err', text: `Save failed: ${err.message}` },
+        }));
+      }
+    };
+    offs.push(onMenu('save-project',    () => saveCurrentProject(false)));
+    offs.push(onMenu('save-project-as', () => saveCurrentProject(true)));
+
+    offs.push(onMenu('open-lab-data', async () => {
+      try {
+        const r = await window.raman.fs.openLabXlsx();
+        if (!r) return;
+        setActivePanel('lab');
+        // Pass the file (base64-encoded buffer) to the Lab Data panel.
+        window.dispatchEvent(new CustomEvent('RAMAN_LAB_FILE_OPENED', { detail: r }));
+        window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+          detail: { kind: 'info', text: `Loaded: ${r.name}. Open the Lab Data panel to upload.` },
+        }));
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent('RAMAN_TOAST', {
+          detail: { kind: 'err', text: `Open failed: ${err.message}` },
+        }));
+      }
+    }));
+
+    offs.push(onMenu('import-data', () => setActivePanel('data')));
+    offs.push(onMenu('export-report', () => {
+      setActivePanel('reports');
+      window.dispatchEvent(new CustomEvent('RAMAN_REQUEST_EXPORT_REPORT'));
+    }));
+    offs.push(onMenu('export-plot', () => {
+      window.dispatchEvent(new CustomEvent('RAMAN_REQUEST_EXPORT_PLOT'));
+    }));
+
+    return () => offs.forEach(off => off?.());
+  }, [setTheme]);
 
   return (
     <div className="app-shell">

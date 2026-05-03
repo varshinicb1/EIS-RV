@@ -129,6 +129,27 @@ contextBridge.exposeInMainWorld('raman', {
             }
         },
     },
+
+    // ── Native filesystem dialogs (run in main process) ──────
+    fs: {
+        openProject:    ()           => ipcRenderer.invoke('fs:open-project'),
+        saveProject:    (content, defaultPath) =>
+                                        ipcRenderer.invoke('fs:save-project', { content, defaultPath }),
+        openLabXlsx:    ()           => ipcRenderer.invoke('fs:open-lab-xlsx'),
+        exportReport:   (content, defaultName, mime) =>
+                                        ipcRenderer.invoke('fs:export-report',
+                                            { content, defaultName, mime: mime || 'application/pdf' }),
+    },
+
+    // ── Application menu events ──────────────────────────────
+    // window.raman.onMenu('open-project', cb) subscribes to clicks on
+    // File → Open project. Returns an unsubscribe function.
+    onMenu: (action, cb) => {
+        const channel = `menu:${action}`;
+        const handler = (_e, payload) => cb(payload);
+        ipcRenderer.on(channel, handler);
+        return () => ipcRenderer.removeListener(channel, handler);
+    },
 });
 
 console.log('🔒 RĀMAN Studio preload initialized (context-isolated)');

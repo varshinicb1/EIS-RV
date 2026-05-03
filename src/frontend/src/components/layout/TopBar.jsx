@@ -1,5 +1,6 @@
 import React from 'react';
-import { Settings, HelpCircle } from 'lucide-react';
+import { Settings, HelpCircle, Sun, Moon, Eye } from 'lucide-react';
+import useTheme, { THEMES } from '../../hooks/useTheme';
 
 /**
  * TopBar — application-wide chrome.
@@ -34,6 +35,7 @@ export default function TopBar({ title, licenseInfo }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <LicensePill info={licenseInfo} />
+        <ThemeToggle />
         <IconBtn label="Help" onClick={() => window.open('https://github.com/varshinicb1/EIS-RV/blob/master/README.md', '_blank', 'noopener')}>
           <HelpCircle size={16} strokeWidth={1.75} />
         </IconBtn>
@@ -42,6 +44,19 @@ export default function TopBar({ title, licenseInfo }) {
         </IconBtn>
       </div>
     </header>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  // Cycle: light → dark → high-contrast → light
+  const order = ['light', 'dark', 'hc'];
+  const next = order[(order.indexOf(theme) + 1) % order.length];
+  const Icon = theme === 'dark' ? Moon : theme === 'hc' ? Eye : Sun;
+  return (
+    <IconBtn label={`Theme: ${THEMES[theme].label} — click for ${THEMES[next].label}`} onClick={() => setTheme(next)}>
+      <Icon size={16} strokeWidth={1.75} />
+    </IconBtn>
   );
 }
 

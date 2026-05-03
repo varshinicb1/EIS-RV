@@ -609,6 +609,13 @@ try:
 except ImportError as e:
     logger.warning("NVIDIA Intelligence router unavailable: %s", e)
 
+# Settings (NVIDIA-key validation/save, future user-facing prefs).
+try:
+    from src.backend.api.v1_routes.settings_routes import router as settings_router
+    app.include_router(settings_router)
+except ImportError as e:
+    logger.warning("Settings router unavailable: %s", e)
+
 
 # ── NVIDIA Alchemi (chat + materials lookup) ────────────────────
 #
