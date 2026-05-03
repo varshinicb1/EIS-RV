@@ -46,6 +46,44 @@ struct DRTResult {
     double lambda_used;    // Regularization parameter used
 };
 
+
+// ── Kramers-Kronig Result ─────────────────────────────────
+//
+// Returned by kramers_kronig_test. The fields below match the
+// header's documented contract (residual_real, residual_imag,
+// is_valid, mu — see Schönleber et al. 2014).
+struct KKResult {
+    // Compliance verdict.
+    bool   is_valid           = false;
+
+    // The Schönleber μ statistic — fraction of the fitted residue mass
+    // that lies on POSITIVE coefficients. μ → 1 ⇒ minimal negative
+    // contribution ⇒ data is K-K compliant. μ < ~0.85 indicates
+    // significant K-K violation.
+    double mu                 = 0.0;
+
+    // Per-frequency relative residual: |Z_meas - Z_fit| / |Z_meas|.
+    VecD   residual_real;          // (Z_real_meas - Z_real_fit) / |Z_meas|
+    VecD   residual_imag;          // (Z_imag_meas - Z_imag_fit) / |Z_meas|
+
+    // Global residuals (max and L2-mean of the relative residuals).
+    double max_residual_real  = 0.0;
+    double max_residual_imag  = 0.0;
+    double mean_residual      = 0.0;   // root-mean-square of the combined real+imag relative residuals
+
+    // The fitted impedance for visual inspection.
+    VecD   Z_fit_real;
+    VecD   Z_fit_imag;
+
+    // The RC bank used. R_k can be negative (Lin-KK trick).
+    VecD   tau;
+    VecD   R;
+    double R_inf              = 0.0;
+
+    // Diagnostics.
+    int    n_rc_used          = 0;
+};
+
 /**
  * Compute DRT from impedance data using Tikhonov regularization.
  *
@@ -63,18 +101,27 @@ DRTResult compute_drt(
 );
 
 /**
- * Kramers-Kronig consistency test using Lin-KK method.
+ * Kramers-Kronig consistency test using the Lin-KK method.
  *
- * Tests whether impedance data satisfies K-K relations,
- * which is a prerequisite for valid equivalent circuit fitting.
+ * Tests whether impedance data satisfies the Kramers-Kronig relations,
+ * a prerequisite for valid equivalent-circuit fitting. Implementation
+ * follows Schönleber, Klotz, Ivers-Tiffée (Electrochim. Acta 131, 2014):
+ * fit the data with a bank of RC elements at logarithmically-spaced τ_k
+ * (allowing negative R_k), then compute
+ *
+ *     μ  =  1 − |Σ R_k where R_k < 0| / Σ |R_k where R_k ≥ 0|
+ *
+ * μ ≈ 1 ⇒ K-K compliant (no negative-R_k mass needed). μ < 0.85
+ * indicates a significant K-K violation, usually meaning experimental
+ * artefacts (drift, noise, non-stationarity).
  *
  * @param frequencies  Frequency array (Hz)
  * @param Z_real       Real impedance (Ω)
  * @param Z_imag       Imaginary impedance (Ω)
- * @param n_rc         Number of RC elements for Lin-KK (0 = auto)
- * @return             Map with: residual_real, residual_imag, is_valid, mu
+ * @param n_rc         Number of RC elements (0 = use as many as data points)
+ * @return             ``KKResult`` with is_valid, mu, residuals and fit
  */
-DRTResult kramers_kronig_test(
+KKResult kramers_kronig_test(
     const VecD& frequencies,
     const VecD& Z_real,
     const VecD& Z_imag,

@@ -1,473 +1,227 @@
 """
-Pre-Flight Check for RĀMAN Studio
+Pre-flight check for RĀMAN Studio
 ==================================
-Comprehensive system check before shipping to customer.
+Verifies that the developer's local environment can build and import the app.
 
-Author: VidyuthLabs
-Date: May 1, 2026
+Honest version. Earlier revisions of this script reported "✓ Security
+Features" by iterating a hardcoded list of `(name, True)` tuples and
+"✓ 21 CFR Part 11 Compliance" by the same trick. Those sections have
+been removed because they did not actually verify anything.
+
+What this script DOES verify:
+  - Python version is supported (3.11–3.13)
+  - Required packages can be imported
+  - Backend entry points (src/backend/api/server.py and friends) exist
+  - The C++ engine source tree is present
+  - The frontend entry points exist
+  - Optional NVIDIA API key is loadable
+
+What this script does NOT verify:
+  - That security features actually work (covered by the test suite)
+  - That the C++ engine is built (run `python3 scripts/build_cpp.py`)
+  - That the frontend is built (run `cd src/frontend && npm run build`)
+
+Exit code is 0 if no errors, 1 if any error, 0 if only warnings.
 """
 
-import sys
-import os
+from __future__ import annotations
+
 import importlib
+import os
+import sys
 from pathlib import Path
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-# ANSI colors for terminal output
-GREEN = '\033[92m'
-RED = '\033[91m'
-YELLOW = '\033[93m'
-BLUE = '\033[94m'
-RESET = '\033[0m'
-BOLD = '\033[1m'
+# ---- ANSI helpers ----------------------------------------------------------
 
-def print_header(text):
-    """Print section header."""
-    print(f"\n{BOLD}{BLUE}{'='*60}{RESET}")
+GREEN, RED, YELLOW, BLUE, RESET, BOLD = (
+    "\033[92m", "\033[91m", "\033[93m", "\033[94m", "\033[0m", "\033[1m"
+)
+
+
+def header(text: str) -> None:
+    print(f"\n{BOLD}{BLUE}{'=' * 60}{RESET}")
     print(f"{BOLD}{BLUE}{text:^60}{RESET}")
-    print(f"{BOLD}{BLUE}{'='*60}{RESET}\n")
+    print(f"{BOLD}{BLUE}{'=' * 60}{RESET}\n")
 
-def print_success(text):
-    """Print success message."""
-    print(f"[OK] {text}")
 
-def print_error(text):
-    """Print error message."""
-    print(f"[ERROR] {text}")
+def ok(text: str) -> None:
+    print(f"{GREEN}[OK]{RESET} {text}")
 
-def print_warning(text):
-    """Print warning message."""
-    print(f"[WARNING] {text}")
 
-def print_info(text):
-    """Print info message."""
+def err(text: str) -> None:
+    print(f"{RED}[ERROR]{RESET} {text}")
+
+
+def warn(text: str) -> None:
+    print(f"{YELLOW}[WARN]{RESET} {text}")
+
+
+def info(text: str) -> None:
     print(f"[INFO] {text}")
 
-# Track issues
-issues = []
-warnings = []
 
-print_header("RAMAN STUDIO PRE-FLIGHT CHECK")
-print_info("Checking system readiness for production deployment...")
+errors: list[str] = []
+warnings: list[str] = []
 
-# ===================================================================
-# 1. Python Version Check
-# ===================================================================
-print_header("1. Python Environment")
 
-python_version = sys.version_info
-print_info(f"Python version: {python_version.major}.{python_version.minor}.{python_version.micro}")
+# ---- 1. Python version -----------------------------------------------------
 
-if python_version >= (3, 10):
-    print_success("Python version is compatible (3.10+)")
+header("1. Python environment")
+
+py = sys.version_info
+info(f"Python {py.major}.{py.minor}.{py.micro}  ({sys.executable})")
+
+if (3, 11) <= (py.major, py.minor) <= (3, 13):
+    ok(f"Python {py.major}.{py.minor} is supported")
+elif (py.major, py.minor) >= (3, 14):
+    warn(f"Python {py.major}.{py.minor} may break some optional ML deps; 3.11–3.13 are tested")
+    warnings.append(f"Python {py.major}.{py.minor} not in tested range")
 else:
-    print_error(f"Python version {python_version.major}.{python_version.minor} is too old. Requires 3.10+")
-    issues.append("Python version < 3.10")
+    err(f"Python {py.major}.{py.minor} is too old; need 3.11+")
+    errors.append("python<3.11")
 
-# ===================================================================
-# 2. Required Dependencies
-# ===================================================================
-print_header("2. Required Dependencies")
 
-required_packages = [
-    # Core
-    ("numpy", "1.24.0"),
-    ("scipy", "1.11.0"),
-    ("scikit-learn", "1.3.0"),
-    ("pandas", "2.0.0"),
-    
-    # API
-    ("fastapi", "0.100.0"),
-    ("uvicorn", "0.23.0"),
-    ("pydantic", "2.0.0"),
-    
-    # Database
-    ("sqlalchemy", "2.0.0"),
-    ("psycopg2", None),  # psycopg2-binary
-    ("alembic", "1.12.0"),
-    ("redis", "5.0.0"),
-    
-    # Auth
-    ("jose", None),  # python-jose
-    ("passlib", "1.7.4"),
-    
-    # Automation
-    ("croniter", "2.0.0"),
-    ("aiohttp", "3.9.0"),
-    
-    # Reports
-    ("reportlab", "4.0.0"),
-    ("openpyxl", "3.1.0"),
-    ("docx", None),  # python-docx
+# ---- 2. Required packages --------------------------------------------------
+
+header("2. Required packages")
+
+# (import_name, optional)
+PACKAGES: list[tuple[str, bool]] = [
+    ("numpy",       False),
+    ("scipy",       False),
+    ("fastapi",     False),
+    ("uvicorn",     False),
+    ("pydantic",    False),
+    ("requests",    False),
+    ("dotenv",      False),  # python-dotenv
+    ("sklearn",     True),   # scikit-learn — needed for optimizer
+    ("pandas",      True),   # used by data_loader
+    ("alembic",     True),   # only needed for migrations
+    ("sqlalchemy",  True),
+    ("psycopg2",    True),   # only if DATABASE_URL points at Postgres
 ]
 
-for package_name, min_version in required_packages:
+for name, optional in PACKAGES:
     try:
-        if package_name == "jose":
-            module = importlib.import_module("jose")
-        elif package_name == "docx":
-            module = importlib.import_module("docx")
-        elif package_name == "psycopg2":
-            module = importlib.import_module("psycopg2")
-        elif package_name == "scikit-learn":
-            module = importlib.import_module("sklearn")
-        else:
-            module = importlib.import_module(package_name)
-        
-        version = getattr(module, "__version__", "unknown")
-        print_success(f"{package_name}: {version}")
+        mod = importlib.import_module(name)
+        ver = getattr(mod, "__version__", "?")
+        ok(f"{name} {ver}")
     except ImportError:
-        print_error(f"{package_name}: NOT INSTALLED")
-        issues.append(f"Missing package: {package_name}")
+        if optional:
+            warn(f"{name}: not installed (optional)")
+            warnings.append(f"missing optional: {name}")
+        else:
+            err(f"{name}: not installed")
+            errors.append(f"missing required: {name}")
 
-# ===================================================================
-# 3. File Structure Check
-# ===================================================================
-print_header("3. File Structure")
 
-required_files = [
-    # Backend core
-    "vanl/backend/main.py",
-    "vanl/backend/core/eis_engine.py",
-    "vanl/backend/core/cv_engine.py",
-    "vanl/backend/core/gcd_engine.py",
-    "vanl/backend/core/ink_engine.py",
-    "vanl/backend/core/supercap_device_engine.py",
-    "vanl/backend/core/battery_engine.py",
-    "vanl/backend/core/biosensor_engine.py",
-    "vanl/backend/core/materials_db.py",
-    "vanl/backend/core/quantum_engine.py",
-    "vanl/backend/core/nvidia_intelligence.py",
-    
-    # Data analysis
-    "vanl/backend/core/data_import.py",
-    "vanl/backend/core/circuit_fitting.py",
-    "vanl/backend/core/drt_analysis.py",
-    
-    # Enterprise features
-    "vanl/backend/core/database.py",
-    "vanl/backend/core/models.py",
-    "vanl/backend/core/auth.py",
-    "vanl/backend/core/batch_processor.py",
-    "vanl/backend/core/scheduler.py",
-    "vanl/backend/core/webhooks.py",
-    "vanl/backend/core/rate_limiter.py",
-    "vanl/backend/core/report_generator.py",
-    "vanl/backend/core/signatures.py",
-    
-    # API routes
-    "vanl/backend/api/routes.py",
-    "vanl/backend/api/pe_routes.py",
-    "vanl/backend/api/nvidia_routes.py",
-    "vanl/backend/api/quantum_routes.py",
-    "vanl/backend/api/data_routes.py",
-    "vanl/backend/api/auth_routes.py",
-    "vanl/backend/api/workspace_routes.py",
-    "vanl/backend/api/project_routes.py",
-    "vanl/backend/api/experiment_routes.py",
-    "vanl/backend/api/batch_routes.py",
-    "vanl/backend/api/automation_routes.py",
-    "vanl/backend/api/compliance_routes.py",
-    
-    # Frontend
-    "vanl/frontend/index.html",
-    "vanl/frontend/app.js",
-    "vanl/frontend/style.css",
-    "vanl/frontend/crystal3d.js",
-    
-    # Config
-    "vanl/requirements.txt",
+# ---- 3. File structure -----------------------------------------------------
+
+header("3. File structure")
+
+REQUIRED = [
+    "src/backend/api/server.py",
+    "src/desktop/main.js",
+    "src/frontend/index.html",
+    "src/frontend/src/App.jsx",
+    "engine_core/CMakeLists.txt",
+    "engine_core/src/eis_solver.cpp",
+
+    # Physics + analysis engines
+    "src/backend/core/engines/eis_engine.py",
+    "src/backend/core/engines/cv_engine.py",
+    "src/backend/core/engines/gcd_engine.py",
+    "src/backend/core/engines/battery_engine.py",
+    "src/backend/core/engines/biosensor_engine.py",
+    "src/backend/core/engines/materials_db.py",
+    "src/backend/core/engines/circuit_fitting.py",
+    "src/backend/core/engines/drt_analysis.py",
+    "src/backend/core/engines/kk_validation.py",
+
+    # API routers mounted by src/backend/api/server.py
+    "src/backend/api/v1_routes/routes.py",
+    "src/backend/api/v1_routes/data_routes.py",
+
+    # Research pipeline + datasets
+    "src/backend/research/pipeline.py",
+    "data/datasets/research/papers.db",
+
+    "package.json",
     ".env.example",
     "README.md",
 ]
 
-for file_path in required_files:
-    if Path(file_path).exists():
-        print_success(f"{file_path}")
+for path in REQUIRED:
+    if Path(path).exists():
+        ok(path)
     else:
-        print_error(f"{file_path}: MISSING")
-        issues.append(f"Missing file: {file_path}")
+        err(f"missing: {path}")
+        errors.append(f"missing file: {path}")
 
-# ===================================================================
-# 4. Environment Variables
-# ===================================================================
-print_header("4. Environment Variables")
 
-env_vars = [
-    ("NVIDIA_API_KEY", False),  # Optional
-    ("DATABASE_URL", False),  # Optional for development
-    ("REDIS_URL", False),  # Optional for development
-    ("SECRET_KEY", False),  # Optional, will use default
+# ---- 4. Environment --------------------------------------------------------
+
+header("4. Environment")
+
+env_keys = [
+    ("NVIDIA_API_KEY", True),   # optional — only needed for cloud AI
+    ("PORT",            True),
+    ("LOG_LEVEL",       True),
 ]
 
-env_file = Path(".env")
-if env_file.exists():
-    print_success(".env file exists")
-else:
-    print_warning(".env file not found (using defaults)")
-    warnings.append("No .env file - using default configuration")
-
-for var_name, required in env_vars:
-    value = os.getenv(var_name)
-    if value:
-        # Show first 12 chars for verification
-        masked_value = value[:12] + "..." if len(value) > 12 else "***"
-        print_success(f"{var_name}: {masked_value}")
-    elif required:
-        print_error(f"{var_name}: NOT SET (required)")
-        issues.append(f"Missing required env var: {var_name}")
+for key, optional in env_keys:
+    val = os.environ.get(key)
+    if val:
+        # Don't print key contents; just confirm presence.
+        ok(f"{key} is set")
+    elif optional:
+        info(f"{key} not set (optional)")
     else:
-        print_info(f"{var_name}: not set (optional)")
+        err(f"{key} not set")
+        errors.append(f"missing env: {key}")
 
-# ===================================================================
-# 5. API Endpoints Check
-# ===================================================================
-print_header("5. API Endpoints")
 
-# Check NVIDIA ALCHEMI first (THE HERO!)
-try:
-    from vanl.backend.core.nvidia_intelligence import get_nvidia_intelligence
-    nvidia = get_nvidia_intelligence()
-    if nvidia.enabled:
-        print_success(f"NVIDIA ALCHEMI: ENABLED (API key configured)")
-        print_info(f"  - Materials property prediction")
-        print_info(f"  - Crystal structure generation")
-        print_info(f"  - Literature search (BioMegatron)")
-        print_info(f"  - Synthesis optimization")
-        print_info(f"  - Materials science chat (Llama 3.1)")
-        
-        # Try to import nvalchemi toolkit
-        try:
-            import nvalchemi
-            version = getattr(nvalchemi, "__version__", "installed")
-            print_success(f"  - nvalchemi-toolkit: {version}")
-        except ImportError:
-            print_warning("  - nvalchemi-toolkit: NOT INSTALLED")
-            if python_version >= (3, 14):
-                print_error(f"  ⚠️  Python {python_version.major}.{python_version.minor} is TOO NEW!")
-                print_error(f"  ⚠️  NVIDIA ALCHEMI requires Python 3.11, 3.12, or 3.13")
-                print_error(f"  ⚠️  Please install Python 3.13 and create a new virtual environment")
-                print_error(f"  ⚠️  See NVIDIA_ALCHEMI_SETUP.md for detailed instructions")
-                issues.append("Python 3.14 incompatible with NVIDIA ALCHEMI - requires Python 3.11-3.13")
-            else:
-                print_info(f"  ℹ️  Install with: pip install nvalchemi-toolkit")
-                warnings.append("NVIDIA ALCHEMI toolkit not installed - install with: pip install nvalchemi-toolkit")
-        
-        # Try to import ASE
-        try:
-            import ase
-            print_success(f"  - ASE (Atomic Simulation Environment): {ase.__version__}")
-        except ImportError:
-            print_warning("  - ASE: NOT INSTALLED")
-            print_info(f"  ℹ️  Install with: pip install ase")
-            warnings.append("ASE not installed - install with: pip install ase")
-    else:
-        print_warning("NVIDIA ALCHEMI: API key not configured")
-        warnings.append("NVIDIA ALCHEMI not configured - set NVIDIA_API_KEY in .env")
-except Exception as e:
-    print_error(f"NVIDIA ALCHEMI: Failed to load - {e}")
-    issues.append(f"NVIDIA ALCHEMI error: {e}")
+# ---- 5. FastAPI app loads --------------------------------------------------
 
-# Check FastAPI app
-try:
-    from vanl.backend.main import app
-    
-    routes_count = len([r for r in app.routes if hasattr(r, 'methods')])
-    print_success(f"Total API endpoints: {routes_count}")
-    
-    # Check key routers
-    routers = [
-        "Core Electrochemistry",
-        "Printed Electronics",
-        "NVIDIA Intelligence",
-        "Quantum Chemistry",
-        "Data Analysis",
-        "Authentication",
-        "Workspaces",
-        "Projects",
-        "Experiments",
-        "Batch Processing",
-        "Automation",
-        "Compliance"
-    ]
-    
-    for router_name in routers:
-        print_success(f"{router_name} routes loaded")
-    
-except ImportError as e:
-    if "sklearn" in str(e) or "scikit" in str(e):
-        print_warning(f"scikit-learn import issue (non-critical): {e}")
-        warnings.append("scikit-learn import warning - some ML features may be limited")
-    else:
-        print_error(f"Failed to load FastAPI app: {e}")
-        issues.append(f"FastAPI app load error: {e}")
-except Exception as e:
-    # Check if it's just a warning about metadata
-    if "metadata" in str(e).lower() or "extend_existing" in str(e).lower():
-        print_warning(f"FastAPI app loaded with database warnings (non-critical)")
-        warnings.append("Database metadata warning - tables being redefined (safe)")
-    else:
-        print_error(f"Failed to load FastAPI app: {e}")
-        issues.append(f"FastAPI app load error: {e}")
+header("5. Backend imports")
 
-# ===================================================================
-# 6. Database Models
-# ===================================================================
-print_header("6. Database Models")
+# Make sure the project root is on sys.path so `import src...` works.
+project_root = Path(__file__).resolve().parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 try:
-    # Import database module first to ensure Base is created
-    import vanl.backend.core.database as db_module
-    
-    # Now import models
-    from vanl.backend.core.models import (
-        User, Workspace, WorkspaceMember, Project,
-        Experiment, BatchJob, AuditLog, APIKey
-    )
-    
-    models = [
-        "User", "Workspace", "WorkspaceMember", "Project",
-        "Experiment", "BatchJob", "AuditLog", "APIKey"
-    ]
-    
-    for model_name in models:
-        print_success(f"{model_name} model")
-    
-    print_info(f"Total database models: {len(models)}")
-    
-except Exception as e:
-    # Check if it's just a warning about table redefinition
-    error_msg = str(e).lower()
-    if "already defined" in error_msg or "extend_existing" in error_msg or "metadata" in error_msg:
-        print_warning(f"Database models loaded with warnings (non-critical)")
-        warnings.append("Database table redefinition warning (safe with extend_existing=True)")
-    else:
-        print_error(f"Failed to load database models: {e}")
-        issues.append(f"Database models error: {e}")
+    from src.backend.api import server  # noqa: F401
+    routes = [r for r in server.app.routes if hasattr(r, "methods")]
+    ok(f"src.backend.api.server imports cleanly ({len(routes)} routes)")
+except Exception as e:  # broad — we want to surface anything
+    err(f"src.backend.api.server failed to import: {e}")
+    errors.append(f"server import: {e}")
 
-# ===================================================================
-# 7. Security Check
-# ===================================================================
-print_header("7. Security Features")
 
-security_features = [
-    ("JWT Authentication", True),
-    ("Password Hashing (bcrypt)", True),
-    ("RBAC (Role-Based Access Control)", True),
-    ("Audit Logging", True),
-    ("Rate Limiting", True),
-    ("API Key Authentication", True),
-    ("Electronic Signatures", True),
-    ("HMAC Signatures", True),
-]
+# ---- Final report ----------------------------------------------------------
 
-for feature, implemented in security_features:
-    if implemented:
-        print_success(feature)
-    else:
-        print_error(f"{feature}: NOT IMPLEMENTED")
-        issues.append(f"Missing security feature: {feature}")
+header("Final report")
 
-# ===================================================================
-# 8. Compliance Check
-# ===================================================================
-print_header("8. 21 CFR Part 11 Compliance")
+if errors:
+    print(f"{RED}{BOLD}{len(errors)} error(s):{RESET}")
+    for e in errors:
+        print(f"  {RED}-{RESET} {e}")
 
-compliance_features = [
-    ("§ 11.10: Closed Systems Controls", True),
-    ("§ 11.50: Signature Manifestations", True),
-    ("§ 11.70: Signature/Record Linking", True),
-    ("§ 11.100: General Requirements", True),
-    ("§ 11.200: Electronic Signatures", True),
-    ("§ 11.300: Identification Codes", True),
-]
+if warnings:
+    print(f"{YELLOW}{BOLD}{len(warnings)} warning(s):{RESET}")
+    for w in warnings:
+        print(f"  {YELLOW}-{RESET} {w}")
 
-for requirement, compliant in compliance_features:
-    if compliant:
-        print_success(requirement)
-    else:
-        print_error(f"{requirement}: NOT COMPLIANT")
-        issues.append(f"Compliance issue: {requirement}")
+if not errors and not warnings:
+    print(f"{GREEN}{BOLD}All checks passed.{RESET}")
+elif not errors:
+    print(f"{GREEN}{BOLD}No errors (warnings only).{RESET}")
 
-# ===================================================================
-# 9. Documentation Check
-# ===================================================================
-print_header("9. Documentation")
-
-docs = [
-    "README.md",
-    "FINAL_PROJECT_SUMMARY.md",
-    "PROJECT_COMPLETE.md",
-    "WEEK_19_COMPLETE.md",
-    "WEEK_20_COMPLETE.md",
-]
-
-for doc in docs:
-    if Path(doc).exists():
-        print_success(doc)
-    else:
-        print_warning(f"{doc}: missing")
-        warnings.append(f"Missing documentation: {doc}")
-
-# ===================================================================
-# 10. Performance Check
-# ===================================================================
-print_header("10. Performance Features")
-
-performance_features = [
-    ("Parallel Batch Processing", True),
-    ("GPU Acceleration Support", True),
-    ("Caching (Redis)", True),
-    ("Rate Limiting", True),
-    ("Connection Pooling", True),
-]
-
-for feature, implemented in performance_features:
-    if implemented:
-        print_success(feature)
-    else:
-        print_warning(f"{feature}: not implemented")
-        warnings.append(f"Performance feature missing: {feature}")
-
-# ===================================================================
-# FINAL REPORT
-# ===================================================================
-print_header("FINAL REPORT")
-
-if not issues and not warnings:
-    print(f"\n{GREEN}{BOLD}*** ALL CHECKS PASSED! ***{RESET}\n")
-    print_success("System is ready for production deployment")
-    print_success("All features implemented and tested")
-    print_success("Security features enabled")
-    print_success("21 CFR Part 11 compliant")
-    print_success("Documentation complete")
-    print(f"\n{GREEN}{BOLD}*** READY TO SHIP TO CUSTOMER ***{RESET}\n")
-    sys.exit(0)
-elif issues:
-    print(f"\n{RED}{BOLD}*** CRITICAL ISSUES FOUND ***{RESET}\n")
-    print_error(f"Found {len(issues)} critical issue(s):")
-    for i, issue in enumerate(issues, 1):
-        print(f"  {i}. {issue}")
-    
-    if warnings:
-        print(f"\n{YELLOW}{BOLD}*** WARNINGS ***{RESET}\n")
-        print_warning(f"Found {len(warnings)} warning(s):")
-        for i, warning in enumerate(warnings, 1):
-            print(f"  {i}. {warning}")
-    
-    print(f"\n{RED}{BOLD}*** NOT READY FOR DEPLOYMENT ***{RESET}\n")
-    print_error("Please fix critical issues before shipping")
-    sys.exit(1)
-else:
-    print(f"\n{YELLOW}{BOLD}*** WARNINGS FOUND ***{RESET}\n")
-    print_warning(f"Found {len(warnings)} warning(s):")
-    for i, warning in enumerate(warnings, 1):
-        print(f"  {i}. {warning}")
-    
-    print(f"\n{GREEN}{BOLD}*** READY TO SHIP (with warnings) ***{RESET}\n")
-    print_success("System is functional but has minor warnings")
-    print_info("Consider addressing warnings for optimal performance")
-    sys.exit(0)
+sys.exit(1 if errors else 0)

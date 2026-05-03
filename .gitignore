@@ -10,22 +10,75 @@ build/
 *.whl
 
 # Virtual environments
+.venv/
+.venv313/
+.venv_new/
 venv/
 env/
-.env/
+.python-version
 
-# Environment variables (IMPORTANT: Never commit!)
+# Environment files (never commit real secrets)
 .env
 .env.local
 .env.*.local
-*.env
+.env.production
+.env.staging
+*.env.local
 
-# IDE
+# TLS / cryptographic material
+certs/*.pem
+certs/*.key
+certs/*.crt
+certs/*.cer
+certs/*.p12
+certs/*.pfx
+*.pem
+*.key
+!alembic.ini
+
+# Runtime state — never commit
+data/projects.json
+data/reports/
+data/materials_cache/
+data/datasets/
+dev_tools/sentinel/*.db
+dev_tools/sentinel/*.log
+dev_tools/sentinel/*.pid
+dev_tools/sentinel/*.out
+datasets/*.db
+datasets/*.json
+# User lab data — proprietary and private, never commit
+datasets/*.xlsx
+datasets/*.xls
+datasets/*.csv
+
+# ML artifacts (large, regenerable)
+models/Raman-Qwen-Agent/checkpoint-*/
+models/**/*.bin
+models/**/*.safetensors
+models/**/*.pt
+models/**/*.pth
+*.pkl
+*.joblib
+
+# Node
+node_modules/
+src/frontend/node_modules/
+**/node_modules/
+.pnp/
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE / editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.history/
+EIS-RV/.history/
 
 # OS
 .DS_Store
@@ -36,28 +89,26 @@ desktop.ini
 .pytest_cache/
 htmlcov/
 .coverage
+.coverage.*
 coverage.xml
-
-# ML models
-vanl/backend/ml/saved_models/*.pkl
-vanl/backend/ml/saved_models/*.joblib
-
-# Datasets (large)
-vanl/datasets/external/*.csv
-vanl/datasets/research/*.db
-
-# Temp files
-*.tmp
-*.bak
-~$*
-
-# Byte-compiled
-*.pyc
+*.cover
 
 # Logs
 *.log
-node_modules
-node_modules
-node_modules
-node_modules
-node_modules
+
+# Temp / backup
+*.tmp
+*.bak
+*.lck
+~*
+~$*
+
+# Build artifacts (Electron, Nuitka, CMake)
+out/
+release/
+engine_core/build/
+engine_core/.cache/
+
+# Misc
+.clangd
+compile_commands.json

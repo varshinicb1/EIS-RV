@@ -4,15 +4,36 @@ import {
   Terminal, Globe, HardDrive, Zap, BarChart
 } from 'lucide-react';
 
+// Real backend latency — measure round-trip time of /health.
+async function measureLatency() {
+  try {
+    const t0 = performance.now();
+    const r = await fetch('http://127.0.0.1:8000/health', { cache: 'no-store' });
+    if (!r.ok) return null;
+    return Math.round(performance.now() - t0);
+  } catch {
+    return null;
+  }
+}
+
 export default function StatusBar({ backendStatus, activePanel }) {
-  const [latency, setLatency] = useState(12);
+  // Latency is a real /health round-trip; null when the backend is offline.
+  // FPS is a real requestAnimationFrame counter (no fakery there).
+  const [latency, setLatency] = useState(null);
   const [fps, setFps] = useState(60);
 
   useEffect(() => {
-    const latInterval = setInterval(() => setLatency(Math.floor(Math.random() * 8) + 8), 5000);
-    
+    let cancelled = false;
+    const tick = async () => {
+      const ms = await measureLatency();
+      if (!cancelled) setLatency(ms);
+    };
+    tick();
+    const latInterval = setInterval(tick, 5000);
+
     let lastTime = performance.now();
     let frameCount = 0;
+    let fpsReq;
     const updateFps = () => {
       frameCount++;
       const time = performance.now();
@@ -21,11 +42,12 @@ export default function StatusBar({ backendStatus, activePanel }) {
         frameCount = 0;
         lastTime = time;
       }
-      requestAnimationFrame(updateFps);
+      fpsReq = requestAnimationFrame(updateFps);
     };
-    const fpsReq = requestAnimationFrame(updateFps);
+    fpsReq = requestAnimationFrame(updateFps);
 
     return () => {
+      cancelled = true;
       clearInterval(latInterval);
       cancelAnimationFrame(fpsReq);
     };
@@ -117,7 +139,10 @@ export default function StatusBar({ backendStatus, activePanel }) {
 
         <div className="status-bracket" style={cornerBracketStyle}>
           <Zap size={12} color={THEME.cyan} style={{ filter: `drop-shadow(0 0 4px ${THEME.cyan})` }} />
-          <span style={{ color: THEME.cyan }}>{latency}ms <span style={{ opacity: 0.5 }}>CORE_LATENCY</span></span>
+          <span style={{ color: THEME.cyan }}>
+            {latency === null ? '—' : `${latency}ms`}{' '}
+            <span style={{ opacity: 0.5 }}>BACKEND_RTT</span>
+          </span>
         </div>
 
         <div className="status-bracket" style={{

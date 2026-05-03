@@ -217,14 +217,45 @@ PYBIND11_MODULE(raman_core, m) {
                 DRTResult with tau, gamma, fitted impedance, etc.
         )doc");
 
+    // ── Kramers-Kronig Result ─────────────────────────────
+    py::class_<KKResult>(m, "KKResult",
+        "Kramers-Kronig validity result (Lin-KK / Schönleber μ).")
+        .def_readonly("is_valid",          &KKResult::is_valid,
+                      "True if μ ≥ 0.85 AND max relative residual ≤ 5%.")
+        .def_readonly("mu",                &KKResult::mu,
+                      "Schönleber μ statistic in [0,1]; 1 = K-K compliant.")
+        .def_readonly("residual_real",     &KKResult::residual_real,
+                      "Per-frequency relative residual on Z_real, |Z|-normalised.")
+        .def_readonly("residual_imag",     &KKResult::residual_imag)
+        .def_readonly("max_residual_real", &KKResult::max_residual_real)
+        .def_readonly("max_residual_imag", &KKResult::max_residual_imag)
+        .def_readonly("mean_residual",     &KKResult::mean_residual,
+                      "RMS of the combined real+imag relative residuals.")
+        .def_readonly("Z_fit_real",        &KKResult::Z_fit_real)
+        .def_readonly("Z_fit_imag",        &KKResult::Z_fit_imag)
+        .def_readonly("tau",               &KKResult::tau)
+        .def_readonly("R",                 &KKResult::R,
+                      "RC residues; negative R_k indicates K-K-violating mass.")
+        .def_readonly("R_inf",             &KKResult::R_inf)
+        .def_readonly("n_rc_used",         &KKResult::n_rc_used);
+
     m.def("kramers_kronig_test", &kramers_kronig_test,
         py::arg("frequencies"),
         py::arg("Z_real"),
         py::arg("Z_imag"),
         py::arg("n_rc") = 0,
         R"doc(
-            Kramers-Kronig consistency test (Lin-KK method).
-            Small residual = data is K-K compliant = valid for fitting.
+            Kramers-Kronig consistency test using the Lin-KK / Schönleber μ method.
+
+            Returns a KKResult containing:
+              - is_valid:        bool. True if μ ≥ 0.85 AND |residual| ≤ 5% of |Z|.
+              - mu:              Schönleber μ in [0,1]. 1 = K-K compliant.
+              - residual_real:   per-frequency relative residual on Z' (|Z|-normalised).
+              - residual_imag:   same for Z''.
+              - max/mean_residual: aggregate residuals.
+              - Z_fit_real, Z_fit_imag: the K-K-compliant fit for plotting.
+              - tau, R, R_inf:   the bank of RC elements that produced the fit.
+              - n_rc_used:       number of RC elements used.
         )doc");
 
     // ── Circuit Fitter ────────────────────────────────────

@@ -6,24 +6,28 @@ import useGuidedTour from './hooks/useGuidedTour.jsx';
 import Sidebar from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import StatusBar from './components/layout/StatusBar';
-import EISPanel from './components/simulation/EISPanel';
-import CVPanel from './components/simulation/CVPanel';
-import BatteryPanel from './components/simulation/BatteryPanel';
-import GCDPanel from './components/simulation/GCDPanel';
-import DRTPanel from './components/simulation/DRTPanel';
-import CircuitFittingPanel from './components/simulation/CircuitFittingPanel';
-import ToolkitPanel from './components/simulation/ToolkitPanel';
-import DataImportPanel from './components/data/DataImportPanel';
-import MaterialsExplorer from './components/materials/MaterialsExplorer';
-import AlchemistCanvas from './components/materials/AlchemistCanvas';
-import BiosensorPanel from './components/simulation/BiosensorPanel';
+// Eager: dashboard + alchemi (default landing) + lightweight panels
 import DashboardPanel from './components/simulation/DashboardPanel';
 import AlchemiPanel from './components/ai/AlchemiPanel';
-import LiteratureMiningPanel from './components/research/LiteratureMiningPanel';
-import ValidationPanel from './components/research/ValidationPanel';
-import UserProfilePanel from './components/user/UserProfilePanel';
-import WorkspacePanel from './components/workspace/WorkspacePanel';
-import ReportsPanel from './components/reports/ReportsPanel';
+
+// Lazy: every other panel — keeps initial bundle small (Electron cold-start)
+const EISPanel              = lazy(() => import('./components/simulation/EISPanel'));
+const CVPanel               = lazy(() => import('./components/simulation/CVPanel'));
+const BatteryPanel          = lazy(() => import('./components/simulation/BatteryPanel'));
+const GCDPanel              = lazy(() => import('./components/simulation/GCDPanel'));
+const DRTPanel              = lazy(() => import('./components/simulation/DRTPanel'));
+const CircuitFittingPanel   = lazy(() => import('./components/simulation/CircuitFittingPanel'));
+const ToolkitPanel          = lazy(() => import('./components/simulation/ToolkitPanel'));
+const DataImportPanel       = lazy(() => import('./components/data/DataImportPanel'));
+const MaterialsExplorer     = lazy(() => import('./components/materials/MaterialsExplorer'));
+const AlchemistCanvas       = lazy(() => import('./components/materials/AlchemistCanvas'));
+const BiosensorPanel        = lazy(() => import('./components/simulation/BiosensorPanel'));
+const LiteratureMiningPanel = lazy(() => import('./components/research/LiteratureMiningPanel'));
+const ValidationPanel       = lazy(() => import('./components/research/ValidationPanel'));
+const UserProfilePanel      = lazy(() => import('./components/user/UserProfilePanel'));
+const WorkspacePanel        = lazy(() => import('./components/workspace/WorkspacePanel'));
+const ReportsPanel          = lazy(() => import('./components/reports/ReportsPanel'));
+const LabDataPanel          = lazy(() => import('./components/lab/LabDataPanel'));
 
 // Backend URL — uses Electron preload bridge or fallback
 const BACKEND_URL = window.raman ? null : 'http://127.0.0.1:8000';
@@ -43,6 +47,7 @@ const PANELS = {
   toolkit:    { label: 'Toolkit',             component: ToolkitPanel },
   materials:  { label: 'Materials Database',  component: MaterialsExplorer },
   data:       { label: 'Data Import',         component: DataImportPanel },
+  lab:        { label: 'Lab Data',             component: LabDataPanel },
   validation: { label: 'Paper Validation',    component: ValidationPanel },
   workspace:  { label: 'Workspace',           component: WorkspacePanel },
   reports:    { label: 'Reports',             component: ReportsPanel },
@@ -110,7 +115,17 @@ function AppContent() {
           backendStatus={backendStatus}
         />
         <div className="app-content animate-in">
-          <ActiveComponent />
+          <Suspense fallback={
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              height: '100%', color: '#00f2ff', fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '11px', letterSpacing: '2px', opacity: 0.6
+            }}>
+              LOADING_MODULE...
+            </div>
+          }>
+            <ActiveComponent />
+          </Suspense>
         </div>
         <StatusBar
           backendStatus={backendStatus}

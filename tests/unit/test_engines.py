@@ -16,7 +16,7 @@ class TestBatteryEngine:
     """Validate battery simulation via direct engine call."""
 
     def test_zinc_mno2_discharge(self):
-        from vanl.backend.core.battery_engine import BatteryConfig, simulate_battery
+        from src.backend.core.engines.battery_engine import BatteryConfig, simulate_battery
 
         config = BatteryConfig(chemistry="zinc_MnO2", electrode_area_cm2=1.0, C_rate=0.5)
         result = simulate_battery(config)
@@ -28,7 +28,7 @@ class TestBatteryEngine:
         assert result.internal_resistance_ohm > 0
 
     def test_lithium_chemistry(self):
-        from vanl.backend.core.battery_engine import BatteryConfig, simulate_battery
+        from src.backend.core.engines.battery_engine import BatteryConfig, simulate_battery
 
         config = BatteryConfig(
             chemistry="LiFePO4",
@@ -42,7 +42,7 @@ class TestBatteryEngine:
         assert result.OCV_V > 2.5  # LFP should have OCV above cutoff
 
     def test_ragone_data(self):
-        from vanl.backend.core.battery_engine import BatteryConfig, simulate_battery
+        from src.backend.core.engines.battery_engine import BatteryConfig, simulate_battery
 
         config = BatteryConfig(chemistry="zinc_MnO2")
         result = simulate_battery(config)
@@ -52,7 +52,7 @@ class TestBatteryEngine:
         assert all(e > 0 for e in result.ragone_E)
 
     def test_rate_capability(self):
-        from vanl.backend.core.battery_engine import BatteryConfig, simulate_battery
+        from src.backend.core.engines.battery_engine import BatteryConfig, simulate_battery
 
         config = BatteryConfig(chemistry="zinc_MnO2")
         result = simulate_battery(config)
@@ -60,7 +60,7 @@ class TestBatteryEngine:
         assert result.rate_capacity["0.1C"] >= result.rate_capacity["5.0C"]
 
     def test_discharge_curve_monotonic(self):
-        from vanl.backend.core.battery_engine import BatteryConfig, simulate_battery
+        from src.backend.core.engines.battery_engine import BatteryConfig, simulate_battery
 
         config = BatteryConfig(chemistry="zinc_MnO2", C_rate=1.0)
         result = simulate_battery(config)
@@ -75,7 +75,7 @@ class TestGCDEngine:
     """Validate GCD simulation engine."""
 
     def test_basic_edlc(self):
-        from vanl.backend.core.gcd_engine import GCDParameters, simulate_gcd
+        from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd
 
         params = GCDParameters(
             Cdl_F=1e-3,
@@ -90,7 +90,7 @@ class TestGCDEngine:
         assert result.avg_specific_capacitance_F_g > 0
 
     def test_pseudocapacitance(self):
-        from vanl.backend.core.gcd_engine import GCDParameters, simulate_gcd
+        from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd
 
         params = GCDParameters(
             Cdl_F=2e-3,
@@ -105,7 +105,7 @@ class TestGCDEngine:
         assert result.avg_specific_capacitance_F_g > 0
 
     def test_cycle_data(self):
-        from vanl.backend.core.gcd_engine import GCDParameters, simulate_gcd
+        from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd
 
         params = GCDParameters(Cdl_F=5e-3, current_A=5e-3, V_max=1.0, n_cycles=5)
         result = simulate_gcd(params)
@@ -115,7 +115,7 @@ class TestGCDEngine:
             assert cd["coulombic_efficiency_pct"] > 50
 
     def test_coulombic_efficiency(self):
-        from vanl.backend.core.gcd_engine import GCDParameters, simulate_gcd
+        from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd
 
         params = GCDParameters(
             Cdl_F=10e-3,
@@ -131,7 +131,7 @@ class TestGCDEngine:
         assert result.avg_coulombic_efficiency_pct > 80
 
     def test_voltage_within_bounds(self):
-        from vanl.backend.core.gcd_engine import GCDParameters, simulate_gcd
+        from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd
 
         params = GCDParameters(Cdl_F=1e-3, V_min=0.0, V_max=1.0, n_cycles=2)
         result = simulate_gcd(params)
@@ -142,7 +142,7 @@ class TestSupercapDeviceEngine:
     """Validate supercapacitor device simulation."""
 
     def test_basic_device(self):
-        from vanl.backend.core.supercap_device_engine import DeviceConfig, simulate_device
+        from src.backend.core.engines.supercap_device_engine import DeviceConfig, simulate_device
 
         config = DeviceConfig()
         perf = simulate_device(config)
@@ -152,7 +152,7 @@ class TestSupercapDeviceEngine:
         assert perf.power_W_kg > 0
 
     def test_ragone_plot(self):
-        from vanl.backend.core.supercap_device_engine import DeviceConfig, simulate_device
+        from src.backend.core.engines.supercap_device_engine import DeviceConfig, simulate_device
 
         config = DeviceConfig()
         perf = simulate_device(config)
@@ -160,7 +160,7 @@ class TestSupercapDeviceEngine:
         assert len(perf.ragone_P_W_kg) == len(perf.ragone_E_Wh_kg)
 
     def test_eis_data(self):
-        from vanl.backend.core.supercap_device_engine import DeviceConfig, simulate_device
+        from src.backend.core.engines.supercap_device_engine import DeviceConfig, simulate_device
 
         config = DeviceConfig()
         perf = simulate_device(config)
@@ -173,7 +173,7 @@ class TestAPISchema:
     """Test that API response schemas match expected frontend format."""
 
     def test_battery_to_dict(self):
-        from vanl.backend.core.battery_engine import BatteryConfig, simulate_battery
+        from src.backend.core.engines.battery_engine import BatteryConfig, simulate_battery
 
         config = BatteryConfig()
         result = simulate_battery(config)
@@ -187,7 +187,7 @@ class TestAPISchema:
         assert "eis" in d
 
     def test_gcd_to_dict(self):
-        from vanl.backend.core.gcd_engine import GCDParameters, simulate_gcd
+        from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd
 
         params = GCDParameters(Cdl_F=1e-3, n_cycles=2)
         result = simulate_gcd(params)

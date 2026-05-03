@@ -176,7 +176,10 @@ export default function CVPanel() {
   const run = useCallback(async () => {
     setRunning(true);
     try {
-      const res = await fetch('/api/v2/cv', {
+      // Absolute URL: in a packaged Electron build the renderer is loaded
+      // from file:// where a relative `/api/v2/cv` resolves to file:///api/v2/cv
+      // and silently fails — fall through to the local JS approximation.
+      const res = await fetch('http://127.0.0.1:8000/api/v2/cv', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params),
       });

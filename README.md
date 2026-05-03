@@ -1,368 +1,183 @@
 # RĀMAN Studio
 
-**"The Digital Twin for Your Potentiostat"**
+Desktop application for electrochemical analysis. Imports data from VidyuthLabs
+AnalyteX devices, runs simulation engines (EIS, CV, GCD), and helps researchers
+explore materials.
 
-[![Security](https://img.shields.io/badge/Security-10%2F10-brightgreen)](SECURITY_10_10_ACHIEVED.md)
-[![License](https://img.shields.io/badge/License-Commercial-blue)](https://vidyuthlabs.co.in)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)](package.json)
-[![GPU](https://img.shields.io/badge/GPU-RTX%204050-green)](src/backend/gpu/gpu_manager.py)
-
-AI-powered desktop companion for VidyuthLabs AnalyteX devices. Professional electrochemical analysis, simulation, and reporting.
-
-**Company**: VidyuthLabs  
-**Pricing**: $5/month (₹400/month) with 30-day free trial  
-**Version**: 1.0.0  
-**Status**: ✅ Production Ready (10/10 Security)
-
-**Honoring Professor CNR Rao's legacy in materials science**
+> **Status**: pre-1.0, work in progress. The product is honest about what it
+> does today; see [What works today](#what-works-today) and [Known
+> limitations](#known-limitations) below.
 
 ---
 
-## 🎯 What is RĀMAN Studio?
+## Pricing intent
 
-RĀMAN Studio is the professional desktop application for electrochemical researchers using **VidyuthLabs AnalyteX** devices. Import your field data, apply AI-powered analysis, run advanced simulations, and generate publication-ready reports.
+- **$5 / month** (₹400 / month) per user, single device.
+- **30-day free trial**, no credit card required at signup.
+- Hardware-bound activation; the license is verified locally with an embedded
+  public key.
 
-### **The Complete VidyuthLabs Workflow**
-
-```
-FIELD                MOBILE              DESKTOP
-─────                ──────              ───────
-
-AnalyteX Device  →   Mobile App    →    RĀMAN Studio
-(Measure)            (Monitor)          (Analyze)
-
-• CV, EIS, DPV       • Real-time        • AI Insights
-• 10nA resolution    • Cloud sync       • Simulation
-• Field-ready        • Instant view     • Reporting
-• ₹25,000            • Free             • ₹400/month
-```
+The licensing system is being rebuilt; see [Roadmap](#roadmap).
 
 ---
 
-## ✨ Key Features
+## Architecture (current)
 
-### 🔬 Data Analysis
-- **Import from AnalyteX** - Seamless cloud sync or USB transfer
-- **AI-Powered Insights** - NVIDIA NIM API integration
-- **Automated Analysis** - Peak detection, baseline correction, curve fitting
-- **Multi-Technique Support** - CV, EIS, DPV, GCD, and more
-
-### 🤖 AI Intelligence (NVIDIA NIM)
-- **Material Property Prediction** - Predict properties from composition
-- **Synthesis Recommendations** - AI-suggested synthesis routes
-- **Literature Search** - AI-powered research paper search
-- **Safety Assessment** - Toxicity and hazard prediction
-- **Optimization** - Bayesian optimization for material discovery
-
-### 📊 Simulation Engines
-- **Electrochemical Impedance Spectroscopy (EIS)** - Modified Randles circuit
-- **Cyclic Voltammetry (CV)** - Butler-Volmer kinetics
-- **Differential Pulse Voltammetry (DPV)** - Ultra-trace quantification
-- **Supercapacitor Modeling** - EDLC + pseudocapacitance
-- **Battery Simulation** - Single Particle Model
-- **Biosensor Kinetics** - Michaelis-Menten enzyme kinetics
-
-### 📈 Professional Reporting
-- **Publication-Ready Figures** - High-resolution plots
-- **Automated Reports** - Generate comprehensive analysis reports
-- **Export Formats** - PDF, Excel, CSV, PNG, SVG
-- **Custom Templates** - Create your own report templates
-
-### 🔒 Security (10/10)
-- **Military-Grade Encryption** - AES-256 with PBKDF2 (500k iterations)
-- **Hardware-Based Licensing** - Multi-source fingerprinting
-- **Encrypted Projects** - Hardware-derived encryption keys
-- **Audit Logging** - All security events tracked
-- **Secure Deletion** - Overwrite before delete
-
-### 💻 Desktop Application
-- **Electron-Based** - Native Windows/Linux application
-- **Local-First** - All data stays on your machine
-- **GPU-Accelerated** - RTX 4050 optimization
-- **Offline Capable** - 7-day offline grace period
+- **Desktop shell**: Electron 28 + React (Vite). Source under `src/desktop/` and
+  `src/frontend/`.
+- **Local backend**: FastAPI + Uvicorn, spawned by Electron as a sidecar
+  process. Source under `src/backend/`.
+- **Physics engine**: C++ library (`engine_core/`) exposing EIS, CV, DRT, and a
+  circuit fitter to Python via pybind11. Eigen + OpenMP, no CUDA.
+- **AI agent (optional)**: A locally-hosted Qwen-1.5-1.8B chat model with a
+  LoRA adapter trained on electrochemistry Q&A. Lives in `src/ai_engine/`.
+  Uses NVIDIA NIM only when the user supplies their own API key — see
+  [NVIDIA / NIM](#nvidia--nim).
+- **Research pipeline (optional)**: arXiv / Crossref / Semantic Scholar
+  scrapers and a local SQLite cache. Lives under `vanl/research_pipeline/` and
+  is being folded into `src/` over time.
 
 ---
 
-## 🚀 Quick Start
+## What works today
 
-### Installation
+| Area | Status |
+|---|---|
+| EIS simulation (Randles + CPE, Warburg) | Implemented in C++, validated within ±10–15% on the included test cases |
+| CV simulation (Butler–Volmer + Nicholson semi-integral) | Implemented in C++; known issue with `Rs_ohm` not yet wired through |
+| GCD simulation | Implemented in Python (`vanl/`) |
+| DRT analysis (Tikhonov regularisation) | Implemented in C++; uses projected gradient, not Lawson–Hanson NNLS |
+| Circuit fitting (Levenberg–Marquardt) | Implemented in C++; numerical Jacobian |
+| File-based project save/load | Plaintext JSON today; encrypted format planned |
+| AnalyteX CSV / JSON import | Works |
+| PDF / HTML report export | Works |
+| Local AI agent (Qwen-1.5-1.8B + LoRA) | Works if model weights are present under `models/Raman-Qwen-Agent/` |
 
-**Windows:**
-```bash
-# Download installer
-RĀMAN-Studio-1.0.0-Setup.exe
+## Known limitations
 
-# Run installer
-# Choose installation directory
-# Create desktop shortcut
-# Launch RĀMAN Studio
-```
+These are documented openly so users (and ourselves) know not to depend on
+them yet.
 
-**Linux:**
-```bash
-# AppImage (Universal)
-chmod +x RĀMAN-Studio-1.0.0.AppImage
-./RĀMAN-Studio-1.0.0.AppImage
-
-# Debian/Ubuntu
-sudo dpkg -i raman-studio_1.0.0_amd64.deb
-raman-studio
-```
-
-### First Launch
-
-1. **Start Free Trial** (30 days)
-   - Hardware ID automatically generated
-   - No credit card required
-
-2. **Import Data from AnalyteX**
-   - Cloud sync (automatic)
-   - USB transfer (manual)
-   - Supported formats: CSV, JSON, AnalyteX native
-
-3. **Analyze Your Data**
-   - AI-powered insights
-   - Automated peak detection
-   - Equivalent circuit fitting
-
-4. **Generate Reports**
-   - Publication-ready figures
-   - Comprehensive analysis
-   - Export to PDF/Excel
+- **Licensing is not enforced.** The current build is effectively trial-mode
+  for everyone. Real licensing (Ed25519-signed tokens, hardware binding,
+  online activation) is being built — see Roadmap.
+- **Project files are stored as plaintext JSON.** Encrypted-at-rest project
+  format will land with the licensing rework.
+- **NVIDIA NIM integration** is not active in any default configuration.
+  Earlier code targeted endpoints that don't exist on `integrate.api.nvidia.com`;
+  that is being rewritten to use the OpenAI-compatible chat-completions API.
+- **The C++ engine ships only EIS, CV, DRT, and a circuit fitter.** DPV,
+  supercapacitor (EDLC + pseudocap), single-particle battery, and biosensor
+  engines mentioned in earlier docs are **not** in `engine_core/` yet.
+- **The frontend renderer port is being unified.** Earlier builds had the
+  Electron sidecar on `:8000` while the React UI talked to `:8001`; in a
+  packaged build that meant the UI fell back to client-side JavaScript
+  approximations without telling the user. This is being fixed.
+- **Telemetry/dashboards in the UI** still show some `Math.random()` values
+  pending wiring to real backend metrics. Affected components carry a
+  `// TODO: real telemetry` marker.
+- **Auto-update** has no signature verification configured. Do not enable
+  auto-update against a public release channel until that is fixed.
 
 ---
 
-## 📊 Why RĀMAN Studio?
-
-### **vs Traditional Lab Software**
-
-| Feature | Traditional | RĀMAN Studio |
-|---------|-------------|--------------|
-| **Cost** | ₹2,00,000+ | ₹400/month |
-| **Hardware Integration** | Limited | AnalyteX native |
-| **AI Analysis** | ❌ | ✅ NVIDIA NIM |
-| **Simulation** | Basic | Advanced (8 engines) |
-| **Cloud Sync** | ❌ | ✅ Optional |
-| **GPU Acceleration** | ❌ | ✅ RTX 4050 |
-| **Offline Mode** | ❌ | ✅ 7-day grace |
-| **Updates** | Paid | Free |
-
-### **Complete VidyuthLabs Solution**
-
-**Hardware**: AnalyteX Device (₹25,000)
-- Portable potentiostat (150g)
-- 10nA resolution
-- CV, EIS, DPV capabilities
-- WiFi/Bluetooth connectivity
-
-**Software**: RĀMAN Studio (₹400/month)
-- Desktop analysis platform
-- AI-powered insights
-- Advanced simulations
-- Professional reporting
-
-**Total**: ₹25,000 + ₹4,800/year = **97% cheaper than traditional lab equipment**
-
----
-
-## 🎓 Honoring Professor CNR Rao
-
-**RĀMAN Studio** is named in honor of **Professor Chintamani Nagesa Ramachandra Rao**, Bharat Ratna and pioneer in materials science.
-
-**Why RĀMAN?**
-- References **Raman spectroscopy** (CNR Rao's expertise)
-- Honors **CV Raman** (Nobel laureate, Raman spectroscopy)
-- Sanskrit: रामन् (Rāman) = "Pleasing, Delightful"
-
-**Professor Rao's Vision:**
-- Make advanced research tools accessible to all
-- Empower Indian scientists with world-class technology
-- Bridge the gap between field and lab research
-
-**How RĀMAN Studio Honors This:**
-1. **Affordable** - ₹400/month vs ₹2,00,000+ traditional software
-2. **Accessible** - Works with ₹25,000 AnalyteX device
-3. **Intelligent** - AI-powered analysis for everyone
-4. **Educational** - Built-in tutorials and learning resources
-5. **Indian** - Made in India, for Indian researchers
-
----
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file:
+## Quick start (developers)
 
 ```bash
-# NVIDIA API Key (for AI features)
-NVIDIA_API_KEY=nvapi-your_key_here
+# Python backend
+python3.12 -m venv .venv
+source .venv/bin/activate              # Windows: .venv\Scripts\activate
+pip install -r vanl/requirements.txt   # consolidated requirements file is on the way
 
-# Server Configuration
-SERVER_PORT=8000
-SERVER_HOST=127.0.0.1
+# C++ engine
+python3 scripts/build_cpp.py --test
 
-# License Server
-LICENSE_SERVER=https://license.vidyuthlabs.co.in/api/v1
-
-# GPU Settings
-GPU_ENABLED=true
-GPU_MEMORY_LIMIT=0.8
+# Desktop shell
+cd src/frontend && npm install && cd -
+npm install
+npm run dev
 ```
 
-### License Activation
+The desktop app talks to the backend over `127.0.0.1`. No data leaves the
+machine in the default configuration.
 
-```python
-from src.backend.licensing.license_manager import get_license_manager
+To configure the optional NVIDIA NIM integration, copy `.env.example` to `.env`
+and set `NVIDIA_API_KEY`. Get a key (free tier available) at
+<https://build.nvidia.com>. The `.env` file is gitignored.
 
-# Get hardware ID
-mgr = get_license_manager()
-print(f"Hardware ID: {mgr.get_hardware_id()}")
+---
 
-# Start free trial (30 days)
-mgr.start_trial()
+## NVIDIA / NIM
 
-# Or activate with license key
-mgr.activate_license("VIDYUTH-XXXXX-XXXXX-XXXXX-XXXXX")
+NVIDIA NIM is used for two opt-in features:
 
-# Check status
-status, details = mgr.validate_license()
-print(f"Status: {status}")
+1. **Materials chat** against a hosted LLM (`meta/llama-3.1-70b-instruct` by
+   default), via the OpenAI-compatible endpoint at
+   `https://integrate.api.nvidia.com/v1/chat/completions`.
+2. **Property look-ups** against published NIMs that take SMILES / structure
+   inputs.
+
+If `NVIDIA_API_KEY` is not set, RĀMAN Studio runs in fully-local mode: the
+local Qwen agent answers chat queries and the materials database returns
+cached values. There is no silent cloud fallback.
+
+---
+
+## Roadmap (next phases)
+
+These are the real next steps. They replace the WEEK_x / PHASE_x status
+markdowns that lived in this repo previously.
+
+| Phase | Goal | Roughly |
+|---|---|---|
+| **0 — Stop the bleeding** | Rotate leaked secrets, drop false-claim docs, gate CI, fix CSP, dedupe deps. | _Done — see SECURITY.md_ |
+| **1 — Architecture consolidation** | One backend (`src/`), one port, retire the older `vanl/` shell while preserving its physics engines. | Days |
+| **2 — Real licensing** | Ed25519-signed license tokens, hardware-bound, 30-day trial without CC, small license server. | Week |
+| **3 — Encrypted projects + auth** | Replace plaintext JSON with the `ProjectManager` encryption path, derive keys from license + hardware. | Days |
+| **4 — NVIDIA NIM done right** | OpenAI-compatible client, real materials DB, per-user token budget. | Week |
+| **5 — C++ engine bug fixes** | `Rs_ohm` wiring, per-species flux convolution, real CN at boundaries, real Lawson–Hanson NNLS, KK validity verdict. | Week |
+| **6 — UI honesty pass** | Remove `Math.random()` placeholders, single backend port, validation that doesn't hand-rig pass conditions. | Days |
+| **7 — Test suite rewrite** | Real assertions, encryption round-trips, license tampering tests. | Week |
+| **8 — Build + ship** | Signed Windows installer, signed AppImage, signature-verified auto-updater. | Week |
+
+---
+
+## Repository layout
+
+```
+src/
+├── backend/          FastAPI app, simulation routes, licensing scaffolding
+├── frontend/         Electron renderer (React + Vite)
+├── desktop/          Electron main + preload
+└── ai_engine/        Local Qwen + LoRA agent, NVIDIA NIM client (being rewritten)
+
+engine_core/          C++ physics library (Eigen + OpenMP, pybind11 bindings)
+
+vanl/                 Older Python backend; physics engines + research pipeline.
+                      Being folded into src/ over time.
+
+tests/                Unit + integration tests (rewrite in progress)
+scripts/              Build helpers (C++, Electron, Nuitka)
+docs/                 Research papers and (eventually) user guide
 ```
 
 ---
 
-## 🧪 Testing
+## Honesty note
 
-### Run Security Tests
-
-```bash
-# Comprehensive security test suite
-python test_security.py
-
-# Expected output:
-# ✅ LICENSE MANAGER: ALL TESTS PASSED
-# ✅ PROJECT MANAGER: ALL TESTS PASSED
-# ✅ GPU MANAGER: ALL TESTS PASSED
-# 🎉 ALL SECURITY TESTS PASSED - 10/10 ACHIEVED!
-```
+If you are reviewing this repo and find a claim in any document that is
+contradicted by the code, treat the code as authoritative and please open an
+issue. Earlier versions of this README and several other markdown files
+contained marketing claims (e.g. “10/10 security”, “8 physics engines”, “21 CFR
+Part 11 compliant”) that the implementation did not back up. Those claims
+have been removed.
 
 ---
 
-## 📚 Documentation
+## License
 
-- **User Guide**: https://vidyuthlabs.co.in/raman-studio/docs
-- **API Reference**: https://vidyuthlabs.co.in/raman-studio/api
-- **Tutorials**: https://vidyuthlabs.co.in/raman-studio/tutorials
-- **Security Audit**: [SECURITY_10_10_ACHIEVED.md](SECURITY_10_10_ACHIEVED.md)
-- **Branding**: [BRANDING_RAMAN_FINAL.md](BRANDING_RAMAN_FINAL.md)
+Commercial. © VidyuthLabs.
 
----
+## Contact
 
-## 💰 Pricing
-
-### **Individual License**
-**$5/month (₹400/month)**
-- 1 user, 1 device
-- All features included
-- Cloud sync (optional)
-- 30-day free trial
-- Email support
-
-### **Lab License**
-**$15/month (₹1,200/month)**
-- 5 users, unlimited devices
-- Priority support
-- Custom templates
-- Team collaboration
-- Training included
-
-### **Institution License**
-**Custom Pricing**
-- Unlimited users
-- On-premise deployment option
-- Dedicated support
-- Training and onboarding
-- Custom integrations
-
-### **Bundle Offer**
-**AnalyteX + RĀMAN Studio**
-- AnalyteX Device: ₹25,000
-- RĀMAN Studio: First 3 months free
-- **Total**: ₹25,000 (save ₹1,200)
-
-### **Student Discount**
-**50% off for verified students**
-- $2.5/month (₹200/month)
-- Requires .edu email or institution verification
-
----
-
-## 🤝 Support
-
-**Email**: support@vidyuthlabs.co.in  
-**Security**: security@vidyuthlabs.co.in  
-**Sales**: sales@vidyuthlabs.co.in  
-**Website**: https://vidyuthlabs.co.in  
-**Documentation**: https://vidyuthlabs.co.in/raman-studio
-
-**CEO & Founder**: [Varshini CB](https://www.linkedin.com/in/varshini-cb-821176360/)  
-6th Sem EEE at RVCE | Chief Subsystem Engineer at Team Antariksh
-
----
-
-## 📄 License
-
-Commercial software by VidyuthLabs.  
-**Pricing**: $5/month (₹400/month) with 30-day free trial  
-**License**: Hardware-bound, single-machine
-
----
-
-## 🎉 Achievements
-
-- ✅ **10/10 Security Score** - Military-grade protection
-- ✅ **GPU Acceleration** - RTX 4050 optimized
-- ✅ **AI Integration** - NVIDIA NIM API
-- ✅ **48 Materials** - Validated database
-- ✅ **8 Physics Engines** - Production-ready
-- ✅ **AnalyteX Integration** - Native support
-- ✅ **Desktop Application** - Privacy-first, local-first
-
----
-
-## 🚀 Roadmap
-
-### v1.1 (Q3 2026)
-- [ ] Real-time AnalyteX control via WiFi/Bluetooth
-- [ ] Advanced AI models (GPT-4, Claude)
-- [ ] Custom material database
-- [ ] Collaboration features
-
-### v1.2 (Q4 2026)
-- [ ] macOS support
-- [ ] Mobile companion app
-- [ ] Cloud sync (optional, encrypted)
-- [ ] Advanced optimization algorithms
-
----
-
-## 🙏 Acknowledgments
-
-- **Professor CNR Rao** - Inspiration and namesake
-- **VidyuthLabs** - AnalyteX hardware platform
-- **NVIDIA** - NIM API for AI intelligence
-- **Anthropic** - Claude for development assistance
-- **Electron** - Desktop application framework
-
----
-
-**Built with ❤️ in India by VidyuthLabs**
-
-*Honoring Professor CNR Rao's legacy in materials science*
-
----
-
-**Website**: https://vidyuthlabs.co.in  
-**AnalyteX Device**: https://vidyuthlabs.co.in/#analytex  
-**RĀMAN Studio**: https://vidyuthlabs.co.in/raman-studio
+VidyuthLabs — <support@vidyuthlabs.co.in>

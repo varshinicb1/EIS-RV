@@ -137,7 +137,9 @@ function createWindow() {
             webSecurity: true,
             allowRunningInsecureContent: false,
             experimentalFeatures: false,
-            enableRemoteModule: false,
+            // ``enableRemoteModule`` was removed in Electron 14; the
+            // ``@electron/remote`` package was never installed here, so
+            // setting it is a no-op now and a deprecation warning in 32+.
             sandbox: true,
             // Disable dangerous features
             nodeIntegrationInWorker: false,
@@ -159,7 +161,7 @@ function createWindow() {
                     "img-src 'self' data: blob: https:; " +
                     "worker-src 'self' blob:; " +
                     "child-src 'self' blob:; " +
-                    "connect-src 'self' http://localhost:8000 http://localhost:5173 http://127.0.0.1:8000 http://127.0.0.1:5173 ws://localhost:5173 https://license.vidyuthlabs.com https://raw.githack.com https://raw.githubusercontent.com; " +
+                    "connect-src 'self' http://localhost:8000 http://localhost:5173 http://127.0.0.1:8000 http://127.0.0.1:5173 ws://localhost:5173 https://license.vidyuthlabs.co.in https://raw.githack.com https://raw.githubusercontent.com; " +
                     "font-src 'self' data: https://fonts.gstatic.com; " +
                     "object-src 'none'; " +
                     "base-uri 'self'; " +
@@ -181,7 +183,7 @@ function createWindow() {
             `http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`,
             `http://${CONFIG.SERVER_HOST}:${CONFIG.VITE_PORT}`,
             `http://localhost:${CONFIG.VITE_PORT}`,
-            'https://license.vidyuthlabs.com'
+            'https://license.vidyuthlabs.co.in'
         ];
         
         if (!allowedOrigins.some(origin => url.startsWith(origin))) {
@@ -193,7 +195,7 @@ function createWindow() {
     // Block new window creation
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         // Only allow specific URLs to open in external browser
-        if (url.startsWith('https://vidyuthlabs.com') || 
+        if (url.startsWith('https://vidyuthlabs.co.in') || 
             url.startsWith('mailto:')) {
             shell.openExternal(url);
         }
@@ -398,7 +400,7 @@ function createMenu() {
                 {
                     label: 'Support',
                     click: () => {
-                        shell.openExternal('mailto:support@vidyuthlabs.com');
+                        shell.openExternal('mailto:support@vidyuthlabs.co.in');
                     }
                 },
                 { type: 'separator' },

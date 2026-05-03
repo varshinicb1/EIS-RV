@@ -1,284 +1,261 @@
 """
-NVIDIA Alchemi Bridge (Python 3.13 Isolated)
-=============================================
-Wraps NVIDIA NIM/Alchemi API calls for quantum-accurate calculations.
+NVIDIA Alchemi bridge — honest replacement.
 
-Extracted from vanl/backend/core/quantum_engine.py for runtime isolation.
-This runs ONLY in the Python 3.13 environment.
+This module exists for backward compatibility with the older
+``AlchemiBridge`` API surface. The original implementation called
+fabricated NVIDIA endpoints (``/optimize``, ``/predict``, ``/properties``,
+``/md``) that do not exist on ``integrate.api.nvidia.com``; every call
+silently fell through to a hand-typed 13-row dictionary with a buggy
+formula key. That has been removed.
 
-Capabilities:
-  - Geometry optimization (MLIP-based)
-  - Band gap calculation
-  - Formation energy prediction
-  - Molecular dynamics simulation
+What you get now
+----------------
+- ``ask`` — materials-Q&A against a real chat model. Uses
+  ``src.ai_engine.nim_client`` against the OpenAI-compatible endpoint.
+- ``estimate_properties`` — looks up the material in the curated 48-entry
+  ``materials_db`` first, and only if it is unknown asks the chat model
+  for a JSON-formatted estimate. LLM-estimated values are clearly
+  flagged with ``"source": "llm_estimate"`` and never claimed to be
+  computational chemistry.
+- ``optimize_geometry``, ``run_molecular_dynamics``: kept as no-op stubs
+  that raise ``NotImplementedError`` with a clear message. NVIDIA does
+  host MLIP-based microservices (MACE-MP, ORB, SevenNet, MatterSim) but
+  they are NOT served by the OpenAI-compatible chat endpoint, and we
+  haven't wired up their separate request shapes yet. Until we do, we
+  refuse rather than fabricate.
 """
+from __future__ import annotations
 
-import json
 import logging
-import os
-import time
-from typing import Any, Dict, List, Optional
+from dataclasses import asdict, is_dataclass
+from typing import Any, Optional
+
+from src.ai_engine.nim_client import NIMClient, NIMError, get_default_client
 
 logger = logging.getLogger(__name__)
 
-NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
-NIM_BASE_URL = os.environ.get("NIM_BASE_URL",
-    "https://integrate.api.nvidia.com/v1")
 
-# Try importing NVIDIA toolkit
-try:
-    import requests
-    HTTP_AVAILABLE = True
-except ImportError:
-    HTTP_AVAILABLE = False
+# Materials we know about with curated data — derived from the 48-entry
+# materials_db.py. Imported lazily to avoid a hard dependency at import time.
+def _load_curated_db() -> dict[str, dict[str, Any]]:
+    try:
+        from src.backend.core.engines.materials_db import MATERIALS_DB
+        return MATERIALS_DB
+    except Exception:  # pragma: no cover — DB is bundled with the app
+        logger.warning("materials_db not importable; alchemi will rely on NIM only")
+        return {}
 
-try:
-    import numpy as np
-    NP_AVAILABLE = True
-except ImportError:
-    NP_AVAILABLE = False
+
+_MATERIALS_QA_SYSTEM = (
+    "You are an expert in electrochemical materials science. You answer "
+    "concisely (under 250 words), cite mechanism when relevant, and refuse "
+    "to fabricate numerical values. When asked for a specific quantitative "
+    "property you do not know precisely, say so and suggest a reasonable "
+    "range, marking it as an estimate."
+)
+
+
+_PROPERTY_SCHEMA_HINT = (
+    '{"formula": str, "band_gap_eV": float|null, '
+    '"formation_energy_eV_per_atom": float|null, '
+    '"density_g_cm3": float|null, '
+    '"crystal_system": str|null, '
+    '"notes": str}'
+)
 
 
 class AlchemiBridge:
-    """
-    Bridge to NVIDIA Alchemi/NIM APIs.
+    """Backward-compatible facade over the honest NIM client + materials DB."""
 
-    All methods accept dicts and return dicts for easy JSON serialization
-    over the ZMQ/REST IPC layer.
-    """
-
-    # Supported NVIDIA NIM models
-    MODELS = {
-        "orb-v3": "nvidia/orb-v3",
-        "mace-mp": "nvidia/mace-mp-0",
-        "sevennet": "nvidia/sevennet-0",
-        "mattersim": "microsoft/mattersim-v1-0-0-rc",
-    }
-
-    def __init__(self, api_key: Optional[str] = None,
-                 model: str = "orb-v3"):
-        self.api_key = api_key or NVIDIA_API_KEY
-        self.model_id = self.MODELS.get(model, model)
-        self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
-
-        if not self.api_key:
-            logger.warning("NVIDIA_API_KEY not set — Alchemi calls will fail")
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+    ) -> None:
+        # If a key was passed explicitly, build a dedicated client; otherwise
+        # share the process-wide singleton.
+        if api_key is not None:
+            self.client = NIMClient(api_key=api_key, default_model=model)
         else:
-            logger.info("AlchemiBridge initialized (model=%s)", self.model_id)
+            self.client = get_default_client()
+            if model:
+                # User specified a model but reused the singleton — respect it
+                # for this instance only.
+                self.client.default_model = self.client._resolve_model(model)  # type: ignore[attr-defined]
 
-    def optimize_geometry(self, params: Dict) -> Dict:
-        """
-        Optimize molecular/crystal geometry using NVIDIA MLIP.
+        self._db: Optional[dict[str, dict[str, Any]]] = None
 
-        Params:
-            positions: list of [x, y, z] coordinates (Å)
-            species: list of element symbols
-            cell: 3x3 lattice matrix (optional, for periodic)
-            fmax: force convergence threshold (eV/Å)
-            max_steps: maximum optimization steps
+    # ------------------------------------------------------------------
+    # Methods expected by older callers
+    # ------------------------------------------------------------------
 
-        Returns:
-            optimized_positions, final_energy, forces, converged
-        """
-        t0 = time.perf_counter()
-
-        positions = params.get("positions", [])
-        species = params.get("species", [])
-        cell = params.get("cell", None)
-        fmax = params.get("fmax", 0.05)
-        max_steps = params.get("max_steps", 100)
-
-        payload = {
-            "model": self.model_id,
-            "input": {
-                "positions": positions,
-                "species": species,
-                "fmax": fmax,
-                "max_steps": max_steps,
+    def ask(self, prompt: str, *, system: Optional[str] = None,
+            temperature: float = 0.4) -> dict[str, Any]:
+        """Free-form materials-science question. Returns dict with answer + usage."""
+        try:
+            sys_prompt = system or _MATERIALS_QA_SYSTEM
+            completion = self.client.chat(
+                [
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user",   "content": prompt},
+                ],
+                temperature=temperature,
+                max_tokens=1024,
+            )
+            return {
+                "ok": True,
+                "answer": completion.text,
+                "model": completion.model,
+                "tokens": completion.total_tokens,
             }
+        except NIMError as e:
+            return {
+                "ok": False,
+                "error": str(e),
+                "status": e.status,
+                "retryable": e.retryable,
+            }
+
+    def estimate_properties(self, formula: str) -> dict[str, Any]:
+        """
+        Return material properties, with provenance.
+
+        Resolution order — highest-trust first:
+
+        1. **User lab data** (``LabDatasetManager``). Returned as
+           ``"source": "lab_dataset"`` with the originating dataset id
+           and name. Multiple matches → all returned in ``matches``.
+        2. **Curated 48-entry reference DB**. ``"source": "curated_db"``.
+           Trustworthy reference values.
+        3. **LLM JSON estimate** via NIM chat. ``"source": "llm_estimate"``.
+           Plausible but not computational chemistry; flagged.
+        4. **Unavailable** — no source had data; returned with the error.
+           We never fabricate.
+        """
+        formula = (formula or "").strip()
+        if not formula:
+            return {"source": "error", "error": "empty formula"}
+
+        # 1. User lab data takes priority — these are the user's own
+        # measurements and are the most relevant data point.
+        try:
+            from src.backend.lab.dataset_manager import get_lab_dataset_manager
+            lab = get_lab_dataset_manager().lookup(formula)
+        except Exception as e:  # noqa: BLE001 — lab store is best-effort
+            logger.debug("lab dataset lookup failed: %s", e)
+            lab = []
+        if lab:
+            # Merge properties across matches (latest non-null wins).
+            merged: dict[str, Any] = {}
+            for row in lab:
+                for k, v in (row.get("properties") or {}).items():
+                    if v is not None:
+                        merged[k] = v
+            return {
+                "source": "lab_dataset",
+                "formula": formula,
+                "properties": merged,
+                "matches": lab,
+                "match_count": len(lab),
+            }
+
+        # 2. Curated DB lookup.
+        if self._db is None:
+            self._db = _load_curated_db()
+        for key in (formula, formula.lower(), formula.replace(" ", "")):
+            if key in self._db:
+                entry = self._db[key]
+                if is_dataclass(entry):
+                    props = asdict(entry)
+                elif isinstance(entry, dict):
+                    props = dict(entry)
+                else:
+                    props = {k: v for k, v in vars(entry).items()
+                             if not k.startswith("_")}
+                return {
+                    "source": "curated_db",
+                    "formula": formula,
+                    "properties": props,
+                }
+
+        # 3. LLM estimate.
+        try:
+            data = self.client.chat_json(
+                f"Give your best estimate of the bulk material properties of "
+                f"`{formula}`. Use null for any value you do not know to "
+                f"within an order of magnitude.",
+                schema_hint=_PROPERTY_SCHEMA_HINT,
+                system=_MATERIALS_QA_SYSTEM,
+                temperature=0.2,
+                max_tokens=512,
+            )
+            return {
+                "source": "llm_estimate",
+                "formula": formula,
+                "properties": data if isinstance(data, dict) else {},
+                "warning": (
+                    "These values are LLM-generated estimates, not "
+                    "computational-chemistry results. Use only as a first-"
+                    "pass guess."
+                ),
+            }
+        except NIMError as e:
+            return {
+                "source": "unavailable",
+                "formula": formula,
+                "error": str(e),
+                "status": e.status,
+            }
+
+    # ------------------------------------------------------------------
+    # Stubs we used to fake — now refuse honestly
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _refuse_unimplemented(method: str) -> dict[str, Any]:
+        return {
+            "ok": False,
+            "error": (
+                f"{method} is not implemented. The OpenAI-compatible NIM "
+                f"endpoint does not provide this; NVIDIA does host MLIP "
+                f"microservices (e.g. MACE-MP, ORB) under separate request "
+                f"shapes that we have not wired up yet. Either run a local "
+                f"MLIP via ASE+pyace, or wait for the dedicated NIM client."
+            ),
         }
-        if cell:
-            payload["input"]["cell"] = cell
-            payload["input"]["pbc"] = [True, True, True]
 
-        result = self._api_call("/optimize", payload)
-        result["compute_time_s"] = time.perf_counter() - t0
+    def optimize_geometry(self, _params: dict[str, Any]) -> dict[str, Any]:
+        return self._refuse_unimplemented("optimize_geometry")
 
+    def calculate_band_gap(self, params: dict[str, Any]) -> dict[str, Any]:
+        # Route through estimate_properties — the band gap is one of the
+        # fields we ask for and it's the only thing the old API returned.
+        species = params.get("species") or params.get("formula") or []
+        formula = species if isinstance(species, str) else "".join(species)
+        result = self.estimate_properties(formula)
+        if result.get("source") in ("curated_db", "llm_estimate"):
+            props = result.get("properties") or {}
+            return {
+                **result,
+                "band_gap_eV": props.get("band_gap_eV"),
+            }
         return result
 
-    def calculate_band_gap(self, params: Dict) -> float:
-        """
-        Predict band gap using NVIDIA MLIP.
+    def calculate_properties(self, params: dict[str, Any]) -> dict[str, Any]:
+        species = params.get("species") or params.get("formula") or []
+        formula = species if isinstance(species, str) else "".join(species)
+        return self.estimate_properties(formula)
 
-        Params:
-            positions, species, cell (same as optimize)
+    def run_molecular_dynamics(self, _params: dict[str, Any]) -> dict[str, Any]:
+        return self._refuse_unimplemented("run_molecular_dynamics")
 
-        Returns:
-            band_gap in eV
-        """
-        payload = {
-            "model": self.model_id,
-            "input": {
-                "positions": params.get("positions", []),
-                "species": params.get("species", []),
-                "cell": params.get("cell", []),
-                "pbc": params.get("pbc", [True, True, True]),
-                "task": "band_gap",
-            }
-        }
-
-        result = self._api_call("/predict", payload)
-        return result.get("band_gap_eV", 0.0)
-
-    def calculate_properties(self, params: Dict) -> Dict:
-        """
-        Predict multiple properties: energy, forces, stress.
-
-        Returns dict with: energy_eV, forces, stress_GPa
-        """
-        payload = {
-            "model": self.model_id,
-            "input": {
-                "positions": params.get("positions", []),
-                "species": params.get("species", []),
-                "cell": params.get("cell", []),
-                "pbc": params.get("pbc", [True, True, True]),
-            }
-        }
-
-        return self._api_call("/properties", payload)
-
-    def run_molecular_dynamics(self, params: Dict) -> Dict:
-        """
-        Run NVT molecular dynamics simulation.
-
-        Params:
-            positions, species, cell, temperature_K, n_steps, timestep_fs
-        """
-        payload = {
-            "model": self.model_id,
-            "input": {
-                "positions": params.get("positions", []),
-                "species": params.get("species", []),
-                "cell": params.get("cell", []),
-                "pbc": [True, True, True],
-                "temperature_K": params.get("temperature_K", 300),
-                "n_steps": params.get("n_steps", 1000),
-                "timestep_fs": params.get("timestep_fs", 1.0),
-                "ensemble": "nvt",
-            }
-        }
-
-        return self._api_call("/md", payload)
-
-    def _api_call(self, endpoint: str, payload: Dict) -> Dict:
-        """Make authenticated API call to NVIDIA NIM."""
-        if not HTTP_AVAILABLE:
-            return self._offline_fallback(endpoint, payload)
-
-        if not self.api_key:
-            return self._offline_fallback(endpoint, payload)
-
-        url = f"{NIM_BASE_URL}{endpoint}"
-
-        try:
-            response = requests.post(
-                url,
-                json=payload,
-                headers=self.headers,
-                timeout=120,
-            )
-
-            if response.status_code == 200:
-                return response.json()
-            elif response.status_code == 401:
-                return {"error": "Invalid NVIDIA API key", "fallback": self._offline_fallback(endpoint, payload)}
-            elif response.status_code == 429:
-                return {"error": "Rate limited — try again later", "fallback": self._offline_fallback(endpoint, payload)}
-            else:
-                return {
-                    "error": f"API error: {response.status_code}",
-                    "detail": response.text[:500],
-                    "fallback": self._offline_fallback(endpoint, payload),
-                }
-        except requests.ConnectionError:
-            return self._offline_fallback(endpoint, payload)
-        except requests.Timeout:
-            return self._offline_fallback(endpoint, payload)
-        except Exception as e:
-            return {"error": f"API call failed: {str(e)}",
-                    "fallback": self._offline_fallback(endpoint, payload)}
-
-    # ── Offline MLIP Fallback Database ─────────────────────────
-
-    OFFLINE_PROPERTIES = {
-        "Au": {"band_gap_eV": 0.0, "formation_energy_eV": 0.0, "lattice_a": 4.078,
-               "density_g_cm3": 19.32, "bulk_modulus_GPa": 220, "type": "metal"},
-        "Pt": {"band_gap_eV": 0.0, "formation_energy_eV": 0.0, "lattice_a": 3.924,
-               "density_g_cm3": 21.45, "bulk_modulus_GPa": 230, "type": "metal"},
-        "C":  {"band_gap_eV": 5.47, "formation_energy_eV": 0.0, "lattice_a": 3.567,
-               "density_g_cm3": 3.51, "bulk_modulus_GPa": 443, "type": "diamond"},
-        "Si": {"band_gap_eV": 1.12, "formation_energy_eV": 0.0, "lattice_a": 5.431,
-               "density_g_cm3": 2.33, "bulk_modulus_GPa": 97.6, "type": "semiconductor"},
-        "MnO2": {"band_gap_eV": 1.3, "formation_energy_eV": -5.22, "lattice_a": 4.396,
-                 "density_g_cm3": 5.03, "bulk_modulus_GPa": 270, "type": "oxide"},
-        "TiO2": {"band_gap_eV": 3.2, "formation_energy_eV": -9.73, "lattice_a": 4.594,
-                 "density_g_cm3": 4.23, "bulk_modulus_GPa": 210, "type": "oxide"},
-        "ZnO":  {"band_gap_eV": 3.37, "formation_energy_eV": -3.63, "lattice_a": 3.250,
-                 "density_g_cm3": 5.61, "bulk_modulus_GPa": 183, "type": "semiconductor"},
-        "Fe2O3": {"band_gap_eV": 2.2, "formation_energy_eV": -8.29, "lattice_a": 5.035,
-                  "density_g_cm3": 5.24, "bulk_modulus_GPa": 220, "type": "oxide"},
-        "Cu":   {"band_gap_eV": 0.0, "formation_energy_eV": 0.0, "lattice_a": 3.615,
-                 "density_g_cm3": 8.96, "bulk_modulus_GPa": 140, "type": "metal"},
-        "Ag":   {"band_gap_eV": 0.0, "formation_energy_eV": 0.0, "lattice_a": 4.086,
-                 "density_g_cm3": 10.49, "bulk_modulus_GPa": 104, "type": "metal"},
-        "LiFePO4": {"band_gap_eV": 3.8, "formation_energy_eV": -15.4, "lattice_a": 10.332,
-                    "density_g_cm3": 3.6, "bulk_modulus_GPa": 96, "type": "cathode"},
-        "LiCoO2":  {"band_gap_eV": 2.7, "formation_energy_eV": -7.1, "lattice_a": 2.816,
-                    "density_g_cm3": 5.1, "bulk_modulus_GPa": 160, "type": "cathode"},
-        "Graphite": {"band_gap_eV": 0.04, "formation_energy_eV": 0.0, "lattice_a": 2.461,
-                     "density_g_cm3": 2.26, "bulk_modulus_GPa": 33, "type": "anode"},
-    }
-
-    def _offline_fallback(self, endpoint: str, payload: Dict) -> Dict:
-        """Return cached material properties when NVIDIA API is unavailable."""
-        species = payload.get("input", {}).get("species", [])
-        formula = "".join(sorted(set(species))) if species else "unknown"
-
-        # Try to match against offline database
-        props = self.OFFLINE_PROPERTIES.get(formula, None)
-        if not props:
-            # Try first element
-            if species:
-                props = self.OFFLINE_PROPERTIES.get(species[0], None)
-
-        if props:
-            logger.info("Using offline MLIP cache for %s", formula)
-            return {
-                "source": "offline_cache",
-                "formula": formula,
-                "properties": props,
-                "warning": "Results from local database — connect NVIDIA API for MLIP-grade accuracy",
-            }
-
+    def get_status(self) -> dict[str, Any]:
+        if self._db is None:
+            self._db = _load_curated_db()
         return {
-            "source": "offline_cache",
-            "formula": formula,
-            "error": f"No offline data for {formula}",
-            "warning": "Set NVIDIA_API_KEY for full MLIP calculations",
+            "configured": self.client.configured,
+            "model": self.client.default_model,
+            "base_url": self.client.base_url,
+            "curated_materials": len(self._db),
+            "mode": "online" if self.client.configured else "offline",
         }
-
-    def get_status(self) -> Dict:
-        """Check connectivity to NVIDIA services."""
-        return {
-            "api_key_set": bool(self.api_key),
-            "model": self.model_id,
-            "nim_url": NIM_BASE_URL,
-            "offline_materials": len(self.OFFLINE_PROPERTIES),
-            "mode": "online" if self.api_key else "offline_cache",
-        }
-

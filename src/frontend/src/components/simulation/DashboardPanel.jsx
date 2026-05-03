@@ -6,10 +6,17 @@ export default function DashboardPanel() {
   const [pipeStats, setPipeStats] = useState(null);
   const chartRef = useRef(null);
 
+  // Telemetry is populated from /api/v2/system/metrics. Anything we don't
+  // have a real value for stays null so the UI can render a "—".
   const [telemetry, setTelemetry] = useState({
-    gpuMem: 8.2,
-    apiLatency: 45,
-    serialStatus: 'IDLE'
+    gpuMem: null,
+    gpuMemMax: null,
+    gpuName: null,
+    gpuOk: false,
+    cpuPercent: null,
+    memUsedGB: null,
+    memTotalGB: null,
+    serialStatus: 'IDLE',
   });
 
   useEffect(() => {
@@ -40,14 +47,33 @@ export default function DashboardPanel() {
     };
     connectWS();
 
-    // Mock GPU/API jitter
-    const int = setInterval(() => {
-      setTelemetry(p => ({
-        ...p,
-        gpuMem: Math.max(0, p.gpuMem + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 0.5),
-        apiLatency: Math.max(10, p.apiLatency + (Math.random() > 0.5 ? 1 : -1) * Math.random() * 5)
-      }));
-    }, 2000);
+    // Real metrics from /api/v2/system/metrics — psutil + torch.cuda when
+    // available, null otherwise. The previous code used Math.random() here
+    // and rendered the result as if it were live GPU memory; that has been
+    // removed.
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const res = await fetch(`${API}/api/v2/system/metrics`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const m = await res.json();
+        if (cancelled) return;
+        setTelemetry(prev => ({
+          ...prev,
+          gpuMem:     m?.gpu?.memory_used_gb ?? null,
+          gpuMemMax:  m?.gpu?.memory_total_gb ?? null,
+          gpuName:    m?.gpu?.name ?? null,
+          gpuOk:      Boolean(m?.gpu?.available),
+          cpuPercent: m?.cpu_percent ?? null,
+          memUsedGB:  m?.memory_used_gb ?? null,
+          memTotalGB: m?.memory_total_gb ?? null,
+        }));
+      } catch {
+        // Backend unreachable — leave previous values; nothing fabricated.
+      }
+    };
+    tick();
+    const int = setInterval(tick, 2000);
 
     return () => {
       clearInterval(int);
@@ -199,25 +225,45 @@ export default function DashboardPanel() {
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* GPU Usage */}
+            {/* GPU memory — real values from torch.cuda.mem_get_info on the backend */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>NVIDIA GPU Memory (Local)</span>
-                <span className="mono" style={{ color: '#4a9eff' }}>{telemetry.gpuMem.toFixed(1)} / 24.0 GB</span>
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  GPU memory{telemetry.gpuName ? ` · ${telemetry.gpuName}` : ''}
+                </span>
+                <span className="mono" style={{ color: '#4a9eff' }}>
+                  {telemetry.gpuMem == null
+                    ? 'no GPU detected'
+                    : `${telemetry.gpuMem.toFixed(1)} / ${(telemetry.gpuMemMax ?? 0).toFixed(1)} GB`}
+                </span>
               </div>
               <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-                <div style={{ width: `${(telemetry.gpuMem / 24) * 100}%`, height: '100%', background: '#4a9eff', transition: 'width 1s ease' }} />
+                <div style={{
+                  width: telemetry.gpuMem != null && telemetry.gpuMemMax
+                    ? `${Math.min(100, (telemetry.gpuMem / telemetry.gpuMemMax) * 100)}%`
+                    : '0%',
+                  height: '100%', background: '#4a9eff', transition: 'width 1s ease',
+                }} />
               </div>
             </div>
 
-            {/* NIM Latency */}
+            {/* CPU + system memory — from psutil */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>NVIDIA NIM Latency (Cloud API)</span>
-                <span className="mono" style={{ color: '#66bb6a' }}>{telemetry.apiLatency.toFixed(0)} ms</span>
+                <span style={{ color: 'var(--text-secondary)' }}>CPU load · system memory</span>
+                <span className="mono" style={{ color: '#66bb6a' }}>
+                  {telemetry.cpuPercent == null ? '—' : `${telemetry.cpuPercent.toFixed(0)}%`}
+                  {' · '}
+                  {telemetry.memUsedGB == null
+                    ? '—'
+                    : `${telemetry.memUsedGB.toFixed(1)} / ${(telemetry.memTotalGB ?? 0).toFixed(1)} GB`}
+                </span>
               </div>
               <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-                <div style={{ width: `${Math.min(100, telemetry.apiLatency / 2)}%`, height: '100%', background: '#66bb6a', transition: 'width 1s ease' }} />
+                <div style={{
+                  width: telemetry.cpuPercent != null ? `${Math.min(100, telemetry.cpuPercent)}%` : '0%',
+                  height: '100%', background: '#66bb6a', transition: 'width 1s ease',
+                }} />
               </div>
             </div>
 

@@ -94,4 +94,11 @@ if(RAMAN_BUILD_TESTS)
         target_link_libraries(test_drt_solver PRIVATE raman_core_static)
         add_test(NAME DRTSolverTests COMMAND test_drt_solver)
     endif()
+
+    # KK solver test
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kk_solver.cpp)
+        add_executable(test_kk_solver tests/test_kk_solver.cpp)
+        target_link_libraries(test_kk_solver PRIVATE raman_core_static)
+        add_test(NAME KKSolverTests COMMAND test_kk_solver)
+    endif()
 endif()

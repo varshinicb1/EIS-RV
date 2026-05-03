@@ -118,28 +118,62 @@ async def websocket_telemetry(websocket: WebSocket):
 # ── Auth & Licensing ─────────────────────────────────────────────
 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from src.backend.licensing.license_manager import get_license_manager, LicenseStatus
+from src.backend.licensing.license_manager import (
+    get_license_manager,
+    LicenseStatus,
+    verify_license,    # FastAPI dependency factory — see Depends(verify_license())
+)
 
 security = HTTPBearer(auto_error=False)
 
-def verify_license():
-    mgr = get_license_manager()
-    status, details = mgr.validate_license(online=False)
-    if status in (LicenseStatus.INVALID, LicenseStatus.EXPIRED, LicenseStatus.REVOKED):
-        raise HTTPException(status_code=403, detail=details.get('message', 'License invalid'))
-    return details
 
 @app.get("/api/v2/auth/license")
 async def get_license():
+    """Read-only — current license / trial state."""
+    return get_license_manager().get_license_info()
+
+
+class _ActivateRequest(BaseModel):
+    token: str
+
+
+@app.post("/api/v2/auth/license/activate")
+async def activate_license(req: _ActivateRequest):
+    """Activate a server-issued license token."""
+    info = get_license_manager().activate_license(req.token)
+    if info.status != LicenseStatus.OK:
+        raise HTTPException(status_code=400, detail=info.to_dict())
+    return info.to_dict()
+
+
+@app.post("/api/v2/auth/license/deactivate")
+async def deactivate_license():
+    """Wipe the locally stored token (reverts to trial state, if any)."""
+    get_license_manager().deactivate_license()
+    return get_license_manager().get_license_info()
+
+
+@app.get("/api/v2/auth/hardware-id")
+async def get_hardware_id():
+    """Return the local hardware id for binding a server-issued token."""
     mgr = get_license_manager()
-    return mgr.get_license_info()
+    hw = mgr.hardware()
+    return {
+        "hardware_id": hw.hex,
+        "short": hw.short,
+        "source": hw.primary_source,
+        "degraded": hw.degraded,
+    }
+
 
 @app.post("/api/v2/auth/trial")
 async def start_trial():
-    mgr = get_license_manager()
-    if mgr.start_trial():
-        return {"status": "success", "message": "Trial started"}
-    raise HTTPException(400, "Could not start trial (already used or invalid).")
+    """
+    Trial bootstrap. The first call to ``/api/v2/auth/license`` already
+    starts a trial implicitly; this endpoint is kept for UI consistency
+    and just returns current state.
+    """
+    return get_license_manager().get_license_info()
 
 # ── Health ───────────────────────────────────────────────────────
 
@@ -172,6 +206,68 @@ async def cache_stats():
     """Get cache statistics."""
     from src.backend.core.cache import get_stats
     return get_stats()
+
+
+@app.get("/api/v2/system/metrics")
+async def system_metrics():
+    """
+    Real, best-effort process and system metrics for the UI.
+
+    Every value is either a real measurement or ``null``. We never
+    fabricate. The earlier UI used ``Math.random()`` to render fake GPU
+    memory and CPU load; this endpoint replaces that.
+    """
+    import time as _time
+    metrics: Dict[str, Any] = {
+        "timestamp": _time.time(),
+        "cpu_percent": None,
+        "memory_used_gb": None,
+        "memory_total_gb": None,
+        "gpu": None,        # filled below if torch.cuda is available
+        "process": None,    # this Python process specifically
+    }
+
+    # Process / system metrics via psutil (an optional dep).
+    try:
+        import psutil  # type: ignore
+        # cpu_percent without an interval returns 0.0 on the first call;
+        # use a short non-blocking sample.
+        metrics["cpu_percent"] = psutil.cpu_percent(interval=0.1)
+        vm = psutil.virtual_memory()
+        metrics["memory_used_gb"] = round((vm.total - vm.available) / 1e9, 2)
+        metrics["memory_total_gb"] = round(vm.total / 1e9, 2)
+        proc = psutil.Process()
+        metrics["process"] = {
+            "rss_mb": round(proc.memory_info().rss / 1e6, 1),
+            "cpu_percent": proc.cpu_percent(interval=0.0),
+            "num_threads": proc.num_threads(),
+        }
+    except ImportError:
+        pass
+    except Exception as e:  # pragma: no cover — defensive
+        logger.debug("system metrics: psutil failed: %s", e)
+
+    # GPU via torch.cuda if available; never via nvidia-smi shellouts.
+    try:
+        import torch  # type: ignore
+        if torch.cuda.is_available():
+            idx = 0
+            free_b, total_b = torch.cuda.mem_get_info(idx)
+            metrics["gpu"] = {
+                "available": True,
+                "name": torch.cuda.get_device_name(idx),
+                "memory_used_gb": round((total_b - free_b) / 1e9, 2),
+                "memory_total_gb": round(total_b / 1e9, 2),
+            }
+        else:
+            metrics["gpu"] = {"available": False}
+    except ImportError:
+        metrics["gpu"] = {"available": False}
+    except Exception as e:  # pragma: no cover
+        logger.debug("system metrics: torch failed: %s", e)
+        metrics["gpu"] = {"available": False}
+
+    return metrics
 
 @app.post("/api/v2/cache/invalidate")
 async def invalidate_cache():
@@ -276,7 +372,7 @@ class BatteryRequest(BaseModel):
 async def simulate_battery(req: BatteryRequest):
     """Run battery simulation via VANL engine."""
     try:
-        from vanl.backend.core.battery_engine import BatteryConfig, simulate_battery
+        from src.backend.core.engines.battery_engine import BatteryConfig, simulate_battery
 
         config = BatteryConfig(
             chemistry=req.chemistry,
@@ -338,7 +434,7 @@ class GCDRequest(BaseModel):
 async def simulate_gcd(req: GCDRequest):
     """Run GCD simulation via VANL engine."""
     try:
-        from vanl.backend.core.gcd_engine import GCDParameters, simulate_gcd as run_gcd
+        from src.backend.core.engines.gcd_engine import GCDParameters, simulate_gcd as run_gcd
 
         params = GCDParameters(
             Cdl_F=req.Cdl_F,
@@ -410,145 +506,128 @@ async def engine_info():
     return info
 
 
-# ── Forward compatibility with VANL routes ──────────────────────
+# ── v1 routers (engines + research) ─────────────────────────────
+#
+# These all require a valid license / active trial. The license check is
+# offline (no network), backed by an Ed25519-signed token, and returns a
+# 403 with structured ``{"code": ..., "message": ...}`` on failure. See
+# src.backend.licensing.license_manager.verify_license.
+
+from fastapi import Depends as _Depends
+_license_dep = [_Depends(verify_license())]
 
 try:
-    from vanl.backend.api.routes import router as vanl_router
-    app.include_router(vanl_router)
+    from src.backend.api.v1_routes.routes import router as vanl_router
+    app.include_router(vanl_router, dependencies=_license_dep)
 except ImportError:
-    logger.warning("VANL routes not available — running in standalone mode")
+    logger.warning("v1 simulation routes unavailable — running in standalone mode")
 
 try:
-    from vanl.backend.api.data_routes import router as data_router
-    app.include_router(data_router)
+    from src.backend.api.v1_routes.data_routes import router as data_router
+    app.include_router(data_router, dependencies=_license_dep)
 except ImportError:
     pass
 
+# Local Raman-Qwen LoRA agent. Lazy-loads the model on first /chat call so
+# this import is cheap even when torch is missing.
+try:
+    from src.backend.api.v1_routes.agent_routes import router as agent_router
+    app.include_router(
+        agent_router,
+        dependencies=[_Depends(verify_license(required_feature="agent"))],
+    )
+except ImportError as e:
+    logger.warning("Local agent router unavailable: %s", e)
 
-# ── NVIDIA Alchemi AI Endpoints ─────────────────────────────────
+# Lab dataset routes — user-supplied experimental data. AlchemiBridge
+# checks the lab store first for property estimates.
+try:
+    from src.backend.api.v1_routes.lab_routes import router as lab_router
+    app.include_router(lab_router)
+except ImportError as e:
+    logger.warning("Lab dataset router unavailable: %s", e)
 
-class AlchemiRequest(BaseModel):
-    positions: List[List[float]]
-    species: List[str]
-    model: str = "orb-v3"
-    cell: Optional[List[List[float]]] = None
-    n_steps: int = 500
-    temperature_K: float = 300
+# Supercapacitor analysis: turns raw CV/GCD/EIS arrays into Cs, b-value,
+# Ragone, etc.; suggests next-iteration formulation via the configured NIM.
+try:
+    from src.backend.api.v1_routes.supercap_routes import router as supercap_router
+    app.include_router(supercap_router)
+except ImportError as e:
+    logger.warning("Supercap router unavailable: %s", e)
+
+
+# ── NVIDIA Alchemi (chat + materials lookup) ────────────────────
+#
+# These wrap the honest src.ai_engine.AlchemiBridge:
+#
+#   /api/v2/alchemi/status     — is the cloud LLM configured? what model?
+#   /api/v2/alchemi/properties — material lookup (curated DB → LLM estimate)
+#   /api/v2/alchemi/chat       — materials Q&A against the configured NIM
+#
+# The previous endpoints (/optimize, /bandgap, /md, /density, /universal)
+# called fabricated NIM endpoints or hand-rolled "MLIP placeholders".
+# They have been removed in favour of these honest replacements. Crystal
+# structure generation and MD remain available only when a dedicated NIM
+# is wired up — see src.backend.core.engines.nvidia_intelligence for the
+# refusal messages.
 
 def _get_alchemi():
     from src.ai_engine.alchemi_bridge import AlchemiBridge
-    api_key = os.environ.get("NVIDIA_API_KEY")
-    return AlchemiBridge(api_key=api_key, model="orb-v3")
-
-@app.post("/api/v2/alchemi/optimize")
-async def alchemi_optimize(req: AlchemiRequest):
-    try:
-        bridge = _get_alchemi()
-        result = bridge.optimize_geometry({
-            "positions": req.positions,
-            "species": req.species,
-            "cell": req.cell,
-        })
-        if "error" in result:
-            logger.error(f"Alchemi error: {result['error']}")
-            # Fallback to placeholder
-            return _alchemi_placeholder("optimize", req)
-        return result
-    except Exception as e:
-        logger.error(f"Alchemi exception: {e}")
-        return _alchemi_placeholder("optimize", req)
-
-@app.post("/api/v2/alchemi/bandgap")
-async def alchemi_bandgap(req: AlchemiRequest):
-    try:
-        bridge = _get_alchemi()
-        bg = bridge.calculate_band_gap({
-            "positions": req.positions,
-            "species": req.species,
-            "cell": req.cell,
-        })
-        if isinstance(bg, dict) and "error" in bg:
-            logger.error(f"Alchemi bandgap error: {bg['error']}")
-            return _alchemi_placeholder("bandgap", req)
-        return {"band_gap_eV": bg, "method": req.model, "energy_eV": -len(req.species) * 2.1,
-                "homo_eV": -5.0, "lumo_eV": -5.0 + bg, "converged": True, "n_iterations": 1, "wall_time_s": 0.1}
-    except Exception as e:
-        logger.error(f"Alchemi bandgap exception: {e}")
-        return _alchemi_placeholder("bandgap", req)
-
-@app.post("/api/v2/alchemi/md")
-async def alchemi_md(req: AlchemiRequest):
-    try:
-        bridge = _get_alchemi()
-        result = bridge.run_molecular_dynamics({
-            "positions": req.positions, "species": req.species,
-            "cell": req.cell, "n_steps": req.n_steps, "temperature_K": req.temperature_K,
-        })
-        if "error" in result:
-            logger.error(f"Alchemi MD error: {result['error']}")
-            return _alchemi_placeholder("md", req)
-        return result
-    except Exception as e:
-        logger.error(f"Alchemi MD exception: {e}")
-        return _alchemi_placeholder("md", req)
-
-@app.post("/api/v2/alchemi/density")
-async def alchemi_density(req: AlchemiRequest):
-    return _alchemi_placeholder("density", req)
-
-def _alchemi_placeholder(task, req):
-    from src.backend.core.native_bridge import alchemi_simulate
-    return alchemi_simulate(task, req.model_dump())
+    return AlchemiBridge()  # picks up NVIDIA_API_KEY from env / nim_client
 
 
-# ── Universal Alchemi Engine (Phase 6 — Advanced Materials AI) ───
+class _AlchemiPropertiesRequest(BaseModel):
+    formula: str = Field(..., description="Chemical formula or name (e.g. 'graphene', 'LiFePO4')")
 
-class UniversalAlchemiRequest(BaseModel):
-    material: str = Field(..., description="Any material/compound name (e.g. 'Titanium Dioxide', 'Aspirin', 'Graphene oxide')")
-    task: str = Field("analyze", description="Task: analyze, optimize, md, bandgap")
-    temperature_K: float = Field(298.0, ge=1, le=5000)
-    n_steps: int = Field(100, ge=10, le=1000)
-    positions: Optional[List[List[float]]] = None
-    species: Optional[List[str]] = None
 
-@app.post("/api/v2/alchemi/universal")
-async def alchemi_universal(req: UniversalAlchemiRequest):
-    """Universal Alchemi endpoint — accepts ANY material name, fetches real data from PubChem,
-    computes quantum properties, predicts synthesis feasibility, and generates synchronized
-    EIS/CV parameters."""
-    try:
-        from src.backend.core.alchemi_engine import universal_alchemi_simulate
-        import numpy as np
-        
-        def clean_numpy(obj):
-            if isinstance(obj, np.bool_):
-                return bool(obj)
-            if isinstance(obj, (np.floating, np.integer)):
-                return obj.item()
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()
-            if isinstance(obj, dict):
-                return {k: clean_numpy(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [clean_numpy(v) for v in obj]
-            return obj
+class _AlchemiChatRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=4000)
+    system: Optional[str] = Field(None, max_length=2000)
+    temperature: float = Field(0.4, ge=0.0, le=2.0)
 
-        result = universal_alchemi_simulate(
-            material=req.material,
-            task=req.task,
-            temperature_K=req.temperature_K,
-            positions=req.positions,
-            species=req.species,
-            n_steps=req.n_steps
-        )
-        return clean_numpy(result)
-    except Exception as e:
-        logger.error(f"Universal Alchemi error: {e}")
-        return {"error": str(e)}
 
-@app.get("/api/v2/alchemi/search/{query}")
+@app.get("/api/v2/alchemi/status",
+         dependencies=[_Depends(verify_license(required_feature="alchemi"))])
+async def alchemi_status():
+    """Is the NIM client configured? What model? How many curated materials?"""
+    return _get_alchemi().get_status()
+
+
+@app.post("/api/v2/alchemi/properties",
+          dependencies=[_Depends(verify_license(required_feature="alchemi"))])
+async def alchemi_properties(req: _AlchemiPropertiesRequest):
+    """
+    Material properties: curated 48-entry DB first, LLM estimate as fallback,
+    explicit "unavailable" when neither path yields anything.
+    """
+    return _get_alchemi().estimate_properties(req.formula)
+
+
+@app.post("/api/v2/alchemi/chat",
+          dependencies=[_Depends(verify_license(required_feature="alchemi"))])
+async def alchemi_chat(req: _AlchemiChatRequest):
+    """Free-form materials-science chat. Returns ok=False on NIM failure."""
+    return _get_alchemi().ask(
+        req.prompt,
+        system=req.system,
+        temperature=req.temperature,
+    )
+
+
+# ── PubChem search (real public API; no fabrication) ────────────
+
+@app.get("/api/v2/alchemi/search/{query}",
+         dependencies=[_Depends(verify_license(required_feature="alchemi"))])
 async def alchemi_search(query: str):
-    """Search PubChem for a material and return its properties + 3D structure."""
+    """
+    Look a material up in PubChem (real public API). Returns the found
+    properties plus a parsed 3D structure if PubChem provided one.
+
+    The previous ``/api/v2/alchemi/universal`` endpoint computed
+    "quantum properties" via a hand-rolled polynomial of molecular
+    descriptors and returned them as if they were ML/MLIP-grade
+    predictions. It has been removed.
+    """
     try:
         from src.backend.core.alchemi_engine import fetch_pubchem, parse_sdf
         data = fetch_pubchem(query)
@@ -643,71 +722,108 @@ async def update_user(data: Dict[str, Any]):
 
 
 # ── Projects / Workspace Management ─────────────────────────────
+#
+# All project endpoints are encrypted-at-rest under the user's data dir
+# (~/.local/share/raman-studio/projects/ on Linux). Keys are derived from
+# the local hardware fingerprint via PBKDF2; moving a project file to
+# another machine renders it unreadable. Every route below is gated by
+# ``Depends(verify_license())`` — anonymous access is disabled.
 
-def _projects_file():
-    return _DATA_DIR / "projects.json"
+from src.backend.projects.project_manager import (
+    get_project_manager,
+    ProjectError,
+    ProjectIntegrityError,
+    ProjectNotFound,
+)
 
-def _load_projects():
-    f = _projects_file()
-    if f.exists():
-        return json.loads(f.read_text())
-    return []
 
-def _save_projects(projects):
-    _projects_file().write_text(json.dumps(projects, indent=2))
-
-@app.get("/api/v2/projects")
+@app.get("/api/v2/projects",
+         dependencies=[_Depends(verify_license())])
 async def list_projects():
-    return _load_projects()
+    """Encrypted index lookup — does NOT decrypt every project file."""
+    return get_project_manager().list_projects()
 
-@app.post("/api/v2/projects")
+
+@app.post("/api/v2/projects",
+          dependencies=[_Depends(verify_license())])
 async def create_project(data: Dict[str, Any]):
-    projects = _load_projects()
-    project = {
-        "id": str(uuid.uuid4())[:8],
-        "name": data.get("name", "Untitled Project"),
-        "description": data.get("description", ""),
-        "created": time.time(),
-        "modified": time.time(),
-        "simulations": [],
-        "files": [],
-        "tags": data.get("tags", []),
-    }
-    projects.append(project)
-    _save_projects(projects)
-    return project
+    p = get_project_manager().create_project(
+        name=data.get("name") or "Untitled Project",
+        description=data.get("description") or "",
+        tags=data.get("tags") or [],
+        author=data.get("author") or "",
+    )
+    return p.to_dict()
 
-@app.put("/api/v2/projects/{project_id}")
+
+@app.get("/api/v2/projects/{project_id}",
+         dependencies=[_Depends(verify_license())])
+async def get_project(project_id: str):
+    try:
+        return get_project_manager().get_project(project_id).to_dict()
+    except ProjectNotFound:
+        raise HTTPException(404, "Project not found")
+    except ProjectIntegrityError as e:
+        raise HTTPException(409, f"Project integrity check failed: {e}")
+    except ProjectError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.put("/api/v2/projects/{project_id}",
+         dependencies=[_Depends(verify_license())])
 async def update_project(project_id: str, data: Dict[str, Any]):
-    projects = _load_projects()
-    for p in projects:
-        if p["id"] == project_id:
-            p.update(data)
-            p["modified"] = time.time()
-            _save_projects(projects)
-            return p
-    raise HTTPException(404, "Project not found")
+    try:
+        return get_project_manager().update_project(project_id, data).to_dict()
+    except ProjectNotFound:
+        raise HTTPException(404, "Project not found")
+    except ProjectError as e:
+        raise HTTPException(400, str(e))
 
-@app.delete("/api/v2/projects/{project_id}")
+
+@app.delete("/api/v2/projects/{project_id}",
+            dependencies=[_Depends(verify_license())])
 async def delete_project(project_id: str):
-    projects = _load_projects()
-    projects = [p for p in projects if p["id"] != project_id]
-    _save_projects(projects)
-    return {"status": "deleted"}
+    try:
+        get_project_manager().delete_project(project_id)
+        return {"status": "deleted", "id": project_id}
+    except ProjectError as e:
+        raise HTTPException(400, str(e))
 
-@app.post("/api/v2/projects/{project_id}/simulations")
+
+@app.post("/api/v2/projects/{project_id}/simulations",
+          dependencies=[_Depends(verify_license())])
 async def add_simulation_to_project(project_id: str, data: Dict[str, Any]):
-    projects = _load_projects()
-    for p in projects:
-        if p["id"] == project_id:
-            sim = {"id": str(uuid.uuid4())[:8], "type": data.get("type", "eis"),
-                   "params": data.get("params", {}), "result": data.get("result", {}),
-                   "timestamp": time.time()}
-            p["simulations"].append(sim)
-            p["modified"] = time.time()
-            _save_projects(projects)
-            return sim
-    raise HTTPException(404, "Project not found")
+    try:
+        return get_project_manager().add_simulation(project_id, data)
+    except ProjectNotFound:
+        raise HTTPException(404, "Project not found")
+    except ProjectError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/v2/projects/{project_id}/export",
+         dependencies=[_Depends(verify_license())])
+async def export_project(project_id: str):
+    """
+    Returns the project as plaintext JSON. The caller is responsible for
+    handling the export safely; the server only enforces the license check.
+    """
+    try:
+        return get_project_manager().export_project(project_id)
+    except ProjectNotFound:
+        raise HTTPException(404, "Project not found")
+    except ProjectError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/v2/projects/import",
+          dependencies=[_Depends(verify_license())])
+async def import_project(payload: Dict[str, Any]):
+    try:
+        p = get_project_manager().import_project(payload)
+        return p.to_dict()
+    except ProjectError as e:
+        raise HTTPException(400, str(e))
 
 
 # ── Report Generation ────────────────────────────────────────────
@@ -816,14 +932,14 @@ _pipeline_lock = asyncio.Lock()
 def _get_pipeline():
     global _pipeline_instance
     if _pipeline_instance is None:
-        from vanl.research_pipeline.pipeline import ResearchPipeline
+        from src.backend.research.pipeline import ResearchPipeline
         _pipeline_instance = ResearchPipeline()
     return _pipeline_instance
 
 def _get_search():
-    from vanl.research_pipeline.schema import get_connection
-    from vanl.research_pipeline.search import DatasetSearch
-    from vanl.research_pipeline.config import DB_PATH
+    from src.backend.research.schema import get_connection
+    from src.backend.research.search import DatasetSearch
+    from src.backend.research.config import DB_PATH
     conn = get_connection(DB_PATH)
     return DatasetSearch(conn)
 
@@ -906,7 +1022,7 @@ async def list_applications():
 @app.get("/api/v2/pipeline/config")
 async def pipeline_config():
     """Get pipeline configuration."""
-    from vanl.research_pipeline.config import SEARCH_QUERIES, MAX_PAPERS_PER_QUERY
+    from src.backend.research.config import SEARCH_QUERIES, MAX_PAPERS_PER_QUERY
     return {"queries": SEARCH_QUERIES, "max_per_query": MAX_PAPERS_PER_QUERY,
             "sources": ["arXiv", "CrossRef", "Semantic Scholar"]}
 
@@ -917,7 +1033,7 @@ async def pipeline_config():
 async def analyze_drt(data: Dict[str, Any]):
     """Run DRT analysis using Tikhonov regularization."""
     try:
-        from vanl.backend.core.drt_analysis import DRTAnalyzer
+        from src.backend.core.engines.drt_analysis import DRTAnalyzer
         import numpy as np
 
         # Generate synthetic EIS data from parameters
@@ -954,7 +1070,7 @@ async def analyze_drt(data: Dict[str, Any]):
 async def fit_circuit(data: Dict[str, Any]):
     """Fit equivalent circuit to EIS data using CNLS."""
     try:
-        from vanl.backend.core.circuit_fitting import CircuitFitter
+        from src.backend.core.engines.circuit_fitting import CircuitFitter
         import numpy as np
 
         circuit_model = data.get("circuit_model", "randles_cpe")
@@ -990,7 +1106,7 @@ async def fit_circuit(data: Dict[str, Any]):
 async def kk_validate(data: Dict[str, Any]):
     """Run Kramers-Kronig validation on EIS data."""
     try:
-        from vanl.backend.core.kk_validation import kramers_kronig_validate
+        from src.backend.core.engines.kk_validation import kramers_kronig_validate
         import numpy as np
 
         frequencies = np.array(data.get("frequencies", np.logspace(-2, 5, 50).tolist()))
@@ -1022,8 +1138,8 @@ async def kk_validate(data: Dict[str, Any]):
 async def predict_synthesis(data: Dict[str, Any]):
     """Run virtual synthesis prediction."""
     try:
-        from vanl.backend.core.synthesis_engine import SynthesisEngine
-        from vanl.backend.core.materials import MaterialComposition, SynthesisParameters, SynthesisMethod
+        from src.backend.core.engines.synthesis_engine import SynthesisEngine
+        from src.backend.core.engines.materials import MaterialComposition, SynthesisParameters, SynthesisMethod
 
         components = data.get("components", {"graphene": 0.3, "MnO2": 0.7})
         method = data.get("method", "hydrothermal")

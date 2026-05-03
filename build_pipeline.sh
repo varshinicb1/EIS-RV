@@ -9,7 +9,7 @@ echo " RĀMAN STUDIO v2.0 - CI/CD BUILD PIPELINE"
 echo "================================================"
 
 echo "[1/4] Preparing Python Environment & Dependencies..."
-python3 -m pip install -r vanl/requirements.txt
+python3 -m pip install -r requirements.txt
 python3 -m pip install pyinstaller
 
 echo "[2/4] Building Backend Executable (PyInstaller)..."

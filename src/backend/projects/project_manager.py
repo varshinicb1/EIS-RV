@@ -1,665 +1,485 @@
 """
-Secure Project Management System
-==================================
-Local project storage with military-grade encryption and integrity checks
-Company: VidyuthLabs
+Encrypted-at-rest project storage.
 
-SECURITY FEATURES:
-- Hardware-derived encryption keys (no key storage)
-- HMAC integrity verification
-- Path traversal protection
-- Input sanitization
-- Atomic file operations
-- Secure deletion
-- Audit logging
+Compared to the previous version
+--------------------------------
+The previous ProjectManager (665 LOC) had a hardcoded HMAC secret
+shipped to every client (``b'raman_studio_project_integrity_v1'``),
+used a "is encrypted" detection check based on whether the file
+contained ``b'::'`` (false-positive for any URL or IPv6 address), and
+was never wired into the API — every existing project route in
+``server.py`` wrote plaintext JSON to ``data/projects.json``.
+
+This rewrite
+------------
+* One Fernet-encrypted file per project.
+* One encrypted index file mapping ``project_id → metadata`` for
+  ``list_projects`` without decrypting every project.
+* The Fernet key is derived from the local hardware fingerprint via
+  PBKDF2-SHA256 (600 000 iterations). Moving a project file to a
+  different machine renders it unreadable; that is by design.
+* Project IDs are server-generated UUIDs. We never use a
+  user-supplied string in a filesystem path.
+* Atomic writes (write to .tmp, then ``os.replace``).
+* No HMAC with a shipped secret. Fernet's built-in MAC, keyed by the
+  PBKDF2-derived key, is the integrity guarantee.
+* One-shot migration of any pre-existing ``data/projects.json`` on
+  first call to ``list_projects``.
 """
+from __future__ import annotations
 
-import json
-import shutil
-import hmac
-import hashlib
 import base64
-import re
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Optional
-from dataclasses import dataclass, asdict
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import json
 import logging
 import os
+import re
+import sys
+import time
+import uuid
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Optional
+
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 logger = logging.getLogger(__name__)
-audit_logger = logging.getLogger('audit')
+
+
+# ---- Storage configuration ------------------------------------------------
+
+
+PBKDF2_ITERS = 600_000
+KDF_SALT = b"raman-studio-projects-v1"
+PROJECT_FILE_EXT = ".proj"
+MAX_NAME_LENGTH = 100
+NAME_DISPLAY_RE = re.compile(r"[^a-zA-Z0-9_\-\s.]")  # for sanitising display names
+
+
+def _user_data_dir() -> Path:
+    """Same logic as license_manager — keep all user data under one tree."""
+    home = Path.home()
+    if sys.platform.startswith("win"):
+        base = Path(os.environ.get("APPDATA", home / "AppData" / "Roaming"))
+    elif sys.platform == "darwin":
+        base = home / "Library" / "Application Support"
+    else:
+        base = Path(os.environ.get("XDG_DATA_HOME", home / ".local" / "share"))
+    out = base / "raman-studio" / "projects"
+    out.mkdir(parents=True, exist_ok=True)
+    return out
+
+
+# ---- Errors ---------------------------------------------------------------
+
+
+class ProjectError(RuntimeError):
+    """Generic project-store error (validation, decrypt, missing, etc.)."""
+
+
+class ProjectNotFound(ProjectError):
+    pass
+
+
+class ProjectIntegrityError(ProjectError):
+    """Decryption failed — file tampered, corrupted, or from another machine."""
+
+
+# ---- Data --------------------------------------------------------------
 
 
 @dataclass
 class Project:
-    """Project data structure"""
     id: str
     name: str
-    description: str
-    created_at: str
-    modified_at: str
-    author: str
-    tags: List[str]
-    simulations: List[Dict]
-    materials: List[Dict]
-    results: List[Dict]
-    notes: str
-    version: int
-    encrypted: bool
-    integrity_hash: str = ""
+    description: str = ""
+    tags: list[str] = field(default_factory=list)
+    created_at: float = field(default_factory=time.time)
+    modified_at: float = field(default_factory=time.time)
+    author: str = ""
+    notes: str = ""
+    simulations: list[dict[str, Any]] = field(default_factory=list)
+    materials: list[dict[str, Any]] = field(default_factory=list)
+    results: list[dict[str, Any]] = field(default_factory=list)
+    schema_version: int = 1
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "tags": list(self.tags),
+            "created_at": self.created_at,
+            "modified_at": self.modified_at,
+            "author": self.author,
+            "notes": self.notes,
+            "simulations": list(self.simulations),
+            "materials": list(self.materials),
+            "results": list(self.results),
+            "schema_version": self.schema_version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Project":
+        return cls(
+            id=str(data["id"]),
+            name=str(data.get("name") or "Untitled Project")[:MAX_NAME_LENGTH],
+            description=str(data.get("description") or ""),
+            tags=list(data.get("tags") or []),
+            created_at=float(data.get("created_at") or time.time()),
+            modified_at=float(data.get("modified_at") or time.time()),
+            author=str(data.get("author") or ""),
+            notes=str(data.get("notes") or ""),
+            simulations=list(data.get("simulations") or []),
+            materials=list(data.get("materials") or []),
+            results=list(data.get("results") or []),
+            schema_version=int(data.get("schema_version") or 1),
+        )
+
+
+# ---- Index entry (light metadata for list_projects) -----------------------
+
+
+def _index_entry(p: Project) -> dict[str, Any]:
+    return {
+        "id": p.id,
+        "name": p.name,
+        "description": p.description,
+        "tags": list(p.tags),
+        "created_at": p.created_at,
+        "modified_at": p.modified_at,
+    }
+
+
+# ---- Helpers ---------------------------------------------------------------
+
+
+def _is_safe_id(project_id: str) -> bool:
+    """Project ids must be hex/UUID-like — no path traversal possible."""
+    if not project_id or len(project_id) > 64:
+        return False
+    return all(c in "0123456789abcdefABCDEF-" for c in project_id)
+
+
+def _sanitise_display_name(name: str) -> str:
+    """For user-visible names. We never put names into a file path."""
+    name = (name or "").strip()
+    if not name:
+        return "Untitled Project"
+    name = NAME_DISPLAY_RE.sub("", name)[:MAX_NAME_LENGTH].strip()
+    return name or "Untitled Project"
+
+
+# ---- The manager ----------------------------------------------------------
 
 
 class ProjectManager:
-    """Secure project manager with military-grade encryption"""
-    
-    # Projects directory
-    PROJECTS_DIR = Path.home() / "RĀMAN_Studio_Projects"
-    
-    # Project file extension
-    PROJECT_EXT = ".dproj"
-    
-    # HMAC secret for integrity
-    HMAC_SECRET = b'raman_studio_project_integrity_v1'
-    
-    # Maximum project name length
-    MAX_NAME_LENGTH = 100
-    
-    # Allowed characters in project names
-    ALLOWED_CHARS = r'[a-zA-Z0-9_\-\s]'
-    
-    def __init__(self):
-        self._ensure_projects_dir()
-        self.current_project: Optional[Project] = None
-        self._setup_audit_logging()
-    
-    def _setup_audit_logging(self):
-        """Set up audit logging for security events"""
-        audit_file = Path.home() / ".raman-studio" / "project_audit.log"
-        audit_file.parent.mkdir(parents=True, exist_ok=True)
-        
-        handler = logging.FileHandler(audit_file)
-        handler.setFormatter(logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s'
-        ))
-        audit_logger.addHandler(handler)
-        audit_logger.setLevel(logging.INFO)
-    
-    def _audit_log(self, action: str, details: Dict):
-        """Log security-sensitive actions"""
-        audit_logger.info(f"{action}: {json.dumps(details)}")
-    
-    def _ensure_projects_dir(self):
-        """Ensure projects directory exists with proper permissions"""
-        self.PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
-        
-        # Set restrictive permissions on Unix
-        if os.name != 'nt':  # Not Windows
-            os.chmod(self.PROJECTS_DIR, 0o700)
-        
-        logger.info(f"📁 Projects directory: {self.PROJECTS_DIR}")
-    
-    def _sanitize_project_name(self, name: str) -> str:
-        """Sanitize project name to prevent path traversal and injection"""
-        if not name or not isinstance(name, str):
-            raise ValueError("Project name must be a non-empty string")
-        
-        # Remove path separators
-        name = name.replace('/', '').replace('\\', '').replace('..', '')
-        
-        # Remove null bytes
-        name = name.replace('\x00', '')
-        
-        # Allow only safe characters
-        name = re.sub(f'[^{self.ALLOWED_CHARS}]', '', name)
-        
-        # Trim whitespace
-        name = name.strip()
-        
-        # Limit length
-        name = name[:self.MAX_NAME_LENGTH]
-        
-        # Ensure not empty after sanitization
-        if not name:
-            raise ValueError("Project name contains only invalid characters")
-        
-        # Prevent reserved names
-        reserved = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'LPT1']
-        if name.upper() in reserved:
-            raise ValueError(f"'{name}' is a reserved name")
-        
-        return name
-    
-    def _validate_project_data(self, project: Project):
-        """Validate project data before saving"""
-        if not project.id or len(project.id) != 16:
-            raise ValueError("Invalid project ID")
-        
-        if not project.name:
-            raise ValueError("Project name is required")
-        
-        if not isinstance(project.simulations, list):
-            raise ValueError("Simulations must be a list")
-        
-        if not isinstance(project.materials, list):
-            raise ValueError("Materials must be a list")
-        
-        if not isinstance(project.results, list):
-            raise ValueError("Results must be a list")
-        
-        if not isinstance(project.tags, list):
-            raise ValueError("Tags must be a list")
-    
-    def _generate_project_id(self, name: str) -> str:
-        """Generate unique project ID"""
-        timestamp = datetime.now().isoformat()
-        combined = f"{name}-{timestamp}"
-        return hashlib.sha256(combined.encode()).hexdigest()[:16]
-    
-    def _get_project_encryption_key(self, project_id: str) -> bytes:
-        """Derive encryption key from hardware ID + project ID"""
-        try:
-            from src.backend.licensing.license_manager import get_license_manager
-            
-            license_mgr = get_license_manager()
-            hardware_id = license_mgr.get_hardware_id()
-        except:
-            # Fallback if license manager not available
-            import uuid
-            hardware_id = str(uuid.getnode())
-        
-        # Combine hardware ID and project ID
-        combined = f"{hardware_id}-{project_id}"
-        
-        # Use PBKDF2 with high iteration count
+    """
+    Encrypted-at-rest project store.
+
+    Construction is cheap. The hardware fingerprint is computed on the
+    first call that needs the encryption key, then memoised.
+    """
+
+    INDEX_FILENAME = "index.dat"
+
+    def __init__(
+        self,
+        *,
+        projects_dir: Optional[Path] = None,
+        legacy_plaintext_path: Optional[Path] = None,
+    ) -> None:
+        self._dir = projects_dir or _user_data_dir()
+        self._legacy_path = legacy_plaintext_path
+        self._key: Optional[bytes] = None
+        self._migrated = False
+
+    # ---- Encryption key (derived from hardware id) ----------------------
+
+    def _derive_key(self) -> bytes:
+        if self._key is not None:
+            return self._key
+        # Lazy import — avoids pulling hardware_id into modules that don't
+        # need projects.
+        from src.backend.licensing.hardware_id import compute_fingerprint
+        hw = compute_fingerprint().hex.encode("ascii")
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=b'raman_studio_project_encryption_v2',
-            iterations=500000,
+            salt=KDF_SALT,
+            iterations=PBKDF2_ITERS,
         )
-        key = kdf.derive(combined.encode())
-        return base64.urlsafe_b64encode(key)
-    
-    def _compute_integrity_hash(self, data: Dict) -> str:
-        """Compute HMAC integrity hash"""
-        data_str = json.dumps(data, sort_keys=True)
-        mac = hmac.new(
-            self.HMAC_SECRET,
-            data_str.encode(),
-            hashlib.sha256
-        ).hexdigest()
-        return mac
-    
-    def _encrypt_project(self, project_data: Dict) -> bytes:
-        """Encrypt project data with derived key and HMAC"""
-        project_id = project_data.get('id', '')
-        
-        # Compute integrity hash
-        integrity_hash = self._compute_integrity_hash(project_data)
-        project_data['integrity_hash'] = integrity_hash
-        
-        # Get encryption key
-        key = self._get_project_encryption_key(project_id)
-        f = Fernet(key)
-        
-        # Encrypt
-        json_data = json.dumps(project_data).encode()
-        encrypted = f.encrypt(json_data)
-        
-        # Add HMAC for additional integrity check
-        mac = hmac.new(self.HMAC_SECRET, encrypted, hashlib.sha256).digest()
-        
-        return mac + b'::' + encrypted
-    
-    def _decrypt_project(self, encrypted_with_mac: bytes, project_id: str = "") -> Dict:
-        """Decrypt project data and verify integrity"""
+        derived = kdf.derive(hw)
+        self._key = base64.urlsafe_b64encode(derived)
+        return self._key
+
+    def _fernet(self) -> Fernet:
+        return Fernet(self._derive_key())
+
+    # ---- Atomic encrypted file ops --------------------------------------
+
+    def _encrypt_to_file(self, path: Path, payload: dict[str, Any]) -> None:
+        blob = self._fernet().encrypt(
+            json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        )
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_bytes(blob)
         try:
-            # Split MAC and encrypted data
-            parts = encrypted_with_mac.split(b'::', 1)
-            if len(parts) != 2:
-                raise ValueError("Invalid encrypted data format")
-            
-            mac, encrypted = parts
-            
-            # Verify HMAC
-            expected_mac = hmac.new(self.HMAC_SECRET, encrypted, hashlib.sha256).digest()
-            if not hmac.compare_digest(mac, expected_mac):
-                raise ValueError("Project file integrity check failed - possible tampering")
-            
-            # Decrypt
-            key = self._get_project_encryption_key(project_id)
-            f = Fernet(key)
-            decrypted = f.decrypt(encrypted)
-            
-            project_data = json.loads(decrypted.decode())
-            
-            # Verify internal integrity hash
-            stored_hash = project_data.pop('integrity_hash', '')
-            computed_hash = self._compute_integrity_hash(project_data)
-            
-            if stored_hash and not hmac.compare_digest(stored_hash, computed_hash):
-                raise ValueError("Project data integrity check failed")
-            
-            project_data['integrity_hash'] = stored_hash
-            
-            return project_data
-            
+            os.chmod(tmp, 0o600)
+        except OSError:
+            pass
+        os.replace(tmp, path)
+
+    def _decrypt_file(self, path: Path) -> dict[str, Any]:
+        try:
+            blob = path.read_bytes()
+            data = self._fernet().decrypt(blob)
+        except (InvalidToken, OSError) as e:
+            raise ProjectIntegrityError(
+                f"Failed to decrypt {path.name}: {e}. "
+                f"This usually means the file was created on another machine, "
+                f"or has been tampered with."
+            ) from e
+        try:
+            return json.loads(data.decode("utf-8"))
+        except (json.JSONDecodeError, ValueError) as e:
+            raise ProjectIntegrityError(
+                f"Decrypted {path.name} but contents are not valid JSON: {e}"
+            ) from e
+
+    # ---- Index --------------------------------------------------------
+
+    def _index_path(self) -> Path:
+        return self._dir / self.INDEX_FILENAME
+
+    def _read_index(self) -> dict[str, dict[str, Any]]:
+        path = self._index_path()
+        if not path.exists():
+            return {}
+        try:
+            data = self._decrypt_file(path)
+            entries = data.get("projects", {})
+            if isinstance(entries, dict):
+                return entries
+            return {}
+        except ProjectIntegrityError as e:
+            logger.warning(
+                "Project index unreadable (%s); rebuilding from project files.",
+                e,
+            )
+            return self._rebuild_index()
+
+    def _write_index(self, entries: dict[str, dict[str, Any]]) -> None:
+        self._encrypt_to_file(
+            self._index_path(),
+            {"projects": entries, "updated_at": time.time()},
+        )
+
+    def _rebuild_index(self) -> dict[str, dict[str, Any]]:
+        """Walk *.proj files, decrypt each, build a fresh index."""
+        entries: dict[str, dict[str, Any]] = {}
+        for path in sorted(self._dir.glob(f"*{PROJECT_FILE_EXT}")):
+            project_id = path.stem
+            if not _is_safe_id(project_id):
+                continue
+            try:
+                project = Project.from_dict(self._decrypt_file(path))
+                entries[project.id] = _index_entry(project)
+            except ProjectIntegrityError:
+                logger.warning("Skipping unreadable project %s", path.name)
+                continue
+        # Best-effort write — index is regenerable.
+        try:
+            self._write_index(entries)
         except Exception as e:
-            logger.error(f"Failed to decrypt project: {e}")
-            raise
-    
+            logger.warning("Could not write rebuilt index: %s", e)
+        return entries
+
+    # ---- One-shot migration of plaintext data/projects.json ------------
+
+    def _migrate_legacy_if_needed(self) -> None:
+        if self._migrated:
+            return
+        self._migrated = True
+        legacy = self._legacy_path
+        if legacy is None or not legacy.exists():
+            return
+        try:
+            data = json.loads(legacy.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("Cannot migrate legacy %s: %s", legacy, e)
+            return
+        if not isinstance(data, list):
+            return
+
+        index = self._read_index()
+        added = 0
+        for raw in data:
+            if not isinstance(raw, dict):
+                continue
+            try:
+                # Always reissue an id: the legacy ids were 8-char prefixes
+                # that aren't long enough to feel safe.
+                project = Project.from_dict({**raw, "id": uuid.uuid4().hex})
+            except Exception:  # noqa: BLE001
+                continue
+            self._save_project(project)
+            index[project.id] = _index_entry(project)
+            added += 1
+
+        if added:
+            self._write_index(index)
+            try:
+                legacy.rename(legacy.with_suffix(".json.migrated"))
+                logger.info(
+                    "Migrated %d projects from %s into the encrypted store.",
+                    added,
+                    legacy,
+                )
+            except OSError:
+                pass
+
+    # ---- Per-project file ops ------------------------------------------
+
+    def _project_path(self, project_id: str) -> Path:
+        if not _is_safe_id(project_id):
+            raise ProjectError(f"invalid project id {project_id!r}")
+        return self._dir / f"{project_id}{PROJECT_FILE_EXT}"
+
+    def _save_project(self, project: Project) -> None:
+        self._encrypt_to_file(self._project_path(project.id), project.to_dict())
+
+    # ---- Public API ----------------------------------------------------
+
+    def list_projects(self) -> list[dict[str, Any]]:
+        self._migrate_legacy_if_needed()
+        index = self._read_index()
+        return sorted(index.values(),
+                      key=lambda e: e.get("modified_at", 0),
+                      reverse=True)
+
     def create_project(
         self,
+        *,
         name: str,
         description: str = "",
-        author: str = "User",
-        tags: List[str] = None,
-        encrypted: bool = True
+        tags: Optional[list[str]] = None,
+        author: str = "",
     ) -> Project:
-        """Create new project with sanitized inputs"""
-        # Sanitize inputs
-        name = self._sanitize_project_name(name)
-        description = description[:500] if description else ""  # Limit description
-        author = author[:100] if author else "User"  # Limit author
-        tags = [tag[:50] for tag in (tags or [])][:10]  # Limit tags
-        
-        project_id = self._generate_project_id(name)
-        now = datetime.now().isoformat()
-        
+        self._migrate_legacy_if_needed()
         project = Project(
-            id=project_id,
-            name=name,
-            description=description,
-            created_at=now,
-            modified_at=now,
-            author=author,
-            tags=tags,
-            simulations=[],
-            materials=[],
-            results=[],
-            notes="",
-            version=1,
-            encrypted=encrypted,
-            integrity_hash=""
+            id=uuid.uuid4().hex,
+            name=_sanitise_display_name(name),
+            description=str(description or ""),
+            tags=list(tags or []),
+            author=str(author or ""),
         )
-        
-        self._validate_project_data(project)
-        self.current_project = project
-        self.save_project(project)
-        
-        self._audit_log('project_created', {
-            'project_id': project_id,
-            'name': name,
-            'author': author
-        })
-        
-        logger.info(f"✅ Created project: {name} ({project_id})")
+        self._save_project(project)
+        index = self._read_index()
+        index[project.id] = _index_entry(project)
+        self._write_index(index)
         return project
-    
-    def save_project(self, project: Optional[Project] = None):
-        """Save project to disk with atomic write"""
-        if project is None:
-            project = self.current_project
-        
-        if project is None:
-            raise ValueError("No project to save")
-        
-        # Validate before saving
-        self._validate_project_data(project)
-        
-        # Update modification time
-        project.modified_at = datetime.now().isoformat()
-        project.version += 1
-        
-        # Convert to dict
-        project_data = asdict(project)
-        
-        # Sanitize name again (in case it was modified)
-        safe_name = self._sanitize_project_name(project.name)
-        project_file = self.PROJECTS_DIR / f"{safe_name}{self.PROJECT_EXT}"
-        
-        # Atomic write using temporary file
-        temp_file = project_file.with_suffix('.tmp')
-        
-        try:
-            if project.encrypted:
-                # Encrypt project data
-                encrypted_data = self._encrypt_project(project_data)
-                with open(temp_file, 'wb') as f:
-                    f.write(encrypted_data)
-            else:
-                # Save as JSON
-                with open(temp_file, 'w', encoding='utf-8') as f:
-                    json.dump(project_data, f, indent=2)
-            
-            # Set restrictive permissions before moving
-            if os.name != 'nt':
-                os.chmod(temp_file, 0o600)
-            
-            # Atomic rename
-            temp_file.replace(project_file)
-            
-            self._audit_log('project_saved', {
-                'project_id': project.id,
-                'name': project.name,
-                'version': project.version
-            })
-            
-            logger.info(f"💾 Saved project: {project.name} (v{project.version})")
-            
-        except Exception as e:
-            # Clean up temp file on error
-            if temp_file.exists():
-                temp_file.unlink()
-            raise
-    
-    def load_project(self, project_name: str) -> Project:
-        """Load project from disk with validation"""
-        # Sanitize project name
-        safe_name = self._sanitize_project_name(project_name)
-        project_file = self.PROJECTS_DIR / f"{safe_name}{self.PROJECT_EXT}"
-        
-        if not project_file.exists():
-            raise FileNotFoundError(f"Project not found: {project_name}")
-        
-        # Check file permissions (Unix only)
-        if os.name != 'nt':
-            stat_info = project_file.stat()
-            if stat_info.st_mode & 0o077:  # Check if group/other have permissions
-                logger.warning(f"⚠️  Insecure permissions on {project_file}")
-        
-        try:
-            # Try to load as encrypted first
-            with open(project_file, 'rb') as f:
-                data = f.read()
-            
-            # Check if it's encrypted (has MAC)
-            if b'::' in data:
-                # Extract project ID from filename for decryption
-                project_id = ""  # Will be extracted from decrypted data
-                project_data = self._decrypt_project(data, project_id)
-            else:
-                # Load as JSON
-                project_data = json.loads(data.decode())
-        except Exception as e:
-            logger.error(f"Failed to load project: {e}")
-            raise
-        
-        project = Project(**project_data)
-        self._validate_project_data(project)
-        self.current_project = project
-        
-        self._audit_log('project_loaded', {
-            'project_id': project.id,
-            'name': project.name,
-            'version': project.version
-        })
-        
-        logger.info(f"📂 Loaded project: {project.name} (v{project.version})")
+
+    def get_project(self, project_id: str) -> Project:
+        self._migrate_legacy_if_needed()
+        path = self._project_path(project_id)
+        if not path.exists():
+            raise ProjectNotFound(project_id)
+        return Project.from_dict(self._decrypt_file(path))
+
+    def update_project(
+        self,
+        project_id: str,
+        updates: dict[str, Any],
+    ) -> Project:
+        project = self.get_project(project_id)
+        # Only allow whitelisted fields to be updated from request bodies.
+        for key in ("name", "description", "tags", "author", "notes",
+                    "simulations", "materials", "results"):
+            if key in updates:
+                setattr(project, key,
+                        _sanitise_display_name(updates[key])
+                        if key == "name" else updates[key])
+        project.modified_at = time.time()
+        self._save_project(project)
+        index = self._read_index()
+        index[project.id] = _index_entry(project)
+        self._write_index(index)
         return project
-    
-    def list_projects(self) -> List[Dict]:
-        """List all projects with error handling"""
-        projects = []
-        
-        for project_file in self.PROJECTS_DIR.glob(f"*{self.PROJECT_EXT}"):
+
+    def delete_project(self, project_id: str) -> None:
+        self._migrate_legacy_if_needed()
+        path = self._project_path(project_id)
+        index = self._read_index()
+        index.pop(project_id, None)
+        self._write_index(index)
+        if path.exists():
             try:
-                # Load project metadata only
-                project = self.load_project(project_file.stem)
-                projects.append({
-                    'id': project.id,
-                    'name': project.name,
-                    'description': project.description,
-                    'created_at': project.created_at,
-                    'modified_at': project.modified_at,
-                    'author': project.author,
-                    'tags': project.tags,
-                    'version': project.version,
-                    'simulations_count': len(project.simulations),
-                    'results_count': len(project.results),
-                    'encrypted': project.encrypted
-                })
-            except Exception as e:
-                logger.error(f"Failed to load project {project_file.stem}: {e}")
-                # Continue with other projects
-        
-        return sorted(projects, key=lambda x: x['modified_at'], reverse=True)
-    
-    def delete_project(self, project_name: str):
-        """Securely delete project"""
-        safe_name = self._sanitize_project_name(project_name)
-        project_file = self.PROJECTS_DIR / f"{safe_name}{self.PROJECT_EXT}"
-        
-        if not project_file.exists():
-            raise FileNotFoundError(f"Project not found: {project_name}")
-        
-        # Secure deletion: overwrite with random data
-        file_size = project_file.stat().st_size
-        with open(project_file, 'wb') as f:
-            f.write(os.urandom(file_size))
-        
-        # Delete file
-        project_file.unlink()
-        
-        self._audit_log('project_deleted', {
-            'name': project_name
-        })
-        
-        logger.info(f"🗑️  Securely deleted project: {project_name}")
-    
-    def export_project(self, project_name: str, export_path: Path):
-        """Export project to external location"""
-        safe_name = self._sanitize_project_name(project_name)
-        project_file = self.PROJECTS_DIR / f"{safe_name}{self.PROJECT_EXT}"
-        
-        if not project_file.exists():
-            raise FileNotFoundError(f"Project not found: {project_name}")
-        
-        # Validate export path
-        export_path = Path(export_path).resolve()
-        if not export_path.parent.exists():
-            raise ValueError("Export directory does not exist")
-        
-        shutil.copy2(project_file, export_path)
-        
-        self._audit_log('project_exported', {
-            'name': project_name,
-            'export_path': str(export_path)
-        })
-        
-        logger.info(f"📤 Exported project: {project_name} → {export_path}")
-    
-    def import_project(self, import_path: Path) -> Project:
-        """Import project from external location"""
-        import_path = Path(import_path).resolve()
-        
-        if not import_path.exists():
-            raise FileNotFoundError(f"Import file not found: {import_path}")
-        
-        # Validate file size (prevent DoS)
-        max_size = 100 * 1024 * 1024  # 100 MB
-        if import_path.stat().st_size > max_size:
-            raise ValueError("Project file too large")
-        
-        # Copy to projects directory
-        project_name = import_path.stem
-        safe_name = self._sanitize_project_name(project_name)
-        project_file = self.PROJECTS_DIR / f"{safe_name}{self.PROJECT_EXT}"
-        
-        shutil.copy2(import_path, project_file)
-        
-        # Load and validate
-        project = self.load_project(safe_name)
-        
-        self._audit_log('project_imported', {
-            'name': safe_name,
-            'import_path': str(import_path)
-        })
-        
-        logger.info(f"📥 Imported project: {safe_name}")
-        return project
-    
-    def add_simulation(self, simulation_data: Dict):
-        """Add simulation to current project"""
-        if self.current_project is None:
-            raise ValueError("No project loaded")
-        
-        # Validate simulation data
-        if not isinstance(simulation_data, dict):
-            raise ValueError("Simulation data must be a dictionary")
-        
-        simulation_data['timestamp'] = datetime.now().isoformat()
-        simulation_data['id'] = hashlib.sha256(
-            json.dumps(simulation_data, sort_keys=True).encode()
-        ).hexdigest()[:16]
-        
-        self.current_project.simulations.append(simulation_data)
-        self.save_project()
-        
-        logger.info(f"➕ Added simulation to project: {self.current_project.name}")
-    
-    def add_result(self, result_data: Dict):
-        """Add result to current project"""
-        if self.current_project is None:
-            raise ValueError("No project loaded")
-        
-        if not isinstance(result_data, dict):
-            raise ValueError("Result data must be a dictionary")
-        
-        result_data['timestamp'] = datetime.now().isoformat()
-        result_data['id'] = hashlib.sha256(
-            json.dumps(result_data, sort_keys=True).encode()
-        ).hexdigest()[:16]
-        
-        self.current_project.results.append(result_data)
-        self.save_project()
-        
-        logger.info(f"➕ Added result to project: {self.current_project.name}")
-    
-    def add_material(self, material_data: Dict):
-        """Add material to current project"""
-        if self.current_project is None:
-            raise ValueError("No project loaded")
-        
-        if not isinstance(material_data, dict):
-            raise ValueError("Material data must be a dictionary")
-        
-        material_data['added_at'] = datetime.now().isoformat()
-        
-        self.current_project.materials.append(material_data)
-        self.save_project()
-        
-        logger.info(f"➕ Added material to project: {self.current_project.name}")
-    
-    def update_notes(self, notes: str):
-        """Update project notes"""
-        if self.current_project is None:
-            raise ValueError("No project loaded")
-        
-        # Limit notes size
-        notes = notes[:10000] if notes else ""
-        
-        self.current_project.notes = notes
-        self.save_project()
-        
-        logger.info(f"📝 Updated notes for project: {self.current_project.name}")
-    
-    def search_projects(self, query: str) -> List[Dict]:
-        """Search projects by name, description, or tags"""
-        if not query or not isinstance(query, str):
-            return []
-        
-        all_projects = self.list_projects()
-        query_lower = query.lower()[:100]  # Limit query length
-        
-        results = []
-        for project in all_projects:
-            if (query_lower in project['name'].lower() or
-                query_lower in project['description'].lower() or
-                any(query_lower in tag.lower() for tag in project['tags'])):
-                results.append(project)
-        
-        return results
-    
-    def get_project_stats(self) -> Dict:
-        """Get statistics about all projects"""
-        projects = self.list_projects()
-        
-        total_simulations = sum(p['simulations_count'] for p in projects)
-        total_results = sum(p['results_count'] for p in projects)
-        
-        # Calculate disk usage
-        disk_usage = sum(
-            f.stat().st_size for f in self.PROJECTS_DIR.glob(f"*{self.PROJECT_EXT}")
-        ) / (1024 * 1024)
-        
-        return {
-            'total_projects': len(projects),
-            'total_simulations': total_simulations,
-            'total_results': total_results,
-            'projects_dir': str(self.PROJECTS_DIR),
-            'disk_usage_mb': round(disk_usage, 2)
+                path.unlink()
+            except OSError as e:
+                logger.warning("Could not delete %s: %s", path, e)
+
+    def add_simulation(
+        self,
+        project_id: str,
+        simulation: dict[str, Any],
+    ) -> dict[str, Any]:
+        project = self.get_project(project_id)
+        sim = {
+            "id": uuid.uuid4().hex[:12],
+            "type": str(simulation.get("type") or "eis"),
+            "params": dict(simulation.get("params") or {}),
+            "result": dict(simulation.get("result") or {}),
+            "timestamp": time.time(),
         }
+        project.simulations.append(sim)
+        project.modified_at = time.time()
+        self._save_project(project)
+        index = self._read_index()
+        index[project.id] = _index_entry(project)
+        self._write_index(index)
+        return sim
+
+    # ---- Import / export (clearly plaintext — caller's choice) ---------
+
+    def export_project(self, project_id: str) -> dict[str, Any]:
+        """
+        Return the project as a plain dict. The caller is responsible
+        for telling the user the export is not encrypted at rest if
+        written to disk.
+        """
+        return self.get_project(project_id).to_dict()
+
+    def import_project(self, payload: dict[str, Any]) -> Project:
+        # Reissue the id — never trust the source's id (it may collide,
+        # be malicious, or be a relative path that an old client wrote).
+        payload = dict(payload)
+        payload["id"] = uuid.uuid4().hex
+        project = Project.from_dict(payload)
+        project.modified_at = time.time()
+        self._save_project(project)
+        index = self._read_index()
+        index[project.id] = _index_entry(project)
+        self._write_index(index)
+        return project
 
 
-# Global project manager instance
-_project_manager = None
+# ---- Module-level singleton ---------------------------------------------
+
+_singleton: Optional[ProjectManager] = None
 
 
 def get_project_manager() -> ProjectManager:
-    """Get global project manager instance"""
-    global _project_manager
-    if _project_manager is None:
-        _project_manager = ProjectManager()
-    return _project_manager
+    global _singleton
+    if _singleton is None:
+        # The legacy plaintext file the old routes used.
+        legacy = Path(__file__).resolve().parents[3] / "data" / "projects.json"
+        _singleton = ProjectManager(legacy_plaintext_path=legacy)
+    return _singleton
 
 
-if __name__ == "__main__":
-    # Test secure project manager
-    logging.basicConfig(level=logging.INFO)
-    
-    manager = get_project_manager()
-    print("\n" + "=" * 60)
-    print("SECURE PROJECT MANAGER TEST")
-    print("=" * 60)
-    
-    # Test sanitization
-    try:
-        bad_name = "../../../etc/passwd"
-        safe_name = manager._sanitize_project_name(bad_name)
-        print(f"\n🛡️  Sanitization test:")
-        print(f"   Input: {bad_name}")
-        print(f"   Output: {safe_name}")
-    except ValueError as e:
-        print(f"   ✅ Blocked: {e}")
-    
-    # Create test project
-    project = manager.create_project(
-        name="Test_Secure_Project",
-        description="Testing secure project management",
-        author="Security Team",
-        tags=["security", "test", "encryption"]
-    )
-    
-    print(f"\n✅ Created project: {project.name}")
-    print(f"   ID: {project.id}")
-    print(f"   Encrypted: {project.encrypted}")
-    
-    # Add simulation
-    manager.add_simulation({
-        'type': 'EIS',
-        'material': 'MnO2',
-        'parameters': {'R_s': 10, 'R_ct': 50}
-    })
-    
-    # Get stats
-    stats = manager.get_project_stats()
-    print(f"\n📈 Project Stats:")
-    for key, value in stats.items():
-        print(f"   {key}: {value}")
-    
-    print("\n✅ Secure Project Manager initialized successfully")
+def reset_project_manager() -> None:
+    """For tests."""
+    global _singleton
+    _singleton = None

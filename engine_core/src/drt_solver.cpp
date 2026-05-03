@@ -183,35 +183,126 @@ DRTResult compute_drt(
 
 
 // ── Kramers-Kronig Test (Lin-KK method) ──────────────────
+//
+// Schönleber, Klotz, Ivers-Tiffée — A method for improving the
+// robustness of linear Kramers-Kronig validity tests. Electrochim.
+// Acta 131 (2014) 20-27.
+//
+// We fit the measured impedance with a bank of RC elements at
+// log-spaced τ_k via UNREGULARIZED linear least squares (the Lin-KK
+// trick: allowing negative R_k stays K-K-compliant, so a fit that
+// requires lots of negative mass implies the data violates K-K).
+//
+// The Schönleber μ statistic is:
+//     μ = 1 - |Σ R_k where R_k < 0| / Σ R_k where R_k ≥ 0
+// μ → 1: data is K-K compliant; μ < 0.85: significant violation.
 
-DRTResult kramers_kronig_test(
+KKResult kramers_kronig_test(
     const VecD& frequencies,
     const VecD& Z_real,
     const VecD& Z_imag,
     int n_rc)
 {
+    KKResult kk;
     const int M = static_cast<int>(frequencies.size());
+    if (M < 2 || Z_real.size() != M || Z_imag.size() != M) {
+        return kk;  // empty / mismatched input → is_valid=false, mu=0
+    }
 
-    // Use fixed τ_k = 1/(2π·f_k) for Lin-KK
-    if (n_rc <= 0) n_rc = M;  // Use as many RC elements as data points
+    // Default n_rc = number of frequency points.
+    if (n_rc <= 0) n_rc = M;
+    n_rc = std::max(2, std::min(n_rc, M));
+    kk.n_rc_used = n_rc;
 
-    DRTParams params;
-    params.n_tau = n_rc;
-    params.non_negative = false;  // Lin-KK allows negative coefficients
-    params.lambda = 0.0;          // No regularization for K-K test
+    // Log-spaced τ grid spanning a decade beyond the measured frequency
+    // range so the fit can absorb relaxations near the edges without
+    // forcing artefacts.
+    const double tau_min = 1.0 / (2.0 * PI * frequencies.maxCoeff() * 10.0);
+    const double tau_max = 10.0 / (2.0 * PI * frequencies.minCoeff());
+    VecD tau(n_rc);
+    const double log_tau_min = std::log(tau_min);
+    const double log_tau_max = std::log(tau_max);
+    for (int k = 0; k < n_rc; ++k) {
+        const double frac = static_cast<double>(k) / (n_rc - 1);
+        tau(k) = std::exp(log_tau_min + frac * (log_tau_max - log_tau_min));
+    }
 
-    // Set τ grid from frequency data
-    params.tau_min = 1.0 / (2.0 * PI * frequencies.maxCoeff());
-    params.tau_max = 1.0 / (2.0 * PI * frequencies.minCoeff());
+    // Build the design matrix: 2M rows (real, imag stacked), n_rc + 1
+    // columns. The last column is the R_inf series term, which only
+    // contributes to the real part. For an RC element R_k / (1 + jωτ_k):
+    //     real contribution at row i, col k = 1 / (1 + (ω_i τ_k)²)
+    //     imag contribution at row i, col k = -ω_i τ_k / (1 + (ω_i τ_k)²)
+    MatD A(2 * M, n_rc + 1);
+    VecD b(2 * M);
+    for (int i = 0; i < M; ++i) {
+        const double omega = 2.0 * PI * frequencies(i);
+        for (int k = 0; k < n_rc; ++k) {
+            const double wt    = omega * tau(k);
+            const double denom = 1.0 + wt * wt;
+            A(i,     k)     = 1.0 / denom;
+            A(M + i, k)     = -wt / denom;
+        }
+        A(i,     n_rc) = 1.0;   // R_inf → real part only
+        A(M + i, n_rc) = 0.0;
+        b(i)     = Z_real(i);
+        b(M + i) = Z_imag(i);
+    }
 
-    // Compute DRT (which gives us the fit)
-    DRTResult result = compute_drt(frequencies, Z_real, Z_imag, params);
+    // Unregularized least-squares via QR. Returns a minimum-norm
+    // solution if A is rank-deficient.
+    VecD x = A.colPivHouseholderQr().solve(b);
+    VecD R = x.head(n_rc);
+    kk.R_inf = x(n_rc);
+    kk.tau   = tau;
+    kk.R     = R;
 
-    // For K-K test, the residual indicates compliance:
-    // Small residual → K-K compliant → data is valid for fitting
-    // Large residual → K-K violation → experimental artifacts present
+    // Fitted impedance + relative residuals.
+    VecD fit = A * x;
+    kk.Z_fit_real.resize(M);
+    kk.Z_fit_imag.resize(M);
+    kk.residual_real.resize(M);
+    kk.residual_imag.resize(M);
+    double mean_sq = 0.0;
+    for (int i = 0; i < M; ++i) {
+        kk.Z_fit_real(i) = fit(i);
+        kk.Z_fit_imag(i) = fit(M + i);
+        const double mag = std::sqrt(Z_real(i) * Z_real(i) +
+                                      Z_imag(i) * Z_imag(i));
+        const double mag_safe = std::max(mag, 1e-30);
+        kk.residual_real(i) = (Z_real(i) - kk.Z_fit_real(i)) / mag_safe;
+        kk.residual_imag(i) = (Z_imag(i) - kk.Z_fit_imag(i)) / mag_safe;
+        mean_sq += kk.residual_real(i) * kk.residual_real(i)
+                 + kk.residual_imag(i) * kk.residual_imag(i);
+    }
+    kk.max_residual_real = kk.residual_real.array().abs().maxCoeff();
+    kk.max_residual_imag = kk.residual_imag.array().abs().maxCoeff();
+    kk.mean_residual = std::sqrt(mean_sq / (2.0 * M));
 
-    return result;
+    // Schönleber μ statistic.
+    double sum_neg = 0.0;
+    double sum_pos = 0.0;
+    for (int k = 0; k < n_rc; ++k) {
+        if (R(k) < 0.0) sum_neg += -R(k);
+        else            sum_pos += R(k);
+    }
+    if (sum_pos > 0.0) {
+        kk.mu = 1.0 - sum_neg / sum_pos;
+    } else {
+        // No positive residues → all mass is negative → severe K-K violation.
+        kk.mu = 0.0;
+    }
+    // Clamp to [0,1] so callers can treat μ as a confidence-like value.
+    kk.mu = std::max(0.0, std::min(1.0, kk.mu));
+
+    // Compliance verdict: μ ≥ 0.85 AND per-point residuals ≤ 5 % of |Z|.
+    // Schönleber's strict residual cap is 1 %; we are slightly more
+    // permissive to accommodate noisier real-world datasets.
+    const bool mu_ok       = (kk.mu >= 0.85);
+    const bool residual_ok = (kk.max_residual_real < 0.05) &&
+                             (kk.max_residual_imag < 0.05);
+    kk.is_valid = mu_ok && residual_ok;
+
+    return kk;
 }
 
 }  // namespace raman

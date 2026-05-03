@@ -7,7 +7,7 @@ import torch.optim as optim
 
 # Add the parent directory to sys.path so we can import the model
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from vanl.backend.core.differentiable_physics import SurrogatePDEModel
+from src.backend.core.engines.differentiable_physics import SurrogatePDEModel
 
 def generate_synthetic_data(num_samples=1000):
     """
@@ -85,8 +85,8 @@ def train():
         if (epoch + 1) % 10 == 0:
             print(f"Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss / (X_train.size()[0] / batch_size):.4f}")
             
-    # Save the model weights
-    save_dir = os.path.join(os.path.dirname(__file__), '..', 'vanl', 'backend', 'ml', 'saved_models')
+    # Save the model weights to the project-level models/ directory.
+    save_dir = os.path.join(os.path.dirname(__file__), '..', 'models', 'pde_surrogate')
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, 'pde_surrogate.pt')
     

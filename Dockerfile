@@ -6,41 +6,51 @@ RUN cd src/frontend && npm install
 COPY src/frontend/ ./src/frontend/
 RUN cd src/frontend && npm run build
 
-# ---- Python Environment (Backend + Sentinel) ----
-FROM python:3.11-slim
+# ---- Python backend (FastAPI + C++ engine) ----
+FROM python:3.12-slim
 WORKDIR /app
 
-# Install system dependencies (needed at runtime for on-the-fly C++ compilation)
-RUN apt-get update && apt-get install -y \
+# System deps for C++ engine compilation at image-build time.
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     git \
     libssl-dev \
+    libeigen3-dev \
+    pybind11-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
-COPY vanl/requirements.txt ./
+# Python deps
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir gunicorn uvicorn pytest
+RUN pip install --no-cache-dir gunicorn uvicorn
 
-# Copy application source code
+# Application source
 COPY engine_core/ ./engine_core/
-COPY src/backend/ ./src/backend/
-COPY vanl/ ./vanl/
-COPY dev_tools/ ./dev_tools/
+COPY src/ ./src/
 COPY data/ ./data/
+COPY scripts/ ./scripts/
 
-# Compile the C++ engine initially
-RUN mkdir -p engine_core/build && cd engine_core/build && cmake .. && cmake --build .
+# Build the C++ engine and put the bindings on PYTHONPATH
+RUN mkdir -p engine_core/build \
+    && cd engine_core/build \
+    && cmake .. -DCMAKE_BUILD_TYPE=Release -DRAMAN_BUILD_TESTS=OFF \
+    && cmake --build . -j"$(nproc)"
 
-# Copy frontend static build 
+# Compiled frontend assets
 COPY --from=frontend-builder /app/src/frontend/dist ./static
 
-# Configure environment
-ENV PYTHONPATH=/app:/app/engine_core/build
-ENV PORT=8000
-ENV ENVIRONMENT=production
+ENV PYTHONPATH=/app:/app/engine_core/build \
+    PORT=8000 \
+    ENVIRONMENT=production \
+    PYTHONUNBUFFERED=1
 
-# The default command will be the FastAPI backend. 
-CMD ["gunicorn", "src.backend.api.server:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+EXPOSE 8000
+
+# Production entrypoint — single canonical FastAPI app under src/.
+CMD ["gunicorn", "src.backend.api.server:app", \
+     "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--bind", "0.0.0.0:8000", \
+     "--access-logfile", "-"]

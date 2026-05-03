@@ -23,7 +23,9 @@ def get_project_root():
 
 def build_nuitka(debug=False, onefile=False):
     root = get_project_root()
-    entry = os.path.join(root, "vanl", "backend", "main.py")
+    # Canonical FastAPI entry point lives at src/backend/api/server.py.
+    # The old vanl/backend/main.py was retired in Phase 1.
+    entry = os.path.join(root, "src", "backend", "api", "server.py")
     out_dir = os.path.join(root, "dist", "backend")
 
     os.makedirs(out_dir, exist_ok=True)
@@ -39,7 +41,7 @@ def build_nuitka(debug=False, onefile=False):
         "--include-package=starlette",
         "--include-package=numpy",
         "--include-package=sklearn",
-        "--include-data-dir=vanl/datasets=datasets",
+        "--include-data-dir=data/datasets=datasets",
         "--enable-plugin=numpy",
         "--company-name=VidyuthLabs",
         "--product-name=RAMAN-Studio-Backend",

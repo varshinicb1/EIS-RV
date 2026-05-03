@@ -508,12 +508,18 @@ export default function BiosensorPanel() {
                 Cdl = {ec.eis?.Cdl_F} F | σ_w = {ec.eis?.sigma_w}<br/>
                 CV Peak Current: {ec.cv?.peak_current_uA} μA
               </div>
-              <div style={{marginTop:12,padding:10,background:'rgba(66, 165, 245, 0.1)',borderRadius:6,border:'1px solid #42a5f544'}}>
-                <strong style={{color:'#42a5f5'}}>4. Mass Manufacturing Scaling Report</strong><br/>
-                Batch Size: 10,000 units/wafer<br/>
-                Estimated Yield (ANSYS Fluids/Stats): {(95 + Math.random() * 4).toFixed(1)}%<br/>
-                Materials Cost: ${(Math.random() * 0.5 + 0.1).toFixed(2)} / unit<br/>
-                Estimated TTM (Time To Market): 3 weeks
+              <div style={{
+                marginTop: 12, padding: 10,
+                background: 'rgba(245, 158, 11, 0.08)', borderRadius: 6,
+                border: '1px dashed #f59e0b66', fontSize: 11, lineHeight: 1.5,
+                color: 'var(--text-secondary)',
+              }}>
+                <strong style={{ color: '#f59e0b' }}>Manufacturing scaling — not modeled.</strong><br/>
+                Yield, materials cost, and time-to-market values were previously
+                computed via <code>Math.random()</code> and labelled as ANSYS Fluids
+                output. They have been removed. A real yield model would need
+                process-window data, a tolerance stack, and a cost BOM that
+                we don't have wired up yet.
               </div>
               <div style={{display:'flex', gap:10, marginTop:12}}>
                 <button className="btn btn-sm" style={{flex:1, background:'#76b90022',color:'#76b900',border:'1px solid #76b90055'}}

@@ -5,15 +5,47 @@ import {
   Terminal, Globe, Zap, ChevronRight
 } from 'lucide-react';
 
+// Backend metrics endpoint added in Phase 4. Returns real psutil
+// measurements where available; the fields we read here are nullable.
+async function fetchSystemMetrics() {
+  try {
+    const r = await fetch('http://127.0.0.1:8000/api/v2/system/metrics', { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
 export default function TopBar({ title, backendStatus }) {
+  // Uptime is real (a per-mount counter). CPU load is real (psutil via the
+  // backend) — null while offline. Session id is a deterministic short
+  // marker derived from mount time + window.crypto if available; the
+  // earlier random hex-string was cosmetic and labelled as a real session
+  // identifier, which it wasn't.
   const [uptime, setUptime] = useState(0);
-  const [load, setLoad] = useState(12);
-  const [sessionHash] = useState(() => Math.random().toString(36).substring(2, 10).toUpperCase());
+  const [load, setLoad] = useState(null);
+  const [sessionId] = useState(() => {
+    const arr = new Uint8Array(4);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(arr);
+    } else {
+      for (let i = 0; i < arr.length; i++) arr[i] = (Date.now() >> (8 * i)) & 0xff;
+    }
+    return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+  });
 
   useEffect(() => {
     const timer = setInterval(() => setUptime(prev => prev + 1), 1000);
-    const loadTimer = setInterval(() => setLoad(Math.floor(Math.random() * 15) + 5), 3000);
+    let cancelled = false;
+    const tick = async () => {
+      const m = await fetchSystemMetrics();
+      if (!cancelled) setLoad(m?.cpu_percent ?? null);
+    };
+    tick();
+    const loadTimer = setInterval(tick, 3000);
     return () => {
+      cancelled = true;
       clearInterval(timer);
       clearInterval(loadTimer);
     };
@@ -117,7 +149,7 @@ export default function TopBar({ title, backendStatus }) {
               RĀMAN STUDIO
             </span>
             <span style={{ fontSize: '9px', color: THEME.cyan, fontFamily: THEME.fontMono, marginTop: '2px', textShadow: `0 0 5px ${THEME.cyan}` }}>
-              INDUSTRIAL_OS v2.0.4 // {sessionHash}
+              v1.0.0 · session {sessionId}
             </span>
           </div>
         </div>
@@ -152,8 +184,10 @@ export default function TopBar({ title, backendStatus }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Cpu size={14} color={THEME.cyan} style={{ filter: `drop-shadow(0 0 5px ${THEME.cyan})` }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '8px', color: THEME.text, textTransform: 'uppercase' }}>CPU_COMPUTE</span>
-            <span style={{ fontSize: '11px', fontFamily: THEME.fontMono, color: '#fff' }}>{load}.00<span style={{ fontSize: '8px', opacity: 0.5 }}>%</span></span>
+            <span style={{ fontSize: '8px', color: THEME.text, textTransform: 'uppercase' }}>CPU</span>
+            <span style={{ fontSize: '11px', fontFamily: THEME.fontMono, color: '#fff' }}>
+              {load === null ? '—' : `${load.toFixed(1)}`}<span style={{ fontSize: '8px', opacity: 0.5 }}>%</span>
+            </span>
           </div>
         </div>
 
@@ -168,8 +202,13 @@ export default function TopBar({ title, backendStatus }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Database size={14} color={THEME.cyan} style={{ filter: `drop-shadow(0 0 5px ${THEME.cyan})` }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '8px', color: THEME.text, textTransform: 'uppercase' }}>PHYS_ENGINE</span>
-            <span style={{ fontSize: '11px', fontFamily: THEME.fontMono, color: THEME.cyan }}>ACTIVE</span>
+            <span style={{ fontSize: '8px', color: THEME.text, textTransform: 'uppercase' }}>BACKEND</span>
+            <span style={{
+              fontSize: '11px', fontFamily: THEME.fontMono,
+              color: backendStatus === 'online' ? THEME.cyan : '#ff5050',
+            }}>
+              {backendStatus === 'online' ? 'ONLINE' : 'OFFLINE'}
+            </span>
           </div>
         </div>
       </div>

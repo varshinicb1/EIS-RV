@@ -85,13 +85,15 @@ struct CVParams {
 
 // ── CV Result ─────────────────────────────────────────────
 struct CVResult {
-    VecD E;              // Potential (V)
+    VecD E;              // Set potential (V) — the waveform the user requested
+    VecD E_actual;       // Electrode potential (V) — equals E when Rs_ohm == 0;
+                         // otherwise E_set − i·Rs after iR-drop correction
     VecD i_total;        // Total current (A)
     VecD i_faradaic;     // Faradaic current (A)
     VecD i_capacitive;   // Capacitive current (A)
     VecD time;           // Time (s)
 
-    // Peak analysis
+    // Peak analysis (computed from i_total vs E_actual when Rs > 0)
     double i_pa   = 0;   // Anodic peak current (A)
     double i_pc   = 0;   // Cathodic peak current (A)
     double E_pa   = 0;   // Anodic peak potential (V)

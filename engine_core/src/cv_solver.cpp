@@ -91,41 +91,173 @@ CVResult simulate_cv(const CVParams& p, int n_points) {
 
     std::vector<double> flux(N, 0.0);
 
+    // Resize result.E_actual and result.i_actual_E to record the iR-corrected
+    // electrode potential per step (matches result.E when Rs_ohm == 0).
+    result.E_actual.resize(N);
+
+    // ── Per-step solve with optional iR-drop correction ──────────
+    //
+    // The user supplies the SET potential E (the waveform). With
+    // uncompensated resistance Rs > 0, the working electrode actually
+    // sees E_actual = E_set - i*Rs. Since i depends on E_actual via the
+    // Butler-Volmer kinetics, this is a fixed-point problem: solve for
+    // j_net such that
+    //
+    //     j_net  =  [kf(E_actual)·Cox_surf − kb(E_actual)·Cred_surf]
+    //               / (1 + kf(E_actual)·S0_ox + kb(E_actual)·S0_red)
+    //
+    //     E_actual  =  E_set − (n·F·A·j_net)·Rs
+    //
+    // We use damped fixed-point iteration. With Rs == 0 the loop falls
+    // through after one pass (trivially converges).
+    const double Rs = std::max(p.Rs_ohm, 0.0);
+    const double i_to_dropV = p.n_electrons * FARADAY * A_eff * Rs;
+    const double FP_TOL = 1e-12;       // mol/cm²/s
+    const int    FP_MAX_ITERS = (Rs > 0.0) ? 20 : 1;
+
+    // ── Boundary-condition strategy (audit C2 fix) ──────────────
+    //
+    // The original BV-only solver oscillates whenever the kinetic
+    // timescale 1/(kf+kb) is much smaller than the convolution
+    // timescale (S0 = coeff·√(dt) where coeff ∝ √(dt/D)). When the
+    // dimensionless ratio
+    //
+    //     Λ_step  ≡  max(kf, kb) · S0
+    //
+    // exceeds ~1, the surface is already in Nernstian equilibrium and
+    // BV's implicit linear solve becomes ill-conditioned: the term
+    // (1 + kf·S0) absorbs essentially all of the kinetic stiffness and
+    // history-corrected concentrations skip about zero between
+    // timesteps. The fix:
+    //
+    //   * NERNSTIAN regime (Λ_step > NERNSTIAN_LAMBDA_THRESHOLD):
+    //     close the boundary using Nernst (C_ox_surf / C_red_surf =
+    //     exp(-n·F·η/RT)) + the convolution mass balance. Closed-form,
+    //     no iteration, numerically stable for arbitrarily fast
+    //     kinetics.
+    //
+    //   * BV regime (slow / quasi-reversible / irreversible): standard
+    //     implicit BV solve with the textbook clamp on history-corrected
+    //     concentrations. Correct in this regime; was already producing
+    //     the right answers for k0 ≪ 1.
+    //
+    // The two branches agree exactly in the reversible limit, so the
+    // hand-off doesn't introduce a discontinuity.
+    constexpr double NERNSTIAN_LAMBDA_THRESHOLD = 1.0;
+
     for (int k = 0; k < N; ++k) {
-        double E = result.E(k);
-        double eta = E - p.E_formal_V;
+        const double E_set = result.E(k);
 
-        // Butler-Volmer rate constants
-        double arg_fwd = std::clamp(-p.alpha * p.n_electrons * f_val * eta, -30.0, 30.0);
-        double arg_rev = std::clamp((1.0 - p.alpha) * p.n_electrons * f_val * eta, -30.0, 30.0);
-        double kf = p.k0_cm_s * std::exp(arg_fwd);
-        double kb = p.k0_cm_s * std::exp(arg_rev);
-
-        // Convolution for surface concentrations
+        // Convolution-based history terms (independent of E_actual).
         double conv_ox = 0.0, conv_red = 0.0;
         for (int m = 0; m < k; ++m) {
-            double S_val = S_diff[k - 1 - m];
+            const double S_val = S_diff[k - 1 - m];
             conv_ox  += flux[m] * S_val;
             conv_red += flux[m] * S_val;
         }
         conv_ox  *= coeff_ox;
         conv_red *= coeff_red;
 
-        double C_ox_surf  = std::max(C_bulk_ox  - conv_ox,  0.0);
-        double C_red_surf = std::max(C_bulk_red + conv_red, 0.0);
+        // History contributes to the surface concentration via:
+        //     C_ox_surf  = C_bulk_ox  - history_ox  - S0_ox·flux[k]
+        //     C_red_surf = C_bulk_red + history_red + S0_red·flux[k]
+        // The implicit BV solve below treats S0·flux[k] as part of the
+        // unknown; the Nernstian branch does the same, just from the
+        // ratio constraint.
+        const double S0_ox  = coeff_ox  * S_diff[0];
+        const double S0_red = coeff_red * S_diff[0];
 
-        // Implicit flux solve
-        double S0_ox  = coeff_ox  * S_diff[0];
-        double S0_red = coeff_red * S_diff[0];
-        double denom  = 1.0 + kf * S0_ox + kb * S0_red;
-        double j_net  = (kf * C_ox_surf - kb * C_red_surf) / std::max(denom, 1e-30);
+        // Initial guess for j: previous step's flux. For k=0 use 0.
+        double j_net = (k > 0) ? flux[k - 1] : 0.0;
+        double E_actual = E_set;
+
+        for (int iter = 0; iter < FP_MAX_ITERS; ++iter) {
+            // Update E_actual from current j_net guess (iR drop).
+            const double E_new_actual = E_set - i_to_dropV * j_net;
+            E_actual = 0.5 * (E_actual + E_new_actual);
+
+            const double eta = E_actual - p.E_formal_V;
+            const double dimless = p.n_electrons * f_val * eta;   // n·F·η/RT
+            double j_new = 0.0;
+
+            // Decide BV vs Nernstian for this step. We base the
+            // decision on the kinetic-vs-mass-transport ratio
+            //   Λ_step = max(kf, kb) · S0
+            // computed with kf, kb evaluated at the same E_actual the
+            // BV branch would use. If either rate is large enough that
+            // Λ_step > threshold, we switch to the Nernstian closed form.
+            // Compute kf, kb (with the standard clamp) for the test.
+            const double arg_fwd_test = std::clamp(-p.alpha * dimless, -30.0, 30.0);
+            const double arg_rev_test = std::clamp((1.0 - p.alpha) * dimless, -30.0, 30.0);
+            const double kf_test = p.k0_cm_s * std::exp(arg_fwd_test);
+            const double kb_test = p.k0_cm_s * std::exp(arg_rev_test);
+            const double lambda_step = std::max(kf_test * S0_ox, kb_test * S0_red);
+
+            if (lambda_step > NERNSTIAN_LAMBDA_THRESHOLD) {
+                // ── Nernstian branch ───────────────────────
+                //
+                // Closure constraint, derived from kf·C_ox = kb·C_red at
+                // equilibrium with this code's BV convention (kf grows at
+                // η < 0, kb grows at η > 0):
+                //
+                //     C_ox_surf / C_red_surf  =  kb/kf  =  exp(-dimless)
+                //
+                // Mass balance:
+                //     C_ox_surf  = C_bulk_ox  - conv_ox  - S0_ox·j
+                //     C_red_surf = C_bulk_red + conv_red + S0_red·j
+                //
+                // Setting the ratio constraint:
+                //
+                //     j (S0_ox + ξ·S0_red)  =  (C_bulk_ox - conv_ox) - ξ·(C_bulk_red + conv_red)
+                //         where ξ = exp(-dimless)
+                //
+                // For very negative η (large positive |dimless|), ξ → ∞
+                // and we rescale by min(1, 1/ξ) to keep the linear
+                // system well-conditioned.
+                const double dimless_clipped = std::clamp(-dimless, -700.0, 700.0);
+                const double xi = std::exp(dimless_clipped);
+
+                // scale = min(1, 1/ξ) keeps both ξ_s and one_s in (0, 1].
+                const double scale = std::exp(-std::max(dimless_clipped, 0.0));
+                const double xi_s   = xi * scale;
+                const double one_s  = 1.0 * scale;
+
+                const double numerator =
+                    (C_bulk_ox  - conv_ox)  * one_s
+                  - (C_bulk_red + conv_red) * xi_s;
+                const double denom_n =
+                    S0_ox * one_s + S0_red * xi_s;
+                j_new = numerator / std::max(denom_n, 1e-300);
+            } else {
+                // ── Butler-Volmer branch (slow / quasi-reversible) ──
+                const double C_ox_surf  = std::max(C_bulk_ox  - conv_ox,  0.0);
+                const double C_red_surf = std::max(C_bulk_red + conv_red, 0.0);
+                const double denom = 1.0 + kf_test * S0_ox + kb_test * S0_red;
+                j_new = (kf_test * C_ox_surf - kb_test * C_red_surf)
+                        / std::max(denom, 1e-30);
+            }
+
+            if (std::abs(j_new - j_net) < FP_TOL) {
+                j_net = j_new;
+                break;
+            }
+            j_net = j_new;
+        }
+
+        // Pin E_actual to its self-consistent value (in-loop damping
+        // would otherwise leave a tiny offset).
+        E_actual = E_set - i_to_dropV * j_net;
 
         flux[k] = j_net;
+        result.E_actual(k)   = E_actual;
         result.i_faradaic(k) = p.n_electrons * FARADAY * A_eff * j_net;
 
-        // Capacitive current: i_cap = Cdl · A · dE/dt
-        double dEdt = (k > 0) ? (result.E(k) - result.E(k - 1)) / dt : p.scan_rate_V_s;
-        result.i_capacitive(k) = p.Cdl_F_cm2 * A_eff * dEdt;
+        // Capacitive current driven by the electrode potential we
+        // actually see.
+        const double dE_actual_dt = (k > 0)
+            ? (result.E_actual(k) - result.E_actual(k - 1)) / dt
+            : p.scan_rate_V_s;
+        result.i_capacitive(k) = p.Cdl_F_cm2 * A_eff * dE_actual_dt;
     }
 
     result.i_total = result.i_faradaic + result.i_capacitive;

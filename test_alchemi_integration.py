@@ -7,14 +7,16 @@ Usage:
     python test_alchemi_integration.py
 """
 
+import os
 import requests
 import json
 import time
 from typing import Dict, Any
 
 # Configuration
-BASE_URL = "http://localhost:8001"
-API_KEY = "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"
+BASE_URL = os.environ.get("RAMAN_BASE_URL", "http://localhost:8001")
+# Read from environment; never commit a real key. Empty key disables NVIDIA-dependent tests.
+API_KEY = os.environ.get("NVIDIA_API_KEY", "")
 
 
 def print_header(title: str):

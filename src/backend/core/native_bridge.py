@@ -82,8 +82,8 @@ def eis_simulate(
     else:
         # ── Python fallback ────────────────────────────────
         try:
-            from vanl.backend.core.eis_engine import simulate_eis as py_simulate_eis
-            from vanl.backend.core.materials import EISParameters
+            from src.backend.core.engines.eis_engine import simulate_eis as py_simulate_eis
+            from src.backend.core.engines.materials import EISParameters
 
             params_obj = EISParameters(
                 Rs=Rs, Rct=Rct, Cdl=Cdl,
@@ -110,7 +110,7 @@ def eis_simulate(
         except ImportError as e:
             raise RuntimeError(
                 f"Neither C++ engine nor Python fallback available ({e}). "
-                "Build the C++ engine or ensure vanl.backend.core is accessible."
+                "Build the C++ engine or ensure src.backend.core.engines is accessible."
             )
 
 
@@ -170,7 +170,7 @@ def cv_simulate(
         }
     else:
         try:
-            from vanl.backend.core.cv_engine import simulate_cv as py_simulate_cv, CVParameters
+            from src.backend.core.engines.cv_engine import simulate_cv as py_simulate_cv, CVParameters
 
             cv_params = CVParameters(
                 electrode_area_cm2=area_cm2,

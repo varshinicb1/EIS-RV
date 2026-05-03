@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Atom, Microscope, BookOpen, Activity, Zap,
   Battery, Timer, BarChart2, Cpu, Database, ArrowUpToLine,
-  FolderKanban, FileText, UserCircle, Circle, Calculator, CheckCircle2, Wand2, 
-  ChevronLeft, ChevronRight, Hash, Layers
+  FolderKanban, FileText, UserCircle, Circle, Calculator, CheckCircle2, Wand2,
+  ChevronLeft, ChevronRight, Hash, Layers, FlaskConical
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
@@ -22,6 +22,7 @@ const ICONS = {
   toolkit: <Calculator size={18} />,
   materials: <Database size={18} />,
   data: <ArrowUpToLine size={18} />,
+  lab: <FlaskConical size={18} />,
   validation: <CheckCircle2 size={18} />,
   workspace: <FolderKanban size={18} />,
   reports: <FileText size={18} />,
@@ -32,7 +33,7 @@ const GROUPS = [
   { label: 'INTELLIGENCE_OPS', tour: 'ai-research', keys: ['alchemist_canvas', 'alchemi', 'literature'] },
   { label: 'ANALYSIS_CORE', tour: 'simulation', keys: ['dashboard', 'eis', 'cv', 'drt', 'circuit'] },
   { label: 'APPLIED_SYSTEMS', tour: 'apps', keys: ['battery', 'biosensor', 'gcd'] },
-  { label: 'RESOURCE_MGMT', tour: 'management', keys: ['materials', 'data', 'workspace', 'reports', 'profile'] },
+  { label: 'RESOURCE_MGMT', tour: 'management', keys: ['lab', 'materials', 'data', 'workspace', 'reports', 'profile'] },
 ];
 
 export default function Sidebar({ panels, active, onSelect, collapsed, onToggle }) {

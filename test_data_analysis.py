@@ -17,9 +17,9 @@ import os
 # Add vanl to path
 sys.path.insert(0, os.path.abspath('.'))
 
-from vanl.backend.core.data_import import DataImporter, EISData, CVData
-from vanl.backend.core.circuit_fitting import CircuitFitter
-from vanl.backend.core.drt_analysis import DRTAnalyzer
+from src.backend.core.engines.data_import import DataImporter, EISData, CVData
+from src.backend.core.engines.circuit_fitting import CircuitFitter
+from src.backend.core.engines.drt_analysis import DRTAnalyzer
 
 
 def print_test_header(test_name: str):
@@ -451,8 +451,8 @@ def run_all_tests():
         print("="*70)
         print("\n✅ Data analysis features are ready for production!")
         print("\nNext steps:")
-        print("1. Test API endpoints: python -m pytest test_api.py")
-        print("2. Start server: python -m uvicorn vanl.backend.main:app --reload --port 8001")
+        print("1. Test API endpoints: python -m pytest tests/")
+        print("2. Start server: python -m uvicorn src.backend.api.server:app --reload --port 8000")
         print("3. Test with real data files")
         return True
     else:

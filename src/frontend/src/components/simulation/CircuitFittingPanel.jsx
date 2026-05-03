@@ -33,36 +33,15 @@ export default function CircuitFittingPanel() {
         body: JSON.stringify({ circuit_model: circuit, method: fitMethod }),
       });
       const d = await r.json(); setFitResult(d);
-    } catch {
-      // Fallback: local synthetic fit
-      const N = 60;
-      const freq = Array.from({ length: N }, (_, i) => Math.pow(10, -2 + i * 7 / (N - 1)));
-      const p = DEFAULT_PARAMS[circuit];
-      const omega = freq.map(f => 2 * Math.PI * f);
-
-      let Zr = [], Zi = [];
-      if (circuit === 'randles' || circuit === 'randles_cpe') {
-        const { Rs, Rct, sigma_w } = p;
-        const Cdl = p.Cdl || p.Q || 1e-5;
-        omega.forEach(w => {
-          const Zw_r = sigma_w / Math.sqrt(w); const Zw_i = -sigma_w / Math.sqrt(w);
-          const Zc_i = -1 / (w * Cdl);
-          const denom_r = 1 / (Rct + Zw_r); const denom_i = Zw_i / ((Rct + Zw_r) ** 2 + Zw_i ** 2);
-          const Yp_r = -Zc_i * w * Cdl * Cdl / (1 + (w * Cdl * Zc_i) ** 2) + denom_r;
-          const Yp_i = w * Cdl + denom_i;
-          const Zp_r = Yp_r / (Yp_r ** 2 + Yp_i ** 2);
-          const Zp_i = -Yp_i / (Yp_r ** 2 + Yp_i ** 2);
-          Zr.push(Rs + Zp_r + (Math.random() - 0.5) * 0.5);
-          Zi.push(Zp_i + (Math.random() - 0.5) * 0.5);
-        });
-      } else {
-        omega.forEach(w => { Zr.push(p.R || 100); Zi.push(-1 / (w * (p.C || p.Q || 1e-5))); });
-      }
-
+    } catch (e) {
+      // Backend unreachable. We do NOT fabricate a fit — the previous code
+      // returned random-noise "data" + "fit" and presented it as a real
+      // result. Show a clear error instead.
       setFitResult({
-        parameters: p, parameter_errors: Object.fromEntries(Object.keys(p).map(k => [k, p[k] * 0.02])),
-        Z_data_real: Zr, Z_data_imag: Zi, Z_fit_real: Zr.map(v => v + (Math.random() - 0.5) * 0.1), Z_fit_imag: Zi.map(v => v + (Math.random() - 0.5) * 0.1),
-        frequencies: freq, chi_squared: 0.0023, reduced_chi_squared: 0.00004, circuit_model: circuit, success: true, message: 'Local fallback fit'
+        success: false,
+        unreachable: true,
+        circuit_model: circuit,
+        message: `Backend unreachable: ${e.message}. Start the local FastAPI sidecar (port 8000) to run a real fit.`,
       });
     }
     setFitting(false);
