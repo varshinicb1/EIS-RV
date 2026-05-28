@@ -1,8 +1,54 @@
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+use tauri_plugin_updater::UpdaterExt;
 
 static PYTHON_RUNNING: AtomicBool = AtomicBool::new(false);
+
+fn find_python() -> Option<PathBuf> {
+    let candidates = if cfg!(windows) {
+        vec!["python.exe", "python3.exe", "py.exe"]
+    } else {
+        vec!["python3", "python"]
+    };
+    for name in &candidates {
+        if let Ok(output) = Command::new(name).args(&["--version"]).output() {
+            if output.status.success() {
+                return Some(PathBuf::from(name));
+            }
+        }
+    }
+    None
+}
+
+fn install_wheel(resource_dir: &std::path::Path) -> Result<(), String> {
+    let wheel_dir = resource_dir.join("wheels");
+    if !wheel_dir.exists() {
+        return Ok(());
+    }
+    let python = find_python().ok_or("Python not found")?;
+
+    for entry in std::fs::read_dir(&wheel_dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) == Some("whl") {
+            println!("[RAMAN] Installing wheel: {}", path.display());
+            let out = Command::new(&python)
+                .args(&["-m", "pip", "install", "--force-reinstall", "--no-deps"])
+                .arg(&path)
+                .output()
+                .map_err(|e| format!("Failed to install wheel: {}", e))?;
+            if !out.status.success() {
+                let stderr = String::from_utf8_lossy(&out.stderr);
+                eprintln!("[RAMAN] Wheel install stderr: {}", stderr);
+            } else {
+                println!("[RAMAN] Wheel installed successfully");
+            }
+        }
+    }
+    Ok(())
+}
 
 fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::Child, String> {
     let resource_dir = app_handle.path().resource_dir()
@@ -35,7 +81,14 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
         let cmd_str = if python_exe.exists() {
             python_exe.to_string_lossy().to_string()
         } else {
-            (if cfg!(windows) { "python" } else { "python3" }).to_string()
+            match find_python() {
+                Some(p) => p.to_string_lossy().to_string(),
+                None => return Err(
+                    "Python is not installed.\n\n".to_string()
+                    + "RĀMAN Studio requires Python 3.11 or newer.\n"
+                    + "Download it from https://python.org/downloads",
+                ),
+            }
         };
         (
             cmd_str,
@@ -49,6 +102,10 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
         )
     };
 
+    if let Err(e) = install_wheel(&resource_dir) {
+        eprintln!("[RAMAN] Warning: could not install Rust wheel: {}", e);
+    }
+
     let mut child = Command::new(&cmd)
         .args(&args)
         .current_dir(&cwd)
@@ -57,11 +114,10 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| format!("Failed to spawn Python backend: {}", e))?;
+        .map_err(|e| format!("Failed to start Python backend: {}\n\nMake sure Python and uvicorn are installed:\n  pip install uvicorn fastapi", e))?;
 
     PYTHON_RUNNING.store(true, Ordering::SeqCst);
 
-    // Log Python output
     if let Some(stdout) = child.stdout.take() {
         std::thread::spawn(move || {
             let reader = std::io::BufReader::new(stdout);
@@ -86,27 +142,138 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
     Ok(child)
 }
 
+fn build_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<tauri::menu::Menu<R>, Box<dyn std::error::Error>> {
+    use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
+
+    let new_project  = MenuItemBuilder::with_id("new-project", "New project").accelerator("CmdOrCtrl+N").build(app)?;
+    let open_project = MenuItemBuilder::with_id("open-project", "Open project...").accelerator("CmdOrCtrl+O").build(app)?;
+    let save_project = MenuItemBuilder::with_id("save-project", "Save project").accelerator("CmdOrCtrl+S").build(app)?;
+    let save_as      = MenuItemBuilder::with_id("save-project-as", "Save project as...").accelerator("CmdOrCtrl+Shift+S").build(app)?;
+    let sep1         = PredefinedMenuItem::separator(app)?;
+    let open_lab     = MenuItemBuilder::with_id("open-lab-data", "Open lab data (xlsx / csv)...").build(app)?;
+    let import_data  = MenuItemBuilder::with_id("import-data", "Import EIS / CV data...").build(app)?;
+    let sep2         = PredefinedMenuItem::separator(app)?;
+    let export_pdf   = MenuItemBuilder::with_id("export-report", "Export current report (PDF)").accelerator("CmdOrCtrl+E").build(app)?;
+    let export_png   = MenuItemBuilder::with_id("export-plot", "Export plot (PNG)").accelerator("CmdOrCtrl+Shift+E").build(app)?;
+    let sep3         = PredefinedMenuItem::separator(app)?;
+    let quit         = PredefinedMenuItem::quit(app, None)?;
+
+    let file_menu = SubmenuBuilder::new(app, "File")
+        .item(&new_project).item(&open_project).item(&save_project).item(&save_as)
+        .item(&sep1).item(&open_lab).item(&import_data)
+        .item(&sep2).item(&export_pdf).item(&export_png)
+        .item(&sep3).item(&quit)
+        .build()?;
+
+    let undo   = PredefinedMenuItem::undo(app, None)?;
+    let redo   = PredefinedMenuItem::redo(app, None)?;
+    let cut    = PredefinedMenuItem::cut(app, None)?;
+    let copy   = PredefinedMenuItem::copy(app, None)?;
+    let paste  = PredefinedMenuItem::paste(app, None)?;
+    let selall = PredefinedMenuItem::select_all(app, None)?;
+    let sep_e  = PredefinedMenuItem::separator(app)?;
+    let settings = MenuItemBuilder::with_id("navigate-panel:profile", "Settings...").accelerator("CmdOrCtrl+,").build(app)?;
+
+    let edit_menu = SubmenuBuilder::new(app, "Edit")
+        .item(&undo).item(&redo).item(&sep_e)
+        .item(&cut).item(&copy).item(&paste).item(&selall)
+        .item(&sep_e).item(&settings)
+        .build()?;
+
+    let sep_v  = PredefinedMenuItem::separator(app)?;
+    let light  = MenuItemBuilder::with_id("set-theme:light", "Light theme").accelerator("CmdOrCtrl+Shift+L").build(app)?;
+    let dark   = MenuItemBuilder::with_id("set-theme:dark", "Dark theme").accelerator("CmdOrCtrl+Shift+D").build(app)?;
+    let hc     = MenuItemBuilder::with_id("set-theme:hc", "High-contrast theme").accelerator("CmdOrCtrl+Shift+H").build(app)?;
+
+    let view_menu = SubmenuBuilder::new(app, "View")
+        .item(&sep_v)
+        .item(&light).item(&dark).item(&hc)
+        .build()?;
+
+    let dash = MenuItemBuilder::with_id("navigate-panel:dashboard", "Dashboard").accelerator("CmdOrCtrl+1").build(app)?;
+    let eis  = MenuItemBuilder::with_id("navigate-panel:eis", "EIS").accelerator("CmdOrCtrl+2").build(app)?;
+    let cv   = MenuItemBuilder::with_id("navigate-panel:cv", "Cyclic voltammetry").accelerator("CmdOrCtrl+3").build(app)?;
+    let gcd  = MenuItemBuilder::with_id("navigate-panel:gcd", "GCD").accelerator("CmdOrCtrl+4").build(app)?;
+    let drt  = MenuItemBuilder::with_id("navigate-panel:drt", "DRT").accelerator("CmdOrCtrl+5").build(app)?;
+    let circ = MenuItemBuilder::with_id("navigate-panel:circuit", "Circuit fitting").accelerator("CmdOrCtrl+6").build(app)?;
+    let bios = MenuItemBuilder::with_id("navigate-panel:biosensor", "Biosensor").accelerator("CmdOrCtrl+7").build(app)?;
+    let sep_t = PredefinedMenuItem::separator(app)?;
+    let alch = MenuItemBuilder::with_id("navigate-panel:alchemi", "Materials AI").build(app)?;
+    let disc = MenuItemBuilder::with_id("navigate-panel:discovery", "Discovery & AI").build(app)?;
+    let alcanvas = MenuItemBuilder::with_id("navigate-panel:alchemist_canvas", "Alchemist canvas").build(app)?;
+    let lab  = MenuItemBuilder::with_id("navigate-panel:lab", "Lab data").build(app)?;
+    let lit  = MenuItemBuilder::with_id("navigate-panel:literature", "Literature mining").build(app)?;
+    let rep  = MenuItemBuilder::with_id("navigate-panel:reports", "Reports").build(app)?;
+
+    let tools_menu = SubmenuBuilder::new(app, "Tools")
+        .item(&dash).item(&eis).item(&cv).item(&gcd).item(&drt).item(&circ).item(&bios)
+        .item(&sep_t)
+        .item(&alch).item(&disc).item(&alcanvas).item(&lab).item(&lit).item(&rep)
+        .build()?;
+
+    let docs    = MenuItemBuilder::with_id("open-docs", "Documentation").build(app)?;
+    let issues  = MenuItemBuilder::with_id("open-issues", "Report an issue").build(app)?;
+    let support = MenuItemBuilder::with_id("open-support", "Support").build(app)?;
+    let sep_h   = PredefinedMenuItem::separator(app)?;
+    let about   = MenuItemBuilder::with_id("open-about", "About").build(app)?;
+
+    let help_menu = SubmenuBuilder::new(app, "Help")
+        .item(&docs).item(&issues).item(&support)
+        .item(&sep_h).item(&about)
+        .build()?;
+
+    let menu = MenuBuilder::new(app)
+        .items(&[&file_menu, &edit_menu, &view_menu, &tools_menu, &help_menu])
+        .build()?;
+    Ok(menu)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            let handle = app.handle().clone();
+            // ── Menu ──────────────────────────────────────────
+            let app_handle = app.handle();
+            if let Ok(menu) = build_menu(&app_handle) {
+                if let Err(e) = app.set_menu(menu) {
+                    eprintln!("[RAMAN] Failed to set menu: {}", e);
+                }
+            }
+            app.on_menu_event(|app_handle, event| {
+                let id: &str = event.id.as_ref();
+                let event_name = format!("menu:{}", id);
+                let _ = app_handle.emit(&event_name, "");
+            });
 
+            // ── Updater ───────────────────────────────────────
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Ok(updater) = handle.updater() {
+                    if let Ok(Some(update)) = updater.check().await {
+                        println!("[RAMAN] Update available: {}", update.version);
+                        let _ = handle.emit("update-available", update.version);
+                    }
+                }
+            });
+
+            // ── Python backend ────────────────────────────────
+            let py_handle = app.handle().clone();
             std::thread::spawn(move || {
-                match start_python_backend(&handle) {
+                match start_python_backend(&py_handle) {
                     Ok(mut child) => {
                         let _ = child.wait();
                         PYTHON_RUNNING.store(false, Ordering::SeqCst);
                     }
                     Err(e) => {
                         eprintln!("[RAMAN] Failed to start Python backend: {}", e);
+                        let _ = py_handle.emit("backend-error", e);
                     }
                 }
             });
 
-            // Wait a moment for the backend to start
             std::thread::sleep(std::time::Duration::from_secs(3));
 
             #[cfg(debug_assertions)]

@@ -36,7 +36,7 @@
     "resources": {
       "../requirements.txt": "requirements.txt",
       "../src/backend": "src/backend",
-      "../engine_core/raman_core_rs/target/wheels": "wheels"
+      "../resources/wheels": "wheels"
     },
     "windows": {
       "certificateThumbprint": null,
@@ -49,6 +49,17 @@
     "publisher": "VidyuthLabs"
   },
   "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/varshinicb1/EIS-RV/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJERDhCRkQ4N0I0MzE0NjMKUldSRjNaZWdUVjY0dmFlczZxNFdJNGM1aDJpM2JkV2FXYWtiU1B0Z0lpeGtBU3B0eWZHVlo4Ngo=",
+      "windows": {
+        "installMode": "basicUi"
+      }
+    },
     "fs": {
       "scope": {
         "allow": ["$APPDATA/**", "$DOCUMENT/**", "$DESKTOP/**", "$HOME/**"],
