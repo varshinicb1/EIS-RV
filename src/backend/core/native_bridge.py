@@ -1,7 +1,7 @@
 """
-C++ Engine Bridge — Python Fallback Wrapper
+Rust Engine Bridge — Python Fallback Wrapper
 =============================================
-Provides a unified interface that uses C++ (raman_core) when available,
+Provides a unified interface that uses Rust (raman_core_rs) when available,
 and falls back to the existing Python implementations otherwise.
 
 Usage:
@@ -19,16 +19,16 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# ── Try loading C++ engine ─────────────────────────────────
+# ── Try loading Rust engine ─────────────────────────────────
 
 try:
-    import raman_core
-    CPP_AVAILABLE = True
-    logger.info("C++ engine (raman_core) loaded -- version %s",
-                raman_core.__version__)
+    import raman_core_rs
+    RUST_AVAILABLE = True
+    logger.info("Rust engine (raman_core_rs) loaded -- version %s",
+                raman_core_rs.__version__)
 except ImportError:
-    CPP_AVAILABLE = False
-    logger.info("C++ engine not available -- using Python fallback")
+    RUST_AVAILABLE = False
+    logger.info("Rust engine not available -- using Python fallback")
 
 
 def eis_simulate(
@@ -53,9 +53,9 @@ def eis_simulate(
     """
     t0 = time.perf_counter()
 
-    if CPP_AVAILABLE and not force_python:
-        # ── C++ path ───────────────────────────────────────
-        params = raman_core.EISParams()
+    if RUST_AVAILABLE and not force_python:
+        # ── Rust path ──────────────────────────────────────
+        params = raman_core_rs.PyEISParams()
         params.Rs = Rs
         params.Rct = Rct
         params.Cdl = Cdl
@@ -65,13 +65,13 @@ def eis_simulate(
         params.diff_len_um = diff_length_um
         params.diff_coeff = diff_coeff
 
-        result = raman_core.simulate_eis(params, f_min, f_max, n_points)
+        result = raman_core_rs.simulate_eis_py(params, f_min, f_max, n_points)
 
         elapsed = time.perf_counter() - t0
-        logger.debug("EIS (C++): %.2f ms, %d points", elapsed * 1000, n_points)
+        logger.debug("EIS (Rust): %.2f ms, %d points", elapsed * 1000, n_points)
 
         return {
-            "engine": "cpp",
+            "engine": "rust",
             "compute_time_s": elapsed,
             "frequencies": np.array(result.frequencies),
             "Z_real": np.array(result.Z_real),
@@ -135,8 +135,8 @@ def cv_simulate(
     """
     t0 = time.perf_counter()
 
-    if CPP_AVAILABLE and not force_python:
-        params = raman_core.CVParams()
+    if RUST_AVAILABLE and not force_python:
+        params = raman_core_rs.PyCVParams()
         params.area_cm2 = area_cm2
         params.E_formal_V = E_formal_V
         params.n_electrons = n_electrons
@@ -150,11 +150,11 @@ def cv_simulate(
         params.E_end_V = E_start_V
         params.scan_rate_V_s = scan_rate_V_s
 
-        result = raman_core.simulate_cv(params, n_points)
+        result = raman_core_rs.simulate_cv_py(params, n_points)
         elapsed = time.perf_counter() - t0
 
         return {
-            "engine": "cpp",
+            "engine": "rust",
             "compute_time_s": elapsed,
             "E": np.array(result.E),
             "i_total": np.array(result.i_total),
@@ -210,8 +210,8 @@ def cv_simulate(
 def get_engine_info() -> Dict:
     """Return info about which engine is active."""
     return {
-        "cpp_available": CPP_AVAILABLE,
-        "cpp_version": getattr(raman_core, "__version__", None) if CPP_AVAILABLE else None,
+        "rust_available": RUST_AVAILABLE,
+        "rust_version": getattr(raman_core_rs, "__version__", None) if RUST_AVAILABLE else None,
         "python_fallback": True,
     }
 
