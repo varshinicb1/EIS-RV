@@ -27,6 +27,7 @@ const ICONS = {
   biosensor: Microscope,
   literature: BookOpen,
   gdrive: CloudDownload,
+  ec_review: BookOpen,
   eis: Activity,
   cv: Zap,
   battery: Battery,
@@ -51,7 +52,7 @@ const ICONS = {
 };
 
 const GROUPS = [
-  { label: 'Intelligence',     keys: ['alchemist_canvas', 'alchemi', 'hydrothermal', 'lab_brain', 'literature', 'gdrive'] },
+  { label: 'Intelligence',     keys: ['alchemist_canvas', 'alchemi', 'hydrothermal', 'lab_brain', 'literature', 'gdrive', 'ec_review'] },
   { label: 'Analysis',         keys: ['dashboard', 'advanced_analysis', 'eis', 'cv', 'drt', 'circuit', 'unified_spectroscopy'] },
   { label: 'Applied systems',  keys: ['battery', 'biosensor', 'gcd'] },
   { label: 'Materials',        keys: ['materials', 'discovery', 'identify'] },

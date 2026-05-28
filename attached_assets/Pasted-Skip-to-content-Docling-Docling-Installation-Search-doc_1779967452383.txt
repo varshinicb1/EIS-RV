@@ -1,0 +1,93 @@
+Skip to content
+Docling
+Docling
+Installation
+
+
+Search
+ docling-project/docling
+v2.95.0
+60.5k
+4.2k
+Documentation
+Concepts
+Examples
+Integrations
+Reference
+Getting started
+Installation
+Quickstart
+⚡ RTX GPU
+Usage
+FAQ
+On this page
+Available extras
+OCR engines
+Development setup
+Documentation
+Getting started
+Installation
+To use Docling, simply install docling from your Python package manager, e.g. pip:
+
+
+pip install docling
+Works on macOS, Linux, and Windows, with support for both x86_64 and arm64 architectures.
+
+Alternative PyTorch distributions
+Installation on macOS Intel (x86_64)
+Available extras
+The docling package is designed to offer a working solution for the Docling default options. Some Docling functionalities require additional third-party packages and are therefore installed only if selected as extras (or installed independently).
+
+The following table summarizes the extras available in the docling package. They can be activated with: pip install "docling[NAME1,NAME2]"
+
+Extra	Description
+asr	Installs dependencies for running the ASR pipeline.
+vlm	Installs dependencies for running the VLM pipeline.
+easyocr	Installs the EasyOCR OCR engine.
+tesserocr	Installs the Tesseract binding for using it as OCR engine.
+ocrmac	Installs the OcrMac OCR engine.
+htmlrender	Installs dependencies for HTML page rendering in the HTML backend.
+rapidocr	Installs the RapidOCR OCR engine with onnxruntime backend.
+OCR engines
+Docling supports multiple OCR engines for processing scanned documents. The current version provides the following engines.
+
+Engine	Installation	Usage
+EasyOCR	easyocr extra or via pip install easyocr.	EasyOcrOptions
+Tesseract	System dependency. See description for Tesseract and Tesserocr below.	TesseractOcrOptions
+Tesseract CLI	System dependency. See description below.	TesseractCliOcrOptions
+OcrMac	System dependency. See description below.	OcrMacOptions
+RapidOCR	rapidocr extra can or via pip install rapidocr onnxruntime	RapidOcrOptions
+OnnxTR	Can be installed via the plugin system pip install "docling-ocr-onnxtr[cpu]". Please take a look at docling-OCR-OnnxTR.	OnnxtrOcrOptions
+The Docling DocumentConverter allows to choose the OCR engine with the ocr_options settings. For example
+
+
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import (
+    TesseractOcrOptions,
+    PdfPipelineOptions,
+)
+from docling.document_converter import DocumentConverter, PdfFormatOption
+
+pipeline_options = PdfPipelineOptions()
+pipeline_options.do_ocr = True
+pipeline_options.ocr_options = TesseractOcrOptions()  # Use Tesseract
+
+doc_converter = DocumentConverter(
+    format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
+)
+Tesseract installation
+Development setup
+To develop Docling features, bugfixes etc., install as follows from your local clone's root dir:
+
+
+uv sync --all-extras
+Back to top
+Previous
+Documentation
+Next
+Quickstart
+
+Search
+
+Filters
+Tags

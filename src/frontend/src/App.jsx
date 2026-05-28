@@ -38,6 +38,7 @@ const AdvancedAnalysisPanel = lazy(() => import('./components/analysis/AdvancedA
 const HydrothermalDiscoveryPanel = lazy(() => import('./components/discovery/HydrothermalDiscoveryPanel'));
 const AutonomousLabPanel         = lazy(() => import('./components/discovery/AutonomousLabPanel'));
 const GoogleDrivePanel           = lazy(() => import('./components/research/GoogleDrivePanel'));
+const ECLiteraturePanel          = lazy(() => import('./components/research/ECLiteraturePanel'));
 
 // Backend URL — uses Electron preload bridge or fallback
 const BACKEND_URL = '';
@@ -50,7 +51,8 @@ const PANELS = {
   lab_brain:    { label: 'Lab Brain · Digital Twin', component: AutonomousLabPanel },
   biosensor:  { label: 'Biosensor Fab',       component: BiosensorPanel },
   literature: { label: 'Literature Mining',   component: LiteratureMiningPanel },
-  gdrive:     { label: 'Drive · Literature Review', component: GoogleDrivePanel },
+  gdrive:     { label: 'Drive · Sync',              component: GoogleDrivePanel },
+  ec_review:  { label: 'EC Sensor Review',          component: ECLiteraturePanel },
   eis:        { label: 'EIS',                 component: EISPanel },
   cv:         { label: 'Cyclic Voltammetry',  component: CVPanel },
   battery:    { label: 'Battery',             component: BatteryPanel },

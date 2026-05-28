@@ -33,14 +33,33 @@ def _build_service():
     try:
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
+        import httplib2
 
-        sa_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
+        sa_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
         if not sa_json:
             raise RuntimeError("GOOGLE_SERVICE_ACCOUNT_JSON env var not set")
 
-        info = json.loads(sa_json)
+        # Validate JSON structure before attempting auth
+        try:
+            info = json.loads(sa_json)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(
+                f"GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON ({e}). "
+                "Paste the full service_account.json downloaded from GCP → IAM & Admin → Service Accounts → Keys."
+            )
+
+        required = {"type", "project_id", "private_key_id", "private_key", "client_email"}
+        missing = required - set(info.keys())
+        if missing:
+            raise RuntimeError(
+                f"service_account JSON is missing fields: {missing}. "
+                "Re-download the full JSON key file from GCP console."
+            )
+
         creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
-        service = build("drive", "v3", credentials=creds, cache_discovery=False)
+        # Use a short timeout so bad credentials fail fast instead of hanging
+        http = httplib2.Http(timeout=10)
+        service = build("drive", "v3", credentials=creds, cache_discovery=False, http=http)
         return service
     except Exception as e:
         logger.error("Failed to build Drive service: %s", e)
