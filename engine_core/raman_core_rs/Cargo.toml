@@ -8,13 +8,13 @@ name = "raman_core_rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ndarray = "0.16"
-num-complex = "0.4"
+ndarray = { version = "0.16", features = ["serde"] }
+num-complex = { version = "0.4", features = ["serde"] }
 numpy = "0.24"
 pyo3 = { version = "0.24", features = ["extension-module"] }
 rayon = "1.10"
-
+serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
-ndarray = "0.16"
-num-complex = "0.4"
+ndarray = { version = "0.16", features = ["serde"] }
+num-complex = { version = "0.4", features = ["serde"] }

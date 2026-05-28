@@ -8,7 +8,8 @@ pub const T_STD: f64 = 298.15;
 pub const RT_F: f64 = R_GAS * T_STD / FARADAY;
 
 // EIS Parameters
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct EISParams {
     pub Rs: f64,
     pub Rct: f64,
@@ -20,7 +21,7 @@ pub struct EISParams {
     pub diff_coeff: f64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct EISResult {
     pub frequencies: Array1<f64>,
     pub Z_real: Array1<f64>,
@@ -31,7 +32,8 @@ pub struct EISResult {
 }
 
 // CV Parameters
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct CVParams {
     pub area_cm2: f64,
     pub roughness: f64,
@@ -54,7 +56,7 @@ pub struct CVParams {
 }
 
 // CV Result
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct CVResult {
     pub E: Array1<f64>,
     pub E_actual: Array1<f64>,
@@ -71,7 +73,8 @@ pub struct CVResult {
 }
 
 // DRT Parameters
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct DRTParams {
     pub lambda: f64,
     pub n_tau: usize,
@@ -82,7 +85,7 @@ pub struct DRTParams {
 }
 
 // DRT Result
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct DRTResult {
     pub tau: Array1<f64>,
     pub gamma: Array1<f64>,
@@ -95,7 +98,7 @@ pub struct DRTResult {
 }
 
 // Kramers-Kronig Result
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct KKResult {
     pub is_valid: bool,
     pub mu: f64,
@@ -113,7 +116,7 @@ pub struct KKResult {
 }
 
 // Circuit Fitter
-#[derive(Clone, Debug, Copy, Default)]
+#[derive(Clone, Debug, Copy, Default, serde::Serialize, serde::Deserialize)]
 pub enum CircuitType {
     #[default]
     RANDLES = 0,
@@ -121,7 +124,8 @@ pub enum CircuitType {
     R_RC_RC = 2,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct FitParams {
     pub circuit: CircuitType,
     pub max_iter: i32,
@@ -131,7 +135,7 @@ pub struct FitParams {
     pub lambda_down: f64,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct FitResult {
     pub params: Array1<f64>,
     pub errors: Array1<f64>,
@@ -142,3 +146,4 @@ pub struct FitResult {
     pub iterations: i32,
     pub converged: bool,
 }
+

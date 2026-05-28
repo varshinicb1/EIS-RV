@@ -4,10 +4,8 @@
   "version": "3.0.0",
   "identifier": "com.vidyuthlabs.raman.studio",
   "build": {
-    "frontendDist": "../src/frontend/dist",
-    "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "cd ../src/frontend && npm run dev",
-    "beforeBuildCommand": "cd ../src/frontend && npm run build"
+    "frontendDist": "../build/renderer",
+    "devUrl": "http://localhost:5173"
   },
   "app": {
     "windows": [
@@ -24,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.plot.ly; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' http://127.0.0.1:*"
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.plot.ly; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' http://127.0.0.1:* http://127.0.0.1:8000 ws://127.0.0.1:8000"
     }
   },
   "bundle": {
@@ -35,6 +33,11 @@
       "icons/128x128.png",
       "icons/icon.ico"
     ],
+    "resources": {
+      "../requirements.txt": "requirements.txt",
+      "../src/backend": "src/backend",
+      "../engine_core/raman_core_rs/target/wheels": "wheels"
+    },
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
@@ -43,7 +46,6 @@
     "shortDescription": "Research-grade electrochemical analysis software",
     "longDescription": "RAMAN Studio is a high-performance desktop application for electrochemical impedance spectroscopy (EIS), cyclic voltammetry (CV), distribution of relaxation times (DRT), and circuit fitting. Built for researchers, by VidyuthLabs.",
     "copyright": "Copyright 2026 VidyuthLabs",
-    "category": "Science",
     "publisher": "VidyuthLabs"
   },
   "plugins": {
