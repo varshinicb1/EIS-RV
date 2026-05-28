@@ -55,6 +55,7 @@ datasets/*.json
 datasets/*.xlsx
 datasets/*.xls
 datasets/*.csv
+!datasets/examples/
 
 # Large binary datasets — use Git LFS or DVC instead
 External datasets/*.zip
@@ -162,4 +163,16 @@ external-repos/
 *.sh
 
 attached_assets/
-*.json
+
+# Tauri build artifacts
+src-tauri/target/
+src/frontend/dist/
+
+# Allow specific JSON config files
+!src-tauri/tauri.conf.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# Allow example datasets
+!datasets/examples/*.xlsx
