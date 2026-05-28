@@ -28,6 +28,7 @@ import json
 import logging
 from typing import Dict, Any, List
 from pathlib import Path
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,7 @@ def _parse_csv(text: str) -> Dict[str, Any]:
 
     return {
         "format": "csv",
-        "data_type": _guess_data_type(headers),
+        "data_type": _guess_data_type(headers, columns, filename),
         "headers": headers,
         "columns": columns,
         "metadata": {},
@@ -225,7 +226,7 @@ def _parse_biologic_mpt(text: str) -> Dict[str, Any]:
 
     return {
         "format": "biologic_mpt",
-        "data_type": _guess_data_type(headers),
+        "data_type": _guess_data_type(headers, columns, filename),
         "headers": headers,
         "columns": columns,
         "metadata": metadata,
@@ -317,22 +318,33 @@ def _parse_json(text: str) -> Dict[str, Any]:
         return {"error": f"Invalid JSON: {e}"}
 
 
-def _guess_data_type(headers: List[str]) -> str:
-    """Guess the electrochemical technique from column headers."""
-    h = [s.lower().replace("'", "").replace('"', '') for s in headers]
-
-    if any("zreal" in s or "zre" in s or "z'" in s or "z_real" in s for s in h):
-        return "EIS"
-    if any("freq" in s for s in h) and any("z" in s for s in h):
-        return "EIS"
-    if any("potential" in s or "e_v" in s or "ewe" in s for s in h):
-        if any("current" in s or "i_" in s or "<i>" in s for s in h):
-            return "CV"
-    if any("capacity" in s or "soc" in s or "q_" in s for s in h):
-        return "Battery"
-    if any("time" in s for s in h) and any("voltage" in s or "ecell" in s for s in h):
-        return "GCD"
-    return "Unknown"
+def _guess_data_type(headers: List[str], columns: Dict[str, np.ndarray] = None, filename: str = "") -> str:
+    """Guess the electrochemical technique using enhanced classifier."""
+    if columns is None:
+        columns = {}
+    
+    # Import classifier lazily to avoid circular dependencies
+    try:
+        from .technique_classifier import TechniqueClassifier
+        classifier = TechniqueClassifier()
+        technique, confidence = classifier.classify(filename, headers, columns)
+        logger.info(f"Classified as {technique} with confidence {confidence:.2f}")
+        return technique
+    except ImportError:
+        # Fallback to simple heuristic if classifier not available
+        h = [s.lower().replace("'", "").replace('"', '') for s in headers]
+        if any("zreal" in s or "zre" in s or "z'" in s or "z_real" in s for s in h):
+            return "EIS"
+        if any("freq" in s for s in h) and any("z" in s for s in h):
+            return "EIS"
+        if any("potential" in s or "e_v" in s or "ewe" in s for s in h):
+            if any("current" in s or "i_" in s or "<i>" in s for s in h):
+                return "CV"
+        if any("capacity" in s or "soc" in s or "q_" in s for s in h):
+            return "Battery"
+        if any("time" in s for s in h) and any("voltage" in s or "ecell" in s for s in h):
+            return "GCD"
+        return "Unknown"
 
 
 def get_supported_formats() -> List[Dict[str, str]]:

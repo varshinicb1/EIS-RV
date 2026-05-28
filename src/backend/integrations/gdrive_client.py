@@ -17,7 +17,9 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive.readonly",
 ]
 
-DRIVE_FOLDER_ID = "1wcWa-pTMFUinnVBIvhUFLbL6LrMawrQV"
+# Default folder ID (hardcoded for binary distribution)
+_DEFAULT_FOLDER_ID = "1W1jAhamHkAKklwlVJae5Mmg3mtB-lId8"
+DRIVE_FOLDER_ID = os.environ.get("GOOGLE_DRIVE_FOLDER_ID", _DEFAULT_FOLDER_ID).strip()
 
 # MIME types we can process
 PROCESSABLE_MIME = {
@@ -57,9 +59,7 @@ def _build_service():
             )
 
         creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
-        # Use a short timeout so bad credentials fail fast instead of hanging
-        http = httplib2.Http(timeout=10)
-        service = build("drive", "v3", credentials=creds, cache_discovery=False, http=http)
+        service = build("drive", "v3", credentials=creds, cache_discovery=False)
         return service
     except Exception as e:
         logger.error("Failed to build Drive service: %s", e)

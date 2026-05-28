@@ -5,15 +5,8 @@ from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
 
-# Use environment variable DATABASE_URL if set (Replit managed DB),
-# otherwise fall back to the centralized config, then SQLite.
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    try:
-        from src.backend.core.config import DATABASE_URL as _cfg_url
-        DATABASE_URL = _cfg_url
-    except ImportError:
-        pass
+# Always use centralized config for DATABASE_URL to avoid stale env vars
+from src.backend.core.config import DATABASE_URL
 if not DATABASE_URL:
     DATABASE_URL = "sqlite:///./raman_studio.db"
 

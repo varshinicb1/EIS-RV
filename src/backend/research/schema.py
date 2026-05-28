@@ -117,6 +117,21 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
     status          TEXT DEFAULT 'running'  -- 'running', 'completed', 'failed'
 );
 
+-- Figures table: extracted images from papers
+CREATE TABLE IF NOT EXISTS figures (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    paper_id        INTEGER NOT NULL,
+    caption         TEXT,              -- figure caption text
+    page            INTEGER,           -- page number in PDF
+    ext             TEXT,              -- image format (png, jpg, etc.)
+    size_kb         REAL,              -- image size in KB
+    data_base64     TEXT,              -- base64 encoded image data
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (paper_id) REFERENCES papers(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_figures_paper ON figures(paper_id);
+
 -- Indexes for fast lookup
 CREATE INDEX IF NOT EXISTS idx_papers_doi ON papers(doi);
 CREATE INDEX IF NOT EXISTS idx_papers_arxiv ON papers(arxiv_id);
@@ -124,6 +139,38 @@ CREATE INDEX IF NOT EXISTS idx_materials_paper ON materials(paper_id);
 CREATE INDEX IF NOT EXISTS idx_synthesis_paper ON synthesis(paper_id);
 CREATE INDEX IF NOT EXISTS idx_eis_paper ON eis_data(paper_id);
 CREATE INDEX IF NOT EXISTS idx_papers_processed ON papers(processed);
+
+-- Embeddings table for vector search tracking
+CREATE TABLE IF NOT EXISTS embeddings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    paper_id INTEGER NOT NULL,
+    text_type TEXT,  -- 'main', 'section', 'table'
+    vector_id TEXT,  -- Qdrant point ID
+    embedding_model TEXT DEFAULT 'BAAI/bge-small-en-v1.5',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (paper_id) REFERENCES papers(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_embeddings_paper ON embeddings(paper_id);
+CREATE INDEX IF NOT EXISTS idx_embeddings_type ON embeddings(text_type);
+
+-- Material relationships table for knowledge graph
+CREATE TABLE IF NOT EXISTS material_relationships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_material TEXT NOT NULL,
+    target_material TEXT,
+    relationship_type TEXT NOT NULL,  -- 'detects', 'combined_with', 'improves'
+    analyte TEXT,  -- for 'detects' relationships
+    lod TEXT,
+    sensitivity TEXT,
+    paper_id INTEGER,
+    confidence REAL DEFAULT 0.5,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (paper_id) REFERENCES papers(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_rel_source ON material_relationships(source_material);
+CREATE INDEX IF NOT EXISTS idx_material_rel_type ON material_relationships(relationship_type);
 """
 
 

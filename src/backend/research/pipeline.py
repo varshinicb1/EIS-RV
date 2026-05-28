@@ -39,6 +39,15 @@ from .export import (
     export_eis_csv, export_full_json,
 )
 
+# Autonomous literature intelligence components
+try:
+    from src.backend.embeddings.vector_store import VectorStore
+    from src.backend.graph.knowledge_graph import KnowledgeGraph
+    LITERATURE_INTELLIGENCE_AVAILABLE = True
+except ImportError:
+    LITERATURE_INTELLIGENCE_AVAILABLE = False
+    logger.warning("Literature intelligence components unavailable")
+
 logger = logging.getLogger(__name__)
 
 
@@ -122,6 +131,17 @@ class ResearchPipeline:
         ]
         self.dedup = Deduplicator(self.conn)
         self.extractor = ScientificExtractor()
+        
+        # Initialize literature intelligence components if available
+        self.vector_store = None
+        self.knowledge_graph = None
+        if LITERATURE_INTELLIGENCE_AVAILABLE:
+            try:
+                self.vector_store = VectorStore()
+                self.knowledge_graph = KnowledgeGraph()
+                logger.info("Literature intelligence components initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize literature intelligence: {e}")
 
     def run(
         self,
@@ -366,6 +386,29 @@ class ResearchPipeline:
                 )
                 self.conn.commit()
                 stats.papers_processed += 1
+                
+                # Update vector store and knowledge graph if available
+                if self.vector_store and row:
+                    try:
+                        self.vector_store.add_paper(
+                            paper_id=paper_id,
+                            title=row["title"],
+                            abstract=row["abstract"] or "",
+                            sections={},  # Would be extracted from full text
+                            tables=[]
+                        )
+                    except Exception as e:
+                        logger.warning(f"Vector store update failed for paper {paper_id}: {e}")
+                
+                if self.knowledge_graph and result.materials:
+                    try:
+                        for mat in result.materials:
+                            self.knowledge_graph.add_material(
+                                name=mat["component"],
+                                paper_id=paper_id
+                            )
+                    except Exception as e:
+                        logger.warning(f"Knowledge graph update failed for paper {paper_id}: {e}")
 
             except Exception as e:
                 logger.error("Processing failed for paper %d: %s", paper_id, e)

@@ -28,10 +28,11 @@ logger = logging.getLogger(__name__)
 _redis = None
 try:
     import redis
-    REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+    REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "changeme123")
+    REDIS_URL = os.environ.get("REDIS_URL", f"redis://:{REDIS_PASSWORD}@localhost:6379/0")
     _redis = redis.Redis.from_url(REDIS_URL, decode_responses=True, socket_timeout=2)
     _redis.ping()
-    logger.info("Redis connected: %s", REDIS_URL)
+    logger.info("Redis connected")
 except Exception as e:
     logger.warning("Redis unavailable (%s) — using in-memory LRU fallback", e)
     _redis = None

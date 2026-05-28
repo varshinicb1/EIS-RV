@@ -35,6 +35,7 @@ class ParsedDocument:
     abstract: str = ""
     sections: Dict[str, str] = field(default_factory=dict)
     tables: List[str] = field(default_factory=list)
+    figures: List[Dict] = field(default_factory=list)  # [{caption, page, ext, data_base64}]
     references: List[str] = field(default_factory=list)
     parser_used: str = "unknown"
     page_count: int = 0
@@ -94,6 +95,19 @@ def _infer_title(text: str, filename: str = "") -> str:
         if 25 < len(line) < 250 and not line.startswith("http") and not re.match(r"^\d", line):
             return line
     return os.path.splitext(filename)[0] if filename else ""
+
+
+def _find_figure_caption(page_text: str, figure_num: int) -> Optional[str]:
+    """Find caption for a figure by searching for 'Figure N' or 'Fig. N' patterns."""
+    patterns = [
+        rf"Figure\s+{figure_num}[\.:\s]+([^\n]+)",
+        rf"Fig\.\s*{figure_num}[\.:\s]+([^\n]+)",
+    ]
+    for pat in patterns:
+        m = re.search(pat, page_text, re.IGNORECASE)
+        if m:
+            return m.group(1).strip()[:200]
+    return None
 
 
 def _infer_authors(text: str) -> List[str]:
@@ -159,12 +173,14 @@ def _parse_with_docling(data: bytes, filename: str = "") -> Optional[ParsedDocum
 def _parse_with_pymupdf(data: bytes, filename: str = "") -> Optional[ParsedDocument]:
     try:
         import fitz  # PyMuPDF
+        import base64
 
         pdf = fitz.open(stream=data, filetype="pdf")
         pages_text = []
         tables_text = []
+        figures = []
 
-        for page in pdf:
+        for page_num, page in enumerate(pdf):
             # Extract text with layout preservation
             text = page.get_text("text", sort=True)
             pages_text.append(text)
@@ -179,12 +195,36 @@ def _parse_with_pymupdf(data: bytes, filename: str = "") -> Optional[ParsedDocum
             except Exception:
                 pass
 
+            # Extract images and captions
+            try:
+                img_list = page.get_images(full=True)
+                for img_index, img in enumerate(img_list, start=1):
+                    xref = img[0]
+                    base_image = pdf.extract_image(xref)
+                    image_bytes = base_image["image"]
+                    ext = base_image["ext"]
+                    # Skip tiny images (icons, decorations)
+                    if len(image_bytes) < 2048:
+                        continue
+                    b64 = base64.b64encode(image_bytes).decode('utf-8')
+                    caption = _find_figure_caption(text, img_index)
+                    figures.append({
+                        "caption": caption or f"Figure {img_index} (page {page_num + 1})",
+                        "page": page_num + 1,
+                        "ext": ext,
+                        "size_kb": round(len(image_bytes) / 1024, 1),
+                        "data_base64": f"data:image/{ext};base64,{b64}",
+                    })
+            except Exception:
+                pass
+
         full_text = "\n".join(pages_text)
         pdf.close()
 
         doc_out = ParsedDocument(
             full_text=full_text,
             tables=tables_text[:20],
+            figures=figures[:50],  # Limit to avoid memory issues
             parser_used="pymupdf",
             page_count=len(pages_text),
         )

@@ -261,6 +261,28 @@ try:
 except ImportError as e:
     logger.warning("Google Drive routes unavailable: %s", e)
 
+# Autonomous Literature Intelligence System Routes
+try:
+    from src.backend.api.embedding_routes import router as embedding_router
+    app.include_router(embedding_router)
+    logger.info("Vector embeddings routes registered (Qdrant semantic search)")
+except ImportError as e:
+    logger.warning("Embedding routes unavailable: %s", e)
+
+try:
+    from src.backend.api.graph_routes import router as graph_router
+    app.include_router(graph_router)
+    logger.info("Knowledge graph routes registered (Neo4j material relationships)")
+except ImportError as e:
+    logger.warning("Graph routes unavailable: %s", e)
+
+try:
+    from src.backend.api.experimenter_routes import router as experimenter_router
+    app.include_router(experimenter_router)
+    logger.info("Autonomous experimenter routes registered (experiment recommendations)")
+except ImportError as e:
+    logger.warning("Experimenter routes unavailable: %s", e)
+
 @app.websocket("/api/v2/ws/telemetry")
 async def websocket_telemetry(websocket: WebSocket):
     # License gate — FastAPI's Depends() doesn't apply uniformly to WS in all

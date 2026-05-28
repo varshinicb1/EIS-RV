@@ -501,7 +501,7 @@ async def startup_event():
     anomaly_ok  = load_anomaly_detector()
     logger.info(
         "ML models: single=%s  ensemble=%s  anomaly=%s",
-        "✓" if single_ok else "✗",
-        "✓" if ensemble_ok else "✗",
-        "✓" if anomaly_ok else "✗",
+        "OK" if single_ok else "FAIL",
+        "OK" if ensemble_ok else "FAIL",
+        "OK" if anomaly_ok else "FAIL",
     )

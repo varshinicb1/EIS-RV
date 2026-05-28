@@ -80,7 +80,7 @@ class GDriveFetcher(BaseFetcher):
     def source_name(self) -> str:
         return self.SOURCE
 
-    def search(self, query: str = "", max_results: int = 500) -> List[PaperRecord]:
+    def search(self, query: str = "", max_results: int = 500, progress_callback=None, batch_callback=None, batch_size: int = 5) -> List[PaperRecord]:
         from src.backend.integrations.gdrive_client import list_files_in_folder, download_file_bytes
         from src.backend.research.docling_parser import parse_document
 
@@ -94,11 +94,15 @@ class GDriveFetcher(BaseFetcher):
         processed = 0
         skipped = 0
 
-        for f in files[:max_results]:
+        total_files = len(files[:max_results])
+        for idx, f in enumerate(files[:max_results]):
             file_id = f["id"]
             filename = f["name"]
             mime = f["mimeType"]
             mod_time = f.get("modifiedTime", "")
+
+            if progress_callback:
+                progress_callback(processed, skipped, total_files, filename)
 
             if not self.force_reprocess and self.ledger.seen(file_id, mod_time):
                 skipped += 1
@@ -135,6 +139,7 @@ class GDriveFetcher(BaseFetcher):
                 record._full_text = parsed.full_text
                 record._sections = parsed.sections
                 record._tables = parsed.tables
+                record._figures = parsed.figures
                 record._parser_used = parsed.parser_used
                 record._drive_file_id = file_id
                 record._drive_filename = filename
@@ -144,13 +149,23 @@ class GDriveFetcher(BaseFetcher):
                 records.append(record)
                 processed += 1
                 logger.info(
-                    "Drive [%s]: '%s' — %d chars, %d tables, %d pages",
+                    "Drive [%s]: '%s' — %d chars, %d tables, %d figures, %d pages",
                     parsed.parser_used, filename[:60],
-                    len(parsed.full_text), len(parsed.tables), parsed.page_count,
+                    len(parsed.full_text), len(parsed.tables), len(parsed.figures), parsed.page_count,
                 )
+
+                # Trigger batch callback if enough papers accumulated
+                if batch_callback and len(records) >= batch_size:
+                    batch_callback(records)
+                    records = []
 
             except Exception as e:
                 logger.warning("Drive: failed to process %s (%s): %s", filename, file_id, e)
+
+        # Final batch
+        if records and batch_callback:
+            batch_callback(records)
+            records = []
 
         logger.info("Drive sync: %d new, %d already seen", processed, skipped)
         return records

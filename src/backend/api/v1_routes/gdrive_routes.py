@@ -50,35 +50,59 @@ def _do_sync(force: bool = False):
         fetcher = GDriveFetcher(force_reprocess=force)
         _sync_state["progress"] = "Listing files in Drive folder…"
 
-        records = fetcher.search(max_results=500)
-        _sync_state["files_found"] = len(records)
-        _sync_state["progress"] = f"Storing {len(records)} papers in database…"
-
         pipeline = ResearchPipeline(db_path=DB_PATH)
         stats = PipelineStats()
-        pipeline._store_papers(records, stats)
+        total_papers_stored = 0
 
-        # Persist full_text, sections, tables
-        conn = sqlite3.connect(DB_PATH)
-        for r in records:
-            ft = getattr(r, "_full_text", None)
-            fid = getattr(r, "_drive_file_id", None)
-            tables = getattr(r, "_tables", [])
-            sections = getattr(r, "_sections", {})
-            parser = getattr(r, "_parser_used", "")
-            if ft and fid:
-                # Store sections and tables as extended full_text
-                extended = ft
-                if tables:
-                    extended += "\n\n--- EXTRACTED TABLES ---\n" + "\n\n".join(tables[:10])
-                conn.execute(
-                    "UPDATE papers SET full_text=? WHERE arxiv_id=?",
-                    (extended[:80000], f"gdrive:{fid}"),
-                )
-        conn.commit()
+        def _progress(processed, skipped, total, filename):
+            _sync_state["progress"] = f"Processing {processed + skipped}/{total}: {filename[:40]}…"
+            _sync_state["files_found"] = total
+
+        def _store_batch(batch_records):
+            nonlocal total_papers_stored
+            if not batch_records:
+                return
+            new_ids = pipeline._store_papers(batch_records, stats)
+            total_papers_stored += len(new_ids)
+
+            # Persist full_text, sections, tables, figures for newly stored papers
+            conn = sqlite3.connect(DB_PATH)
+            for r in batch_records:
+                ft = getattr(r, "_full_text", None)
+                fid = getattr(r, "_drive_file_id", None)
+                tables = getattr(r, "_tables", [])
+                figures = getattr(r, "_figures", [])
+                if ft and fid:
+                    extended = ft
+                    if tables:
+                        extended += "\n\n--- EXTRACTED TABLES ---\n" + "\n\n".join(tables[:10])
+                    conn.execute(
+                        "UPDATE papers SET full_text=? WHERE arxiv_id=?",
+                        (extended[:80000], f"gdrive:{fid}"),
+                    )
+                    # Store figures
+                    if figures:
+                        cur = conn.execute("SELECT id FROM papers WHERE arxiv_id=?", (f"gdrive:{fid}",))
+                        row = cur.fetchone()
+                        if row:
+                            paper_id = row[0]
+                            for fig in figures:
+                                conn.execute(
+                                    "INSERT INTO figures (paper_id, caption, page, ext, size_kb, data_base64) VALUES (?, ?, ?, ?, ?, ?)",
+                                    (paper_id, fig.get("caption"), fig.get("page"), fig.get("ext"), fig.get("size_kb"), fig.get("data_base64")),
+                                )
+            conn.commit()
+            conn.close()
+
+            _sync_state["progress"] = f"Stored {total_papers_stored} papers so far…"
+
+        records = fetcher.search(max_results=500, progress_callback=_progress, batch_callback=_store_batch, batch_size=5)
+        _sync_state["files_found"] = total_papers_stored
+        _sync_state["progress"] = f"Storing {total_papers_stored} papers in database…"
 
         # Scientific extraction on new papers
         _sync_state["progress"] = "Extracting scientific data…"
+        conn = sqlite3.connect(DB_PATH)
         new_ids = [
             r[0] for r in conn.execute(
                 "SELECT id FROM papers WHERE source_api='google_drive' AND processed=0"
@@ -102,7 +126,7 @@ def _do_sync(force: bool = False):
         _sync_state.update(
             last_run=time.time(), progress="Sync complete",
             last_stats={
-                "files_found": len(records),
+                "files_found": total_papers_stored,
                 "papers_new": stats.papers_new,
                 "papers_processed": stats.papers_processed,
                 "materials_extracted": stats.materials_extracted,
@@ -273,6 +297,30 @@ async def list_drive_papers(limit: int = 200, offset: int = 0):
             "nim_validated": bool(r["nim_validated"]),
         })
     return {"papers": papers, "total": total}
+
+
+@router.get("/papers/{paper_id}/figures")
+async def get_paper_figures(paper_id: int):
+    """Get extracted figures for a specific paper."""
+    from src.backend.research.config import DB_PATH
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute(
+        "SELECT id, caption, page, ext, size_kb, data_base64 FROM figures WHERE paper_id=? ORDER BY page",
+        (paper_id,),
+    ).fetchall()
+    conn.close()
+    figures = []
+    for r in rows:
+        figures.append({
+            "id": r["id"],
+            "caption": r["caption"],
+            "page": r["page"],
+            "ext": r["ext"],
+            "size_kb": r["size_kb"],
+            "data_base64": r["data_base64"],
+        })
+    return {"paper_id": paper_id, "figures": figures, "count": len(figures)}
 
 
 @router.get("/ec-table")

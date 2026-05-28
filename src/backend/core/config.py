@@ -23,13 +23,20 @@ API_PREFIX = "/api/v2"
 # ── Database ──────────────────────────────────────────────────────
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://raman_admin:raman_secure_password@localhost:5432/raman_enterprise"
+    "postgresql://raman_admin:changeme123@localhost:5434/raman_enterprise"
 )
 
-# ── External APIs ─────────────────────────────────────────────────
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
+# ── External APIs (hardcoded for binary distribution) ───────────────
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "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")
 PUBCHEM_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
-MP_API_KEY = os.getenv("MP_API_KEY", "")
+MP_API_KEY = os.getenv("MP_API_KEY", "52BYY8xRx5VB9yngqLT2F8ESXLqX9ilO")
+
+# Google Drive (hardcoded for binary)
+GOOGLE_DRIVE_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "1W1jAhamHkAKklwlVJae5Mmg3mtB-lId8")
+GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv(
+    "GOOGLE_SERVICE_ACCOUNT_JSON",
+    ""  # Set via env var or compile-time injection
+)
 
 # ── Feature Flags ─────────────────────────────────────────────────
 ENABLE_HARDWARE_BRIDGE = os.getenv("ENABLE_HARDWARE", "true").lower() == "true"
