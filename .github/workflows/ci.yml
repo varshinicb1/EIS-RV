@@ -65,34 +65,45 @@ jobs:
           path: coverage.xml
           retention-days: 14
 
-  cpp-build:
-    name: C++ engine
-    runs-on: ubuntu-latest
+  rust-build:
+    name: Rust engine
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install C++ deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake g++ libeigen3-dev pybind11-dev
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
 
-      - name: Configure & build
-        run: |
-          cd engine_core
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DRAMAN_BUILD_TESTS=ON
-          cmake --build . -j$(nproc)
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: engine_core/raman_core_rs
 
-      - name: Run C++ unit tests
-        run: |
-          cd engine_core/build
-          ctest --output-on-failure
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-      - name: Verify Python bindings import
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build Rust extension
         run: |
-          cd engine_core/build
-          python3 -c "import raman_core; print(f'{len([x for x in dir(raman_core) if not x.startswith(\"_\")])} exports OK')"
+          cd engine_core/raman_core_rs
+          maturin build --release
+
+      - name: Install wheel and verify import
+        run: |
+          pip install engine_core/raman_core_rs/target/wheels/*.whl --no-deps
+          python -c "import raman_core_rs; print(f'raman_core_rs v{raman_core_rs.__version__} loaded OK')"
+
+      - name: Run Rust unit tests
+        run: |
+          cd engine_core/raman_core_rs
+          cargo test --release
 
   frontend:
     name: Frontend build + test
@@ -165,7 +176,7 @@ jobs:
   docker:
     name: Docker image
     runs-on: ubuntu-latest
-    needs: [python-test, cpp-build, frontend, lint]
+    needs: [python-test, rust-build, frontend, lint]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
       - uses: actions/checkout@v4

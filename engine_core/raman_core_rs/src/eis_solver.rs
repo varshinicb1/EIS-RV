@@ -2,7 +2,7 @@ use crate::types::*;
 use num_complex::Complex64;
 use ndarray::Array1;
 
-fn warburg_semi_infinite(omega: f64, sigma_w: f64) -> Complex64 {
+pub fn warburg_semi_infinite(omega: f64, sigma_w: f64) -> Complex64 {
     if sigma_w < 1e-6 || omega < 1e-12 {
         return Complex64::new(0.0, 0.0);
     }
@@ -10,7 +10,7 @@ fn warburg_semi_infinite(omega: f64, sigma_w: f64) -> Complex64 {
     Complex64::new(sigma_w / sqrt_omega, -sigma_w / sqrt_omega)
 }
 
-fn warburg_bounded(omega: f64, sigma_w: f64, L_um: f64, D_cm2s: f64) -> Complex64 {
+pub fn warburg_bounded(omega: f64, sigma_w: f64, L_um: f64, D_cm2s: f64) -> Complex64 {
     if sigma_w < 1e-6 || omega < 1e-12 {
         return Complex64::new(0.0, 0.0);
     }

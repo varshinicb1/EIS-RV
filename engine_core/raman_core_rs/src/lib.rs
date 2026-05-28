@@ -1,9 +1,9 @@
-mod types;
-mod eis_solver;
-mod cv_solver;
-mod circuit_fitter;
-mod drt_solver;
-mod diffusion_solver;
+pub mod types;
+pub mod eis_solver;
+pub mod cv_solver;
+pub mod circuit_fitter;
+pub mod drt_solver;
+pub mod diffusion_solver;
 
 use pyo3::prelude::*;
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1};

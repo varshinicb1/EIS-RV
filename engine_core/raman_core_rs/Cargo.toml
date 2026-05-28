@@ -5,7 +5,7 @@ edition = "2021"
 
 [lib]
 name = "raman_core_rs"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 ndarray = "0.16"
@@ -14,3 +14,7 @@ numpy = "0.24"
 pyo3 = { version = "0.24", features = ["extension-module"] }
 rayon = "1.10"
 
+
+[dev-dependencies]
+ndarray = "0.16"
+num-complex = "0.4"

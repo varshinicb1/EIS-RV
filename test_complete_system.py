@@ -6,7 +6,7 @@ Tests all major components working together:
 - Capacitance calculation from CV data
 - CV simulation with automatic capacitance
 - Material identification
-- NiMn₂O₄ integration
+- NiMn2O4 integration
 
 Author: VidyuthLabs
 Date: May 13, 2026
@@ -34,7 +34,7 @@ def test_enhanced_materials_database():
         data = response.json()
         materials = data['materials']
         
-        print(f"✅ Loaded {data['total']} materials")
+        print(f"[PASS] Loaded {data['total']} materials")
         
         # Check for enhanced properties
         enhanced_count = 0
@@ -43,12 +43,12 @@ def test_enhanced_materials_database():
             # Try to get enhanced data from the full database
             if 'Graphene' in name or 'MXene' in name or 'PANI' in name:
                 enhanced_count += 1
-                print(f"   ✅ {name} (enhanced)")
+                print(f"   [PASS] {name} (enhanced)")
         
         print(f"\n   Enhanced materials: {enhanced_count}")
         return True
     else:
-        print(f"❌ Failed: {response.status_code}")
+        print(f"[FAIL] Failed: {response.status_code}")
         return False
 
 
@@ -62,7 +62,7 @@ def test_capacitance_equations():
         data = response.json()
         equations = data['equations']
         
-        print(f"✅ Retrieved {len(equations)} equations")
+        print(f"[PASS] Retrieved {len(equations)} equations")
         print(f"   - Gravimetric: {equations['gravimetric_specific_capacitance']['formula']}")
         print(f"   - Energy: {equations['energy_density']['formula']}")
         print(f"   - Power: {equations['power_density']['formula']}")
@@ -74,7 +74,7 @@ def test_capacitance_equations():
         
         return True
     else:
-        print(f"❌ Failed: {response.status_code}")
+        print(f"[FAIL] Failed: {response.status_code}")
         return False
 
 
@@ -97,27 +97,27 @@ def test_cv_simulation_with_capacitance():
         result = response.json()
         analysis = result.get('analysis', {})
         
-        print(f"✅ CV simulation successful")
+        print(f"[PASS] CV simulation successful")
         print(f"   Peak current (anodic): {analysis.get('i_pa_mA', 0):.4f} mA")
         print(f"   Peak current (cathodic): {analysis.get('i_pc_mA', 0):.4f} mA")
         print(f"   Peak separation: {analysis.get('delta_Ep_mV', 0):.2f} mV")
         
         cap = analysis.get('specific_capacitance_F_g')
         if cap:
-            print(f"   ✅ Specific capacitance: {cap:.2f} F/g")
+            print(f"   [PASS] Specific capacitance: {cap:.2f} F/g")
         else:
-            print(f"   ⚠️  Capacitance not calculated (may need backend update)")
+            print(f"   [WARN]  Capacitance not calculated (may need backend update)")
         
         return True
     else:
-        print(f"❌ Failed: {response.status_code}")
+        print(f"[FAIL] Failed: {response.status_code}")
         print(response.text)
         return False
 
 
 def test_nimn2o4_availability():
-    """Test 4: NiMn₂O₄ availability in database."""
-    print_header("Test 4: NiMn₂O₄ Availability")
+    """Test 4: NiMn2O4 availability in database."""
+    print_header("Test 4: NiMn2O4 Availability")
     
     response = requests.get(f"{API_BASE}/api/v2/material-id/materials")
     
@@ -127,21 +127,21 @@ def test_nimn2o4_availability():
         nimn2o4 = next((m for m in materials if 'NiMn' in m['name']), None)
         
         if nimn2o4:
-            print(f"✅ NiMn₂O₄ found in database")
+            print(f"[PASS] NiMn2O4 found in database")
             print(f"   Name: {nimn2o4['name']}")
             print(f"   Category: {nimn2o4.get('category', 'N/A')}")
             return True
         else:
-            print(f"❌ NiMn₂O₄ not found")
+            print(f"[FAIL] NiMn2O4 not found")
             return False
     else:
-        print(f"❌ Failed: {response.status_code}")
+        print(f"[FAIL] Failed: {response.status_code}")
         return False
 
 
 def test_biosensor_simulation():
-    """Test 5: Biosensor simulation with NiMn₂O₄."""
-    print_header("Test 5: Biosensor Simulation (NiMn₂O₄)")
+    """Test 5: Biosensor simulation with NiMn2O4."""
+    print_header("Test 5: Biosensor Simulation (NiMn2O4)")
     
     response = requests.post(
         f"{API_BASE}/api/v1/biosensor/simulate",
@@ -158,7 +158,7 @@ def test_biosensor_simulation():
     if response.status_code == 200:
         result = response.json()
         
-        print(f"✅ Biosensor simulation successful")
+        print(f"[PASS] Biosensor simulation successful")
         print(f"   Sensitivity: {result.get('sensitivity', 0):.4f} μA/mM/cm²")
         print(f"   LOD: {result.get('lod', 0):.2e} M")
         print(f"   Response time: {result.get('response_time', 0):.2f} s")
@@ -173,7 +173,7 @@ def test_biosensor_simulation():
         
         return True
     else:
-        print(f"❌ Failed: {response.status_code}")
+        print(f"[FAIL] Failed: {response.status_code}")
         print(response.text)
         return False
 
@@ -188,7 +188,7 @@ def test_best_practices():
         data = response.json()
         bp = data['best_practices']
         
-        print(f"✅ Best practices retrieved")
+        print(f"[PASS] Best practices retrieved")
         print(f"   Scan rate: {bp['scan_rate']['recommendation']}")
         print(f"   Potential window (aqueous): {bp['potential_window']['aqueous']}")
         print(f"   Potential window (organic): {bp['potential_window']['organic']}")
@@ -199,7 +199,7 @@ def test_best_practices():
         
         return True
     else:
-        print(f"❌ Failed: {response.status_code}")
+        print(f"[FAIL] Failed: {response.status_code}")
         return False
 
 
@@ -212,7 +212,7 @@ def test_system_status():
     
     if response1.status_code == 200:
         status = response1.json()
-        print(f"✅ Material identification system")
+        print(f"[PASS] Material identification system")
         print(f"   ML model trained: {status.get('ml_model_trained', False)}")
         print(f"   Materials in database: {status.get('n_materials', 0)}")
         print(f"   RDKit available: {status.get('rdkit_available', False)}")
@@ -221,9 +221,9 @@ def test_system_status():
     try:
         response2 = requests.get(f"{API_BASE}/api/health")
         if response2.status_code == 200:
-            print(f"\n✅ Backend health check passed")
+            print(f"\n[PASS] Backend health check passed")
     except:
-        print(f"\n⚠️  Health endpoint not available")
+        print(f"\n[WARN]  Health endpoint not available")
     
     return True
 
@@ -237,7 +237,7 @@ def main():
     print("- Enhanced materials database")
     print("- Capacitance calculation system")
     print("- CV simulation with capacitance")
-    print("- NiMn₂O₄ integration")
+    print("- NiMn2O4 integration")
     print("- Biosensor simulation")
     print("- Best practices documentation")
     
@@ -245,7 +245,7 @@ def main():
         ("Enhanced Materials Database", test_enhanced_materials_database),
         ("Capacitance Equations", test_capacitance_equations),
         ("CV Simulation + Capacitance", test_cv_simulation_with_capacitance),
-        ("NiMn₂O₄ Availability", test_nimn2o4_availability),
+        ("NiMn2O4 Availability", test_nimn2o4_availability),
         ("Biosensor Simulation", test_biosensor_simulation),
         ("Best Practices", test_best_practices),
         ("System Status", test_system_status),
@@ -257,7 +257,7 @@ def main():
             result = test_func()
             results.append((name, result))
         except Exception as e:
-            print(f"❌ Test failed with exception: {e}")
+            print(f"[FAIL] Test failed with exception: {e}")
             results.append((name, False))
     
     # Summary
@@ -266,17 +266,19 @@ def main():
     total = len(results)
     
     for name, result in results:
-        status = "✅ PASSED" if result else "❌ FAILED"
+        status = "[PASS] PASSED" if result else "[FAIL] FAILED"
         print(f"{status}: {name}")
     
     print(f"\nTests passed: {passed}/{total} ({passed/total*100:.0f}%)")
     
     if passed == total:
-        print("\n✅ ALL TESTS PASSED!")
+        print("\n[PASS] ALL TESTS PASSED!")
         print("\n🎉 SYSTEM FULLY OPERATIONAL!")
     else:
-        print(f"\n⚠️  {total - passed} test(s) need attention")
+        print(f"\n[WARN]  {total - passed} test(s) need attention")
 
 
 if __name__ == "__main__":
     main()
+
+

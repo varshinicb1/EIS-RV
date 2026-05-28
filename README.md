@@ -30,8 +30,9 @@ The licensing system is being rebuilt; see [Roadmap](#roadmap).
   `src/frontend/`.
 - **Local backend**: FastAPI + Uvicorn, spawned by Electron as a sidecar
   process. Source under `src/backend/`.
-- **Physics engine**: C++ library (`engine_core/`) exposing EIS, CV, DRT, and a
-  circuit fitter to Python via pybind11. Eigen + OpenMP, no CUDA.
+- **Physics engine**: Rust library (`engine_core/raman_core_rs/`) exposing EIS, CV,
+  DRT, diffusion, and a circuit fitter to Python via PyO3 + numpy. Replaces the
+  previous C++ / pybind11 implementation.
 - **AI agent (optional)**: A locally-hosted Qwen-1.5-1.8B chat model with a
   LoRA adapter trained on electrochemistry Q&A. Lives in `src/ai_engine/`.
   Uses NVIDIA NIM only when the user supplies their own API key — see
@@ -46,11 +47,11 @@ The licensing system is being rebuilt; see [Roadmap](#roadmap).
 
 | Area | Status |
 |---|---|
-| EIS simulation (Randles + CPE, Warburg) | Implemented in C++, validated within ±10–15% on the included test cases |
-| CV simulation (Butler–Volmer + Nicholson semi-integral) | Implemented in C++; known issue with `Rs_ohm` not yet wired through |
+| EIS simulation (Randles + CPE, Warburg) | Implemented in Rust, validated within ±10–15% on the included test cases |
+| CV simulation (Butler–Volmer + Nicholson semi-integral) | Implemented in Rust; known issue with `Rs_ohm` not yet wired through |
 | GCD simulation | Implemented in Python (`vanl/`) |
-| DRT analysis (Tikhonov regularisation) | Implemented in C++; uses projected gradient, not Lawson–Hanson NNLS |
-| Circuit fitting (Levenberg–Marquardt) | Implemented in C++; numerical Jacobian |
+| DRT analysis (Tikhonov regularisation) | Implemented in Rust; uses projected gradient, not Lawson–Hanson NNLS |
+| Circuit fitting (Levenberg–Marquardt) | Implemented in Rust; numerical Jacobian |
 | **Raman spectroscopy analysis** | **NEW: Full analysis pipeline with airPLS baseline, peak detection, material ID** |
 | File-based project save/load | Plaintext JSON today; encrypted format planned |
 | AnalyteX CSV / JSON import | Works |
@@ -70,7 +71,7 @@ them yet.
 - **NVIDIA NIM integration** is not active in any default configuration.
   Earlier code targeted endpoints that don't exist on `integrate.api.nvidia.com`;
   that is being rewritten to use the OpenAI-compatible chat-completions API.
-- **The C++ engine ships only EIS, CV, DRT, and a circuit fitter.** DPV,
+- **The Rust engine ships EIS, CV, DRT, diffusion, and a circuit fitter.** DPV,
   supercapacitor (EDLC + pseudocap), single-particle battery, and biosensor
   engines mentioned in earlier docs are **not** in `engine_core/` yet.
 - **The frontend renderer port is being unified.** Earlier builds had the
@@ -93,8 +94,11 @@ python3.12 -m venv .venv
 source .venv/bin/activate              # Windows: .venv\Scripts\activate
 pip install -r vanl/requirements.txt   # consolidated requirements file is on the way
 
-# C++ engine
-python3 scripts/build_cpp.py --test
+# Rust engine
+cd engine_core/raman_core_rs
+pip install maturin
+maturin develop --release
+cd ../..
 
 # Desktop shell
 cd src/frontend && npm install && cd -
@@ -155,13 +159,14 @@ src/
 ├── desktop/          Electron main + preload
 └── ai_engine/        Local Qwen + LoRA agent, NVIDIA NIM client (being rewritten)
 
-engine_core/          C++ physics library (Eigen + OpenMP, pybind11 bindings)
+engine_core/          Rust physics library (ndarray + num-complex, PyO3 bindings)
+                      C++ source kept under engine_core/src/ for reference
 
 vanl/                 Older Python backend; physics engines + research pipeline.
                       Being folded into src/ over time.
 
 tests/                Unit + integration tests (rewrite in progress)
-scripts/              Build helpers (C++, Electron, Nuitka)
+scripts/              Build helpers (Rust, Electron, Nuitka)
 docs/                 Research papers and (eventually) user guide
 ```
 

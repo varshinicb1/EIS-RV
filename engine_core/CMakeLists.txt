@@ -1,3 +1,6 @@
+# DEPRECATED: C++ engine is superseded by Rust engine (raman_core_rs)
+# See engine_core/raman_core_rs/ for the active implementation.
+# This CMake build is kept for reference and benchmarking only.
 cmake_minimum_required(VERSION 3.18)
 project(raman_core VERSION 2.0.0 LANGUAGES CXX)
 

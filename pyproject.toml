@@ -1,3 +1,7 @@
+[build-system]
+requires = ["maturin>=1.0"]
+build-backend = "maturin"
+
 [tool.pytest.ini_options]
 # Make ``import src.backend...`` work without installing the package.
 # Tests live alongside source so we add the repo root to sys.path.
@@ -22,7 +26,7 @@ filterwarnings = [
 line-length = 120
 target-version = "py311"
 extend-exclude = [
-    "engine_core/build",
+    "engine_core/raman_core_rs/target",
     "build",
     "dist-electron",
     "node_modules",

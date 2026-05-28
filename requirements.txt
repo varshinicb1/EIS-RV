@@ -2,6 +2,9 @@
 # Install via: pip install -r requirements.txt
 # Generated from working environment on 2026-05-08.
 
+# Rust extension build tool
+maturin==1.13.3
+
 # Numerical Computing
 numpy==2.4.4
 
@@ -59,12 +62,12 @@ requests==2.33.1
 python-dotenv==1.2.2
 
 # PyTorch (Required for ML features)
-torch==2.6.0
-torchvision==0.21.0
+torch>=2.9.0
+torchvision>=0.20.0
 
 # Scientific Data & Plotting
 galvani==0.4.1
-duckdb==0.10.1
+duckdb>=0.10.0
 matplotlib==3.8.4
 seaborn==0.13.2
 tqdm==4.66.2
@@ -81,3 +84,9 @@ tqdm==4.66.2
 #
 # WEI (Workflow Execution Interface)
 # ad_sdl.wei>=1.0.0
+
+# Autonomous Literature Intelligence System
+qdrant-client>=1.7.0
+sentence-transformers>=2.2.0
+neo4j>=5.14.0
+opencv-python>=4.8.0
