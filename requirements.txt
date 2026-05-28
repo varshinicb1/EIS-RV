@@ -59,11 +59,11 @@ requests==2.33.1
 python-dotenv==1.2.2
 
 # PyTorch (Required for ML features)
-torch==2.11.0
-torchvision==0.16.0
+torch==2.6.0
+torchvision==0.21.0
 
 # Scientific Data & Plotting
-galvani==0.4.0
+galvani==0.4.1
 duckdb==0.10.1
 matplotlib==3.8.4
 seaborn==0.13.2
