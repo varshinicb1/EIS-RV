@@ -253,6 +253,14 @@ try:
 except ImportError as e:
     logger.warning("Brain routes unavailable: %s", e)
 
+# Google Drive Integration + EC Sensor Literature Review
+try:
+    from src.backend.api.v1_routes.gdrive_routes import router as gdrive_router
+    app.include_router(gdrive_router)
+    logger.info("Google Drive integration registered (bidirectional sync + EC literature review)")
+except ImportError as e:
+    logger.warning("Google Drive routes unavailable: %s", e)
+
 @app.websocket("/api/v2/ws/telemetry")
 async def websocket_telemetry(websocket: WebSocket):
     # License gate — FastAPI's Depends() doesn't apply uniformly to WS in all

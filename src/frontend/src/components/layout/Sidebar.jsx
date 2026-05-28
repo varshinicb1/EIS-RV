@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Atom, Microscope, BookOpen, Activity, Zap,
   Battery, Timer, BarChart2, Cpu, Database, ArrowUpToLine,
   FolderKanban, FileText, UserCircle, Calculator, CheckCircle2, Wand2,
-  ChevronLeft, ChevronRight, Layers, FlaskConical, Flame, Network,
+  ChevronLeft, ChevronRight, Layers, FlaskConical, Flame, Network, CloudDownload,
 } from 'lucide-react';
 import Logo, { BrandMark } from '../brand/Logo';
 
@@ -26,6 +26,7 @@ const ICONS = {
   lab_brain: Network,
   biosensor: Microscope,
   literature: BookOpen,
+  gdrive: CloudDownload,
   eis: Activity,
   cv: Zap,
   battery: Battery,
@@ -50,7 +51,7 @@ const ICONS = {
 };
 
 const GROUPS = [
-  { label: 'Intelligence',     keys: ['alchemist_canvas', 'alchemi', 'hydrothermal', 'lab_brain', 'literature'] },
+  { label: 'Intelligence',     keys: ['alchemist_canvas', 'alchemi', 'hydrothermal', 'lab_brain', 'literature', 'gdrive'] },
   { label: 'Analysis',         keys: ['dashboard', 'advanced_analysis', 'eis', 'cv', 'drt', 'circuit', 'unified_spectroscopy'] },
   { label: 'Applied systems',  keys: ['battery', 'biosensor', 'gcd'] },
   { label: 'Materials',        keys: ['materials', 'discovery', 'identify'] },
