@@ -1,0 +1,59 @@
+# RĀMAN Studio — pre-commit hooks
+#
+# Install once per checkout:   pip install pre-commit && pre-commit install
+# Run on staged files:         pre-commit run
+# Run on all files:            pre-commit run --all-files
+#
+# These hooks are also run as part of `make check` if a Makefile is added,
+# and they double as a safety net before the GitHub Actions CI starts.
+
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '^(engine_core/build/|build/|dist-electron/|node_modules/|src/frontend/node_modules/)'
+      - id: end-of-file-fixer
+        exclude: '^(engine_core/build/|build/|dist-electron/|node_modules/|src/frontend/node_modules/)'
+      - id: check-merge-conflict
+      - id: check-yaml
+        exclude: '^(\.github/workflows/)'  # GH Actions yaml uses on:/syntax our checker chokes on; let actionlint handle
+      - id: check-json
+        exclude: '^(node_modules/|src/frontend/node_modules/)'
+      - id: check-added-large-files
+        args: ['--maxkb=2048']
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.4
+    hooks:
+      - id: ruff
+        args: ['--fix', '--exit-non-zero-on-fix', '--ignore=E501']
+        files: '^(src/|tests/|scripts/).*\.py$'
+
+  - repo: https://github.com/python-poetry/poetry
+    rev: '1.8.4'
+    hooks: []
+
+  # Python AST sanity — fast catch of syntax errors before they hit CI.
+  - repo: local
+    hooks:
+      - id: python-ast-check
+        name: python ast parse
+        entry: python -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]'
+        language: system
+        files: '^(src/|tests/|scripts/).*\.py$'
+        pass_filenames: true
+
+      - id: no-print-in-library-code
+        name: forbid library print() (use logger)
+        entry: bash -c 'set -e; for f in "$@"; do if grep -nE "^[^#]*\bprint\(" "$f" | grep -vE "if __name__|def quick_test|def quick_drt_test"; then echo "Library code in $f has print() calls — use logger.info/warning/exception instead." >&2; exit 1; fi; done'
+        language: system
+        files: '^src/backend/(?!api/v1_routes/agent_routes\.py$).*\.py$'
+        exclude: '__main__|main\.py|scheduler\.py|gpu_manager\.py'
+        pass_filenames: true

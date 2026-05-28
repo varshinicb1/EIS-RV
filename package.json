@@ -1,0 +1,155 @@
+{
+  "name": "raman-studio",
+  "productName": "RĀMAN Studio",
+  "version": "2.1.0",
+  "description": "Desktop electrochemical analysis — EIS, CV, GCD, supercapacitor — by VidyuthLabs",
+  "main": "src/desktop/main.js",
+  "author": {
+    "name": "VidyuthLabs",
+    "email": "support@vidyuthlabs.co.in",
+    "url": "https://vidyuthlabs.co.in"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "prebuild": "cd src/frontend && (npm ci --legacy-peer-deps --ignore-scripts || npm install --legacy-peer-deps) && npm run build",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:mac": "electron-builder --mac",
+    "build:all": "electron-builder --win --linux --mac",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "release": "electron-builder --publish always",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^32.2.7",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.vidyuthlabs.raman.studio",
+    "productName": "RĀMAN Studio",
+    "copyright": "Copyright © 2026 VidyuthLabs",
+    "directories": {
+      "output": "dist-electron",
+      "buildResources": "resources"
+    },
+    "files": [
+      "src/**/*",
+      "build/renderer/**/*",
+      "engine_core/build/**/*",
+      "engine_core/include/**/*",
+      "requirements.txt",
+      "!**/*.pyc",
+      "!**/__pycache__",
+      "!**/.git",
+      "!**/.venv",
+      "!**/.venv313",
+      "!**/.venv_new",
+      "!**/.history",
+      "!**/.pytest_cache",
+      "!**/node_modules/.cache",
+      "!**/tests",
+      "!**/dev_tools",
+      "!**/docs",
+      "!**/EIS-RV"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/backend",
+        "to": "backend",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "resources",
+        "to": "resources",
+        "filter": ["**/*", "!backend"]
+      }
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "artifactName": "${productName}-${version}-Setup.${ext}",
+      "publisherName": "VidyuthLabs",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RĀMAN Studio",
+      "license": "LICENSE"
+    },
+    "msi": {
+      "oneClick": false,
+      "perMachine": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RĀMAN Studio"
+    },
+    "linux": {
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb",      "arch": ["x64"] }
+      ],
+      "icon": "resources/icons/icon.png",
+      "category": "Science",
+      "synopsis": "Desktop electrochemical analysis (EIS, CV, GCD)",
+      "description": "Desktop companion for VidyuthLabs AnalyteX devices.",
+      "desktop": {
+        "Name": "RĀMAN Studio",
+        "Comment": "Desktop companion for AnalyteX",
+        "Categories": "Science;Education;Engineering;"
+      }
+    },
+    "appImage": {
+      "license": "LICENSE_COMMERCIAL"
+    },
+    "deb": {
+      "depends": [
+        "libnotify4",
+        "libxtst6",
+        "libnss3"
+      ]
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ],
+      "icon": "resources/icons/icon.icns",
+      "category": "public.app-category.education",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "resources/entitlements.mac.plist",
+      "entitlementsInherit": "resources/entitlements.mac.plist",
+      "notarize": false
+    },
+    "dmg": {
+      "title": "RĀMAN Studio ${version}",
+      "icon": "resources/icons/icon.icns",
+      "background": null,
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "varshinicb1",
+        "repo": "EIS-RV",
+        "releaseType": "release"
+      }
+    ]
+  }
+}

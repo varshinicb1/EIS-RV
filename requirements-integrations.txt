@@ -1,0 +1,70 @@
+# RĀMAN Studio — External Integrations (Optional)
+# ================================================
+# Install these for advanced features:
+#   pip install -r requirements-integrations.txt
+#
+# All integrations are optional and fail gracefully if not installed.
+
+# ── RDKit (Cheminformatics) ─────────────────────────────────────
+# Molecular descriptors, fingerprints, similarity search
+# Install via conda (recommended):
+#   conda install -c conda-forge rdkit
+# Or via pip:
+rdkit>=2024.3.1
+
+# ── CAMD (Bayesian Optimization) ────────────────────────────────
+# Autonomous materials discovery with Bayesian optimization
+# Requires: numpy, scipy, scikit-learn (already in main requirements)
+camd>=2023.12.0
+
+# ── WEI (Workflow Execution Interface) ──────────────────────────
+# Autonomous lab workflow orchestration
+# Note: WEI integration works in REST mode without this package
+# Install for full WEI features:
+# ad_sdl.wei>=1.0.0
+
+# ── Electrochemical Impedance Spectroscopy ──────────────────────
+# Equivalent circuit fitting, Kramers–Kronig validation, and
+# impedance data preprocessing for EIS analysis.
+impedance>=1.7.0
+
+# ── Baseline Correction ────────────────────────────────────────
+# Automated baseline estimation and removal for Raman, IR, and
+# other spectroscopic data (ALS, SNIP, ModPoly, etc.).
+pybaselines>=1.0.0
+
+# ── Raman Spectroscopy Processing ──────────────────────────────
+# End-to-end Raman spectral analysis: cosmic-ray removal,
+# calibration, spectral decomposition, and database matching.
+ramanspy>=0.3.0
+
+# ── Battery Modelling ──────────────────────────────────────────
+# Physics-based lithium-ion battery models (SPM, DFN, etc.) for
+# simulating discharge/charge curves and degradation.
+pybamm>=24.1
+
+# ── Battery Observation & Parameterisation ─────────────────────
+# Bayesian parameter estimation for battery models: fits pybamm
+# models to experimental EIS/CV/GCD data.
+pybop>=24.3
+
+# ── Additional Dependencies for Full Integration ────────────────
+# These are pulled in by the above packages but listed for clarity
+
+# ── Voltammetry Modelling ──────────────────────────────────────
+# pyMECSim provides a Python interface to the MECSim Fortran engine
+# for simulating complex voltammetric reaction mechanisms.
+pymecsim>=1.0.0
+
+# ── DRT Analysis ───────────────────────────────────────────────
+# pyDRTtools implements Distribution of Relaxation Times (DRT)
+# analysis for complex impedance spectra.
+pyDRTtools>=1.0.0
+
+# CAMD dependencies (most already in main requirements)
+# qmpy-rester>=0.2.0  # Materials database access
+# matminer>=0.7.0     # Materials informatics
+
+# RDKit dependencies (handled by conda/pip)
+# pillow>=9.0.0       # Image processing
+# numpy>=1.21.0       # Already in main requirements

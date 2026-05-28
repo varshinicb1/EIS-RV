@@ -1,0 +1,851 @@
+{
+  "materials": [
+    {
+      "name": "Graphene",
+      "smiles": "C1=CC=CC=C1",
+      "category": "carbon_nanomaterial",
+      "properties": {
+        "conductivity": "high",
+        "capacitance_F_g": 250,
+        "surface_area_m2_g": 2630
+      },
+      "synthesis_route": "CVD growth on copper foil at 1000\u00c2\u00b0C with CH4/H2 gas mixture",
+      "features": {
+        "Rs": 8.5,
+        "Rct": 45.0,
+        "Cdl": 0.00025,
+        "warburg_coeff": 15.0
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          200,
+          300
+        ],
+        "typical_capacitance_F_g": 250,
+        "energy_density_Wh_kg": 85,
+        "power_density_W_kg": 100000,
+        "cycle_life": 100000
+      },
+      "economics": {
+        "cost_per_kg_usd": 100,
+        "cost_category": "medium"
+      },
+      "synthesis": {
+        "methods": [
+          "CVD",
+          "Mechanical exfoliation",
+          "Chemical reduction"
+        ],
+        "best_method": "CVD on copper foil"
+      },
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous",
+          "Organic",
+          "Ionic liquid"
+        ],
+        "potential_windows_V": {
+          "aqueous": 0.8,
+          "organic": 2.7,
+          "ionic_liquid": 3.5
+        }
+      },
+      "applications": [
+        "Supercapacitors",
+        "Batteries",
+        "Sensors",
+        "Composites"
+      ],
+      "advantages": [
+        "High conductivity",
+        "Large surface area",
+        "Excellent mechanical properties"
+      ],
+      "disadvantages": [
+        "Expensive",
+        "Difficult to process",
+        "Aggregation issues"
+      ],
+      "literature_references": [
+        "Zhu et al. (2011), Science, 332, 1537",
+        "El-Kady et al. (2012), Science, 335, 1326"
+      ]
+    },
+    {
+      "name": "Graphene Oxide",
+      "smiles": "C1(O)=C(O)C(O)=C(O)C(O)=C1O",
+      "category": "carbon_nanomaterial",
+      "properties": {
+        "conductivity": "medium",
+        "capacitance_F_g": 180,
+        "surface_area_m2_g": 800
+      },
+      "synthesis_route": "Hummers method: graphite + KMnO4 + H2SO4, then exfoliation",
+      "features": {
+        "Rs": 15.0,
+        "Rct": 120.0,
+        "Cdl": 0.00018,
+        "warburg_coeff": 45.0
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          200,
+          300
+        ],
+        "typical_capacitance_F_g": 250,
+        "energy_density_Wh_kg": 85,
+        "power_density_W_kg": 100000,
+        "cycle_life": 100000
+      },
+      "economics": {
+        "cost_per_kg_usd": 100,
+        "cost_category": "medium"
+      },
+      "synthesis": {
+        "methods": [
+          "CVD",
+          "Mechanical exfoliation",
+          "Chemical reduction"
+        ],
+        "best_method": "CVD on copper foil"
+      },
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous",
+          "Organic",
+          "Ionic liquid"
+        ],
+        "potential_windows_V": {
+          "aqueous": 0.8,
+          "organic": 2.7,
+          "ionic_liquid": 3.5
+        }
+      },
+      "applications": [
+        "Supercapacitors",
+        "Batteries",
+        "Sensors",
+        "Composites"
+      ],
+      "advantages": [
+        "High conductivity",
+        "Large surface area",
+        "Excellent mechanical properties"
+      ],
+      "disadvantages": [
+        "Expensive",
+        "Difficult to process",
+        "Aggregation issues"
+      ],
+      "literature_references": [
+        "Zhu et al. (2011), Science, 332, 1537",
+        "El-Kady et al. (2012), Science, 335, 1326"
+      ]
+    },
+    {
+      "name": "Reduced Graphene Oxide",
+      "smiles": "C1=C(O)C=CC(O)=C1",
+      "category": "carbon_nanomaterial",
+      "properties": {
+        "conductivity": "high",
+        "capacitance_F_g": 220,
+        "surface_area_m2_g": 1500
+      },
+      "synthesis_route": "Thermal reduction of GO at 200\u00c2\u00b0C or chemical reduction with hydrazine",
+      "features": {
+        "Rs": 10.0,
+        "Rct": 65.0,
+        "Cdl": 0.00022,
+        "warburg_coeff": 25.0
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          200,
+          300
+        ],
+        "typical_capacitance_F_g": 250,
+        "energy_density_Wh_kg": 85,
+        "power_density_W_kg": 100000,
+        "cycle_life": 100000
+      },
+      "economics": {
+        "cost_per_kg_usd": 100,
+        "cost_category": "medium"
+      },
+      "synthesis": {
+        "methods": [
+          "CVD",
+          "Mechanical exfoliation",
+          "Chemical reduction"
+        ],
+        "best_method": "CVD on copper foil"
+      },
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous",
+          "Organic",
+          "Ionic liquid"
+        ],
+        "potential_windows_V": {
+          "aqueous": 0.8,
+          "organic": 2.7,
+          "ionic_liquid": 3.5
+        }
+      },
+      "applications": [
+        "Supercapacitors",
+        "Batteries",
+        "Sensors",
+        "Composites"
+      ],
+      "advantages": [
+        "High conductivity",
+        "Large surface area",
+        "Excellent mechanical properties"
+      ],
+      "disadvantages": [
+        "Expensive",
+        "Difficult to process",
+        "Aggregation issues"
+      ],
+      "literature_references": [
+        "Zhu et al. (2011), Science, 332, 1537",
+        "El-Kady et al. (2012), Science, 335, 1326"
+      ]
+    },
+    {
+      "name": "Carbon Nanotubes (SWCNT)",
+      "smiles": "C1=CC=CC=C1",
+      "category": "carbon_nanomaterial",
+      "properties": {
+        "conductivity": "very_high",
+        "capacitance_F_g": 180,
+        "surface_area_m2_g": 1315
+      },
+      "synthesis_route": "Arc discharge or CVD with Fe/Co catalyst",
+      "features": {
+        "Rs": 7.0,
+        "Rct": 35.0,
+        "Cdl": 0.00018,
+        "warburg_coeff": 12.0
+      }
+    },
+    {
+      "name": "Carbon Nanotubes (MWCNT)",
+      "smiles": "C1=CC=CC=C1",
+      "category": "carbon_nanomaterial",
+      "properties": {
+        "conductivity": "high",
+        "capacitance_F_g": 150,
+        "surface_area_m2_g": 430
+      },
+      "synthesis_route": "CVD with Ni catalyst at 700\u00c2\u00b0C",
+      "features": {
+        "Rs": 9.0,
+        "Rct": 50.0,
+        "Cdl": 0.00015,
+        "warburg_coeff": 18.0
+      }
+    },
+    {
+      "name": "Activated Carbon",
+      "smiles": "C",
+      "category": "carbon_material",
+      "properties": {
+        "conductivity": "medium",
+        "capacitance_F_g": 200,
+        "surface_area_m2_g": 2000
+      },
+      "synthesis_route": "Carbonization of biomass at 800\u00c2\u00b0C + KOH activation",
+      "features": {
+        "Rs": 12.0,
+        "Rct": 80.0,
+        "Cdl": 0.0002,
+        "warburg_coeff": 35.0
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          150,
+          250
+        ],
+        "typical_capacitance_F_g": 200,
+        "energy_density_Wh_kg": 60,
+        "power_density_W_kg": 100000,
+        "cycle_life": 100000
+      },
+      "economics": {
+        "cost_per_kg_usd": 5,
+        "cost_category": "very_low"
+      },
+      "synthesis": {
+        "methods": [
+          "Physical activation",
+          "Chemical activation",
+          "Biomass carbonization"
+        ],
+        "best_method": "KOH activation at 800\u00b0C"
+      },
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous",
+          "Organic",
+          "Ionic liquid"
+        ],
+        "potential_windows_V": {
+          "aqueous": 1.0,
+          "organic": 2.7,
+          "ionic_liquid": 3.5
+        }
+      },
+      "applications": [
+        "Supercapacitors",
+        "Water purification",
+        "Gas storage"
+      ],
+      "advantages": [
+        "Very low cost",
+        "Abundant",
+        "High surface area",
+        "Excellent cycle life"
+      ],
+      "disadvantages": [
+        "Moderate capacitance",
+        "Pore size distribution issues"
+      ],
+      "literature_references": [
+        "Pandolfo & Hollenkamp (2006), J. Power Sources, 157, 11",
+        "Zhang & Zhao (2009), Chem. Soc. Rev., 38, 2520"
+      ]
+    },
+    {
+      "name": "MXene (Ti3C2Tx)",
+      "smiles": "[Ti]",
+      "category": "2d_material",
+      "properties": {
+        "conductivity": "very_high",
+        "capacitance_F_g": 380,
+        "surface_area_m2_g": 98
+      },
+      "synthesis_route": "Selective etching of Ti3AlC2 with HF",
+      "features": {
+        "Rs": 5.0,
+        "Rct": 25.0,
+        "Cdl": 0.00038,
+        "warburg_coeff": 8.0
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          300,
+          450
+        ],
+        "typical_capacitance_F_g": 380,
+        "energy_density_Wh_kg": 120,
+        "power_density_W_kg": 150000,
+        "cycle_life": 10000
+      },
+      "economics": {
+        "cost_per_kg_usd": 200,
+        "cost_category": "high"
+      },
+      "synthesis": {
+        "methods": [
+          "HF etching",
+          "LiF/HCl etching",
+          "Electrochemical etching"
+        ],
+        "best_method": "LiF/HCl etching of Ti3AlC2"
+      },
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous",
+          "Organic",
+          "Ionic liquid"
+        ],
+        "potential_windows_V": {
+          "aqueous": 1.2,
+          "organic": 3.0,
+          "ionic_liquid": 3.5
+        }
+      },
+      "applications": [
+        "Supercapacitors",
+        "Batteries",
+        "EMI shielding",
+        "Sensors"
+      ],
+      "advantages": [
+        "Very high capacitance",
+        "Excellent conductivity",
+        "Hydrophilic"
+      ],
+      "disadvantages": [
+        "Oxidation in air",
+        "Limited cycle life",
+        "Expensive"
+      ],
+      "literature_references": [
+        "Lukatskaya et al. (2013), Science, 341, 1502",
+        "Ghidiu et al. (2014), Nature, 516, 78"
+      ]
+    },
+    {
+      "name": "Polyaniline (PANI)",
+      "smiles": "C1=CC(N)=CC=C1",
+      "category": "conducting_polymer",
+      "properties": {
+        "conductivity": "medium",
+        "capacitance_F_g": 480,
+        "surface_area_m2_g": 50
+      },
+      "synthesis_route": "Oxidative polymerization of aniline with (NH4)2S2O8",
+      "features": {
+        "Rs": 18.0,
+        "Rct": 150.0,
+        "Cdl": 0.00048,
+        "warburg_coeff": 60.0
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          400,
+          550
+        ],
+        "typical_capacitance_F_g": 480,
+        "energy_density_Wh_kg": 150,
+        "power_density_W_kg": 50000,
+        "cycle_life": 5000
+      },
+      "economics": {
+        "cost_per_kg_usd": 20,
+        "cost_category": "low"
+      },
+      "synthesis": {
+        "methods": [
+          "Chemical polymerization",
+          "Electrochemical polymerization"
+        ],
+        "best_method": "Oxidative polymerization with (NH4)2S2O8"
+      },
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous acidic"
+        ],
+        "potential_windows_V": {
+          "aqueous": 0.8
+        }
+      },
+      "applications": [
+        "Supercapacitors",
+        "Batteries",
+        "Sensors",
+        "Corrosion protection"
+      ],
+      "advantages": [
+        "Very high capacitance",
+        "Low cost",
+        "Easy synthesis"
+      ],
+      "disadvantages": [
+        "Poor cycle life",
+        "Swelling/shrinking",
+        "Acidic electrolyte required"
+      ],
+      "literature_references": [
+        "Snook et al. (2011), J. Power Sources, 196, 1",
+        "Wang et al. (2013), Chem. Soc. Rev., 42, 3088"
+      ]
+    },
+    {
+      "name": "Polypyrrole (PPy)",
+      "smiles": "C1=CNC=C1",
+      "category": "conducting_polymer",
+      "properties": {
+        "conductivity": "medium",
+        "capacitance_F_g": 420,
+        "surface_area_m2_g": 45
+      },
+      "synthesis_route": "Electrochemical polymerization of pyrrole",
+      "features": {
+        "Rs": 20.0,
+        "Rct": 180.0,
+        "Cdl": 0.00042,
+        "warburg_coeff": 70.0
+      }
+    },
+    {
+      "name": "PEDOT:PSS",
+      "smiles": "C1=CSC(OCCO)=C1",
+      "category": "conducting_polymer",
+      "properties": {
+        "conductivity": "high",
+        "capacitance_F_g": 210,
+        "surface_area_m2_g": 30
+      },
+      "synthesis_route": "Oxidative polymerization of EDOT with PSS dopant",
+      "features": {
+        "Rs": 14.0,
+        "Rct": 95.0,
+        "Cdl": 0.00021,
+        "warburg_coeff": 40.0
+      }
+    },
+    {
+      "name": "Manganese Dioxide (MnO2)",
+      "smiles": "[Mn](=O)=O",
+      "category": "metal_oxide",
+      "properties": {
+        "conductivity": "low",
+        "capacitance_F_g": 280,
+        "surface_area_m2_g": 120
+      },
+      "synthesis_route": "Hydrothermal synthesis from KMnO4 at 140\u00c2\u00b0C",
+      "features": {
+        "Rs": 25.0,
+        "Rct": 200.0,
+        "Cdl": 0.00028,
+        "warburg_coeff": 85.0
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          200,
+          350
+        ],
+        "typical_capacitance_F_g": 280,
+        "energy_density_Wh_kg": 90,
+        "power_density_W_kg": 60000,
+        "cycle_life": 10000
+      },
+      "economics": {
+        "cost_per_kg_usd": 10,
+        "cost_category": "low"
+      },
+      "synthesis": {
+        "methods": [
+          "Hydrothermal",
+          "Electrodeposition",
+          "Chemical precipitation"
+        ],
+        "best_method": "Hydrothermal from KMnO4 at 140\u00b0C"
+      },
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous neutral/alkaline"
+        ],
+        "potential_windows_V": {
+          "aqueous": 1.0
+        }
+      },
+      "applications": [
+        "Supercapacitors",
+        "Batteries",
+        "Catalysis"
+      ],
+      "advantages": [
+        "Low cost",
+        "Abundant",
+        "Environmentally friendly"
+      ],
+      "disadvantages": [
+        "Poor conductivity",
+        "Moderate cycle life",
+        "Dissolution in acidic media"
+      ],
+      "literature_references": [
+        "Wei et al. (2011), Adv. Mater., 23, 3440",
+        "Devaraj & Munichandraiah (2008), J. Phys. Chem. C, 112, 4406"
+      ]
+    },
+    {
+      "name": "Ruthenium Oxide (RuO2)",
+      "smiles": "[Ru](=O)=O",
+      "category": "metal_oxide",
+      "properties": {
+        "conductivity": "high",
+        "capacitance_F_g": 720,
+        "surface_area_m2_g": 150
+      },
+      "synthesis_route": "Sol-gel method with RuCl3 precursor",
+      "features": {
+        "Rs": 6.0,
+        "Rct": 30.0,
+        "Cdl": 0.00072,
+        "warburg_coeff": 10.0
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          600,
+          800
+        ],
+        "typical_capacitance_F_g": 720,
+        "energy_density_Wh_kg": 200,
+        "power_density_W_kg": 200000,
+        "cycle_life": 100000
+      },
+      "economics": {
+        "cost_per_kg_usd": 5000,
+        "cost_category": "very_high"
+      },
+      "synthesis": {
+        "methods": [
+          "Sol-gel",
+          "Hydrothermal",
+          "Electrodeposition"
+        ],
+        "best_method": "Sol-gel with RuCl3 precursor"
+      },
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous",
+          "Organic"
+        ],
+        "potential_windows_V": {
+          "aqueous": 1.2,
+          "organic": 2.5
+        }
+      },
+      "applications": [
+        "Supercapacitors",
+        "Electrocatalysis"
+      ],
+      "advantages": [
+        "Highest capacitance",
+        "Excellent cycle life",
+        "Fast kinetics"
+      ],
+      "disadvantages": [
+        "Very expensive",
+        "Toxic",
+        "Limited availability"
+      ],
+      "literature_references": [
+        "Zheng et al. (1995), J. Electrochem. Soc., 142, 2699",
+        "Hu et al. (2006), Nano Lett., 6, 2690"
+      ]
+    },
+    {
+      "id": "NiMn2O4_spinel",
+      "name": "Nickel Manganate (NiMn\u2082O\u2084)",
+      "formula": "NiMn2O4",
+      "category": "metal_oxide",
+      "subcategory": "spinel",
+      "crystal_structure": {
+        "type": "spinel",
+        "space_group": "Fd-3m",
+        "lattice_parameter_nm": 0.844,
+        "crystallite_size_nm": 8.88
+      },
+      "synthesis": {
+        "methods": [
+          "Solution combustion",
+          "Hydrothermal",
+          "Co-precipitation"
+        ],
+        "best_method": "Solution combustion with glucose fuel at 550\u00b0C"
+      },
+      "morphology": {
+        "type": "nanoparticles",
+        "structure": "porous_network",
+        "particle_size_nm": 8.88,
+        "surface_area_m2_g": 85,
+        "porosity": "high",
+        "interconnected": true
+      },
+      "composition_at_pct": {
+        "Ni": 16.35,
+        "Mn": 24.48,
+        "O": 59.17
+      },
+      "conductivity_S_m": 12000.0,
+      "band_gap_eV": 1.8,
+      "electrochemistry": {
+        "electrolytes": [
+          "Aqueous alkaline",
+          "Acetate buffer"
+        ],
+        "potential_windows_V": {
+          "aqueous": 1.0,
+          "buffer": 0.8
+        }
+      },
+      "eis_params": {
+        "Rs_ohm": 28.0,
+        "Rct_ohm": 24.5,
+        "Cdl_F": 1.5e-05,
+        "n": 0.85,
+        "frequency_range_Hz": [
+          0.01,
+          100000
+        ]
+      },
+      "biosensor_performance": {
+        "analyte": "Uric Acid",
+        "sensitivity_uA_uM_cm2": 0.044,
+        "lod_M": 3.999e-05,
+        "linear_range_M": [
+          1e-05,
+          0.00025
+        ],
+        "stability_cycles": 500
+      },
+      "xps_binding_energies": {
+        "Ni_2p3/2": [
+          855.3,
+          856.4
+        ],
+        "Mn_2p3/2": [
+          642.2,
+          645.1
+        ],
+        "O_1s": [
+          530.1,
+          531.4
+        ],
+        "C_1s": [
+          284.8
+        ]
+      },
+      "applications": [
+        "Supercapacitors",
+        "Biosensors",
+        "Batteries",
+        "Electrocatalysis"
+      ],
+      "electrode_fabrication": {
+        "substrate": "Glassy Carbon Electrode (GCE)",
+        "loading_mg_cm2": 0.85,
+        "binder": "Nafion (0.25 wt%)",
+        "dispersion_solvent": "DI water",
+        "drying_temp_C": 70,
+        "drying_time_min": 60
+      },
+      "compatible_electrolytes": [
+        "Acetate buffer (pH 6)",
+        "PBS (pH 7.4)",
+        "K\u2083[Fe(CN)\u2086] (0.1 M KCl)",
+        "KOH (1 M)"
+      ],
+      "references": [
+        {
+          "authors": "Shubha MB, Chithaiah P, et al.",
+          "title": "NiMn\u2082O\u2084 Nanoparticles for Electrochemical Detection of Uric Acid",
+          "journal": "To be published",
+          "year": 2026,
+          "doi": "pending"
+        }
+      ],
+      "dataset": {
+        "location": "C:\\Users\\varsh\\OneDrive\\Documents\\Vidyuthlabs\\Raman-studio\\EIS-RV\\NiMn2O4 final files-20260512T222647Z-3-001\\NiMn2O4 final files",
+        "sem_images": 26,
+        "tem_images": 28,
+        "xps_scans": 5,
+        "electrochemical_files": 7,
+        "manuscript_files": 2
+      },
+      "ml_features": {
+        "eis_signature": {
+          "semicircle_diameter_ohm": 24.5,
+          "high_freq_intercept_ohm": 28.0,
+          "low_freq_slope": "diffusion_limited"
+        },
+        "cv_signature": {
+          "peak_current_uA": 160,
+          "peak_potential_V": [
+            0.49,
+            0.95
+          ],
+          "reversibility_ratio": 0.85
+        },
+        "material_fingerprint": {
+          "spinel_structure": true,
+          "mixed_valence": true,
+          "porous_morphology": true,
+          "nanoparticle_size_nm": 8.88
+        }
+      },
+      "gnn_features": {
+        "nodes": [
+          {
+            "element": "Ni",
+            "oxidation_states": [
+              2,
+              3
+            ],
+            "coordination": 6
+          },
+          {
+            "element": "Mn",
+            "oxidation_states": [
+              3,
+              4
+            ],
+            "coordination": 6
+          },
+          {
+            "element": "O",
+            "oxidation_states": [
+              -2
+            ],
+            "coordination": 4
+          }
+        ],
+        "edges": [
+          {
+            "type": "Ni-O",
+            "bond_length_nm": 0.205
+          },
+          {
+            "type": "Mn-O",
+            "bond_length_nm": 0.195
+          }
+        ],
+        "global_features": {
+          "particle_size_nm": 8.88,
+          "porosity": 0.45,
+          "surface_area_m2_g": 85
+        }
+      },
+      "validation": {
+        "experimental_data": true,
+        "simulation_validated": false,
+        "ml_model_trained": false,
+        "gnn_ready": true
+      },
+      "performance": {
+        "capacitance_range_F_g": [
+          250,
+          320
+        ],
+        "typical_capacitance_F_g": 280,
+        "energy_density_Wh_kg": 95,
+        "power_density_W_kg": 70000,
+        "cycle_life": 5000
+      },
+      "economics": {
+        "cost_per_kg_usd": 15,
+        "cost_category": "low"
+      },
+      "advantages": [
+        "Good capacitance",
+        "Low cost",
+        "Dual redox couples",
+        "Biocompatible"
+      ],
+      "disadvantages": [
+        "Moderate cycle life",
+        "Requires alkaline electrolyte"
+      ],
+      "literature_references": [
+        "Shubha MB et al. (2026), To be published",
+        "Zhang et al. (2015), J. Power Sources, 276, 39"
+      ]
+    }
+  ],
+  "version": "3.0",
+  "last_updated": "2026-05-13",
+  "enhancements": {
+    "performance_metrics": true,
+    "economic_data": true,
+    "synthesis_methods": true,
+    "literature_references": true,
+    "application_domains": true
+  }
+}

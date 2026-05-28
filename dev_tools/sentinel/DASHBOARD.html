@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RĀMAN Sentinel</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #09090b; color: #a1a1aa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #27272a; }
+h1 { color: #fafafa; font-size: 20px; font-weight: 700; }
+h1 span { color: #52525b; font-weight: 400; font-size: 12px; margin-left: 8px; }
+.meta { font-size: 11px; color: #52525b; font-family: 'SF Mono', 'Fira Code', monospace; }
+.stats { display: flex; gap: 24px; margin-bottom: 32px; }
+.stat { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px 20px; flex: 1; }
+.stat-value { color: #fafafa; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.stat-label { font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; }
+.controls { display: flex; gap: 8px; margin-bottom: 32px; }
+.btn { padding: 8px 16px; border-radius: 6px; border: 1px solid #27272a; background: #18181b; color: #fafafa; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn:hover { background: #27272a; }
+.btn-primary { background: #fafafa; color: #09090b; border-color: #fafafa; }
+.btn-primary:hover { background: #e4e4e7; }
+.btn-danger { color: #ef4444; border-color: #7f1d1d; }
+.btn-danger:hover { background: #7f1d1d; }
+h2 { color: #fafafa; font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+h2::before { content: ''; width: 6px; height: 6px; background: #3b82f6; border-radius: 50%; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; transition: border-color 0.15s; }
+.card:hover { border-color: #3f3f46; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.date { font-size: 10px; color: #52525b; font-family: monospace; }
+.card-title { color: #fafafa; font-size: 13px; font-weight: 600; text-decoration: none; display: block; margin-bottom: 6px; line-height: 1.4; }
+.card-title:hover { color: #60a5fa; }
+.card-summary { font-size: 12px; color: #71717a; line-height: 1.5; }
+.log { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; margin-top: 32px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #52525b; white-space: pre-wrap; }
+@media (max-width: 768px) { .grid { grid-template-columns: 1fr; } .stats { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>RĀMAN Sentinel<span>v2.0</span></h1>
+        <div class="meta">Last sync: 2026-05-08 07:06:41</div>
+    </header>
+
+    <div class="stats">
+        <div class="stat"><div class="stat-value">19</div><div class="stat-label">Total Intel</div></div>
+        <div class="stat"><div class="stat-value">0</div><div class="stat-label">Papers</div></div>
+        <div class="stat"><div class="stat-value">19</div><div class="stat-label">Repositories</div></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" onclick="location.reload()">Refresh</button>
+    </div>
+
+    <h2>Intelligence Feed</h2>
+    <div class="grid">
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-05</span>
+            </div>
+            <a href="https://github.com/ombuzi/battery-thermal-fpga-digital-twin" target="_blank" class="card-title">ombuzi/battery-thermal-fpga-digital-twin</a>
+            <p class="card-summary">No description</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-05</span>
+            </div>
+            <a href="https://github.com/benedict8005/battery-digital-twin" target="_blank" class="card-title">benedict8005/battery-digital-twin</a>
+            <p class="card-summary">This repo hold the databricks code for the battery digital twin project physics inform neural networks</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-06</span>
+            </div>
+            <a href="https://github.com/tsa2000/Battery-digital-twin-jax" target="_blank" class="card-title">tsa2000/Battery-digital-twin-jax</a>
+            <p class="card-summary">Test</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-06</span>
+            </div>
+            <a href="https://github.com/aericheng/atcc-sysblade" target="_blank" class="card-title">aericheng/atcc-sysblade</a>
+            <p class="card-summary">Sysblade HyperBuffer — LFP+LIC 混合 BBU + Battery Digital Twin SaaS · ATCC 第 23 屆 C13 系統電 · Live demo @ sysblade-atcc.vercel.app</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-07</span>
+            </div>
+            <a href="https://github.com/jmcmeen/battery-lab-sim" target="_blank" class="card-title">jmcmeen/battery-lab-sim</a>
+            <p class="card-summary">Dockerized digital twin of a battery R&D lab — 16 cyclers × 32 channels, hardware-level safety, hot/cold telemetry storage, chaos-tested.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-06</span>
+            </div>
+            <a href="https://github.com/SciML/NeuralPDE.jl" target="_blank" class="card-title">SciML/NeuralPDE.jl</a>
+            <p class="card-summary">Physics-Informed Neural Networks (PINN) Solvers of (Partial) Differential Equations for Scientific Machine Learning (SciML) accelerated simulation</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-05</span>
+            </div>
+            <a href="https://github.com/alexbenanti/NeuraLSPv2" target="_blank" class="card-title">alexbenanti/NeuraLSPv2</a>
+            <p class="card-summary">This repository is an implementation of the paper: NeuraLSP: A Neural Spectral Preconditioner for Accelerating PDE Solvers </p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-05</span>
+            </div>
+            <a href="https://github.com/atzberg/geo_neural_op" target="_blank" class="card-title">atzberg/geo_neural_op</a>
+            <p class="card-summary">Geometric Neural Operators (GNPs) for machine learning tasks on point-cloud representations: curvature estimation, shape deformations, solvers for geometric PDEs.  Also, includes weights of pretrained...</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-06</span>
+            </div>
+            <a href="https://github.com/arihant-jha/compressible-navier-stokes-pinn" target="_blank" class="card-title">arihant-jha/compressible-navier-stokes-pinn</a>
+            <p class="card-summary">Physics-Informed Neural Network (PyTorch) that solves the 2D compressible Navier-Stokes equations for lid-driven cavity flow — label-free PDE-residual training with L-BFGS. IIT Kanpur UGP.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-06</span>
+            </div>
+            <a href="https://github.com/Tarpelite/OmniForge" target="_blank" class="card-title">Tarpelite/OmniForge</a>
+            <p class="card-summary">OmniForge is the successor to OmniArch: a physics-conditioned compiler that forges compact, composable neural operators for fast PDE solving and adaptation.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-29</span>
+            </div>
+            <a href="https://github.com/JustinSasek/Physcial-Simulation-Final-Project" target="_blank" class="card-title">JustinSasek/Physcial-Simulation-Final-Project</a>
+            <p class="card-summary">A Python mass-spring physics simulator with PyTorch-based differentiable physics and a pygame UI. Simulate soft body dynamics and optimize parameters through gradient-based learning.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-03</span>
+            </div>
+            <a href="https://github.com/sri-godugu/physics-neural-world-model" target="_blank" class="card-title">sri-godugu/physics-neural-world-model</a>
+            <p class="card-summary">Physics-Informed Neural World Model combining differentiable rigid body simulation with DreamerV3-style model-based RL for Physical AI</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-05</span>
+            </div>
+            <a href="https://github.com/gbionics/jaxsim" target="_blank" class="card-title">gbionics/jaxsim</a>
+            <p class="card-summary">A differentiable physics engine and multibody dynamics library for control and robot learning.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-06</span>
+            </div>
+            <a href="https://github.com/liblaf/apple" target="_blank" class="card-title">liblaf/apple</a>
+            <p class="card-summary">🍎 A JAX and Warp library for differentiable physics simulation, featuring elastic energy models and finite element methods.</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-05-07</span>
+            </div>
+            <a href="https://github.com/daubners/evoxels" target="_blank" class="card-title">daubners/evoxels</a>
+            <p class="card-summary">Differentiable physics framework for voxel-based microstructure simulations</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2025-11-07</span>
+            </div>
+            <a href="https://github.com/yezhanwo/battery-PINN-trials" target="_blank" class="card-title">yezhanwo/battery-PINN-trials</a>
+            <p class="card-summary">just a leaner's trials</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2025-10-15</span>
+            </div>
+            <a href="https://github.com/scuzyq/PINNACLE" target="_blank" class="card-title">scuzyq/PINNACLE</a>
+            <p class="card-summary">Physics-Informed Neural Networks Analyzing Corrsosion Layers in Electrochemistry</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-01-07</span>
+            </div>
+            <a href="https://github.com/Feugmo-Group/PINNACLE" target="_blank" class="card-title">Feugmo-Group/PINNACLE</a>
+            <p class="card-summary">Physics-Informed Neural Networks Analyzing Corrsosion Layers in Electrochemistry</p>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="badge" style="background:rgba(168,85,247,0.1);color:#a855f7">GitHub</span>
+                <span class="date">2026-04-21</span>
+            </div>
+            <a href="https://github.com/Tianyi-Q/pemfc-degradation-pgml" target="_blank" class="card-title">Tianyi-Q/pemfc-degradation-pgml</a>
+            <p class="card-summary">This hobby project is a Physics Guided Machine Learning pipeline enforcing thermodynamic constraints via PyTorch to forecast PEMFC degradation kinetics.</p>
+        </div>
+    </div>
+
+    <div class="log" id="log">Loading log...</div>
+</div>
+<script>
+fetch('autonomous.log').then(r=>r.text()).then(t=>{
+    document.getElementById('log').textContent = t.split('\n').slice(-20).join('\n');
+}).catch(()=>{document.getElementById('log').textContent='Log file not accessible (open via local server).';});
+</script>
+</body>
+</html>

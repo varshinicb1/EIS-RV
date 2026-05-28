@@ -1,0 +1,152 @@
+{
+  "material_id": "NiMn2O4_spinel",
+  "graph": {
+    "nodes": [
+      {
+        "id": 0,
+        "element": "Ni",
+        "atomic_number": 28,
+        "oxidation_state": 2.5,
+        "electronegativity": 1.91,
+        "coordination": 6,
+        "site": "octahedral"
+      },
+      {
+        "id": 1,
+        "element": "Mn",
+        "atomic_number": 25,
+        "oxidation_state": 3.5,
+        "electronegativity": 1.55,
+        "coordination": 6,
+        "site": "octahedral"
+      },
+      {
+        "id": 2,
+        "element": "Mn",
+        "atomic_number": 25,
+        "oxidation_state": 3.5,
+        "electronegativity": 1.55,
+        "coordination": 6,
+        "site": "octahedral"
+      },
+      {
+        "id": 3,
+        "element": "O",
+        "atomic_number": 8,
+        "oxidation_state": -2,
+        "electronegativity": 3.44,
+        "coordination": 4,
+        "site": "tetrahedral"
+      },
+      {
+        "id": 4,
+        "element": "O",
+        "atomic_number": 8,
+        "oxidation_state": -2,
+        "electronegativity": 3.44,
+        "coordination": 4,
+        "site": "tetrahedral"
+      },
+      {
+        "id": 5,
+        "element": "O",
+        "atomic_number": 8,
+        "oxidation_state": -2,
+        "electronegativity": 3.44,
+        "coordination": 4,
+        "site": "tetrahedral"
+      },
+      {
+        "id": 6,
+        "element": "O",
+        "atomic_number": 8,
+        "oxidation_state": -2,
+        "electronegativity": 3.44,
+        "coordination": 4,
+        "site": "tetrahedral"
+      }
+    ],
+    "edges": [
+      {
+        "source": 0,
+        "target": 3,
+        "bond_type": "Ni-O",
+        "bond_length_nm": 0.205
+      },
+      {
+        "source": 0,
+        "target": 4,
+        "bond_type": "Ni-O",
+        "bond_length_nm": 0.205
+      },
+      {
+        "source": 0,
+        "target": 5,
+        "bond_type": "Ni-O",
+        "bond_length_nm": 0.205
+      },
+      {
+        "source": 0,
+        "target": 6,
+        "bond_type": "Ni-O",
+        "bond_length_nm": 0.205
+      },
+      {
+        "source": 1,
+        "target": 3,
+        "bond_type": "Mn-O",
+        "bond_length_nm": 0.195
+      },
+      {
+        "source": 1,
+        "target": 4,
+        "bond_type": "Mn-O",
+        "bond_length_nm": 0.195
+      },
+      {
+        "source": 1,
+        "target": 5,
+        "bond_type": "Mn-O",
+        "bond_length_nm": 0.195
+      },
+      {
+        "source": 2,
+        "target": 4,
+        "bond_type": "Mn-O",
+        "bond_length_nm": 0.195
+      },
+      {
+        "source": 2,
+        "target": 5,
+        "bond_type": "Mn-O",
+        "bond_length_nm": 0.195
+      },
+      {
+        "source": 2,
+        "target": 6,
+        "bond_type": "Mn-O",
+        "bond_length_nm": 0.195
+      }
+    ],
+    "global_features": {
+      "crystal_structure": "spinel",
+      "space_group": "Fd-3m",
+      "lattice_parameter_nm": 0.844,
+      "particle_size_nm": 8.88,
+      "porosity": 0.45,
+      "surface_area_m2_g": 85
+    }
+  },
+  "targets": {
+    "conductivity_S_m": 12000.0,
+    "band_gap_eV": 1.8,
+    "biosensor_sensitivity_uA_uM_cm2": 0.044,
+    "biosensor_lod_M": 3.999e-05,
+    "eis_rct_ohm": 24.5
+  },
+  "metadata": {
+    "source": "experimental",
+    "validated": true,
+    "date": "2026-05-13"
+  }
+}

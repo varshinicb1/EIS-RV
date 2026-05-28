@@ -1,0 +1,119 @@
+No CHEMICAL NAME
+1 Aluminium Metal Powder
+2 Aluminium Nitrate
+3 Ammonium Bicitrate 
+4 Ammonium Carbonate 
+5 Ammonium Chloride 
+6 Ammonium Dihydrogen Orthophosphate
+7 Ammonium Metavanadate
+8 Ammonium niobate oxalate hydrate
+9 Ammonium Persulphate
+10 Ascorbic Acid 
+11 Aspartic Acid 
+12 Barium Nitrate 
+13 Bismuth Nitrate 
+14 Bismuth Oxide
+15 Borax
+16 Boric Acid
+17 Calcium Chloride 
+18 Calcium Silicate 
+19 CDTA
+20 Ceric Nitrate Hexahydrate 
+21 Cerous Nitrate Hexahydrate 
+22 Cesium Iodide
+23 Cetyl Trimethyl Ammonium Bromide (CTAB)
+24 Chitosan
+25 Chromium Nitrate 
+26 Citric Acid 
+27 Cobalt Nitrate 
+28 Cobaltous Chloride Hexahydrate. 29 Copper Acetate Monohydrate 
+30 Cupric Nitrate 
+31 Cupric Sulphate 
+32 Cuprous Iodide
+33 Dextrose 
+34 Dimethyl Formamide
+35 Dodecyl Benzene Sulphonic Acid Sodium Salt (SDS)
+36 Erbium Oxide
+37 Ethylenediaminetetraacetic acid 
+38 Ferric Chloride 
+39 Ferric Nitrate 
+40 Ferrocene
+41 Ferrous Sulphate 
+42 Glycine
+43 Graphite Powder
+44 Hexamine 
+45 Hydrazine Sulphate 
+46 Hydrochloric Acid 
+47 Indium Acetate 
+48 Indium oxide Nanopowder
+49 Iron (Metal) Powder
+50 L-cysteine
+51 Lanthanum Chloride 
+52 Lanthanum Oxide
+53 Liquid Parafin
+54 Lithium Nitrate
+55 Lithium perchlorate anhydrous 
+56 Magnesium Nitrate Hexahydrate. Magnesium Sulphate (dried)
+58 Malic Acid
+59 Manganese Nitrate
+60 Melamine 
+61 N-methyl 2-Pyrrolidone 
+62 Nickel Chloride Hexahydrate 
+63 Nickel Nitrate 
+64 Niobium Pentoxide Extrapure 
+65 Orthophosphoric Acid
+66 Oxalic Acid 
+67 Poly(tetrafluoroethylene)
+68 Polyethylene Glycol (PEG)
+69 Polyvinyl Alcohol (PVA)
+70 Polyvinyl Idene Fluoride 
+71 Polyvinyl Pyrrolidone
+72 Potassium Chloride 
+73 Potassium Chromate
+74 Potassium Dichromate 
+75 Potassium Hydroxide 
+76 Potassium Hydroxide Concentrate
+77 Potassium Nitrate 
+78 Potassium Permanganate 
+79 Potassium Sulphate 
+80 Propan-2-ol (IPA)
+81 Pyrrole
+82 Salicylic Acid 
+83 Silica Gel
+84 Silicic Acid.Silver Nitrate 
+86 Sodium borohydride
+87 Sodium Ethoxide
+88 Sodium Hydroxide pellets
+89 Sodium meta silicate nonhydrate
+90 Sodium Metal
+91 Sodium Molybdate dihydrate 
+92 Sodium Nitrate purified 
+93 Sodium salenate
+94 Sodium selenite anhydrous 
+95 Sodium Silicate (meta) pentahydrare
+96 Sodium Sulphate Anhydrous 
+97 Sodium Sulphite Anhydrous Extrapure
+98 Sodium Thiosulphate
+99 Sodium Tungstate
+100 Stannous Chloride 
+101 Stearic Acide
+102 Strontium nitrate anhydrous 
+103 Succinic Acid
+104 Sucrose 
+105 Sulphur Crystal 
+106 Sulphur Powder 
+107 Terbium Oxide
+108 Tetraethyl orthosilicate
+109 Thioacetamide
+110 Thiourea
+111 Titanium Butoxide
+112 Titanium Dioxide. No CHEMICAL NAME
+113 Titanium tetraisopropoxide
+114 Tungsten Powder
+115 Tungstic Acid
+116 Urea
+117 Vanadium Pentoxide 
+118 Zinc (Metal) Powder 
+119 Zinc Acetate dihydrate 
+120 Zinc Nitrate Hexahydrate 
+121 Zirconyl Nitrate. Save this to your memory 

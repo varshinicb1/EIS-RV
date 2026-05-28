@@ -1,0 +1,31 @@
+# Enhanced Data Extraction Dependencies
+# Install with: pip install -r requirements_extraction.txt
+
+# PDF Processing
+PyPDF2>=3.0.0
+pdfplumber>=0.10.3
+
+# Table Extraction
+camelot-py[cv]>=0.11.0
+
+# Image Processing (for figure digitization - Phase 3)
+opencv-python>=4.8.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+
+# NLP (for advanced extraction - Phase 4)
+transformers>=4.30.0
+torch>=2.0.0
+spacy>=3.6.0
+scispacy>=0.5.3
+
+# Utilities
+requests>=2.31.0
+tqdm>=4.65.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Note: For camelot-py, you may also need system dependencies:
+# Ubuntu/Debian: sudo apt-get install ghostscript python3-tk
+# macOS: brew install ghostscript tcl-tk
+# Windows: Download and install Ghostscript from https://www.ghostscript.com/

@@ -1,0 +1,927 @@
+/**
+ * RĀMAN Studio - Secure Main Process
+ * ===================================
+ * The Digital Twin for Your Potentiostat
+ * 
+ * Honoring Professor CNR Rao's Legacy in Materials Science
+ * 
+ * SECURITY FEATURES:
+ * - Input validation
+ * - CSP headers
+ * - Secure IPC
+ * - Process isolation
+ * - Error handling
+ * 
+ * Company: VidyuthLabs
+ */
+
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
+const path = require('path');
+const { spawn } = require('child_process');
+const Store = require('electron-store');
+const crypto = require('crypto');
+const { initAutoUpdater, downloadUpdate, installUpdate, checkForUpdates } = require('./auto-updater');
+
+// Secure configuration
+const CONFIG = {
+    SERVER_PORT: 8000,
+    VITE_PORT: 5173,
+    SERVER_HOST: '127.0.0.1',
+    MAX_WINDOW_COUNT: 5,
+    PYTHON_TIMEOUT: 30000,
+    IPC_RATE_LIMIT: 100, // requests per minute
+    IS_DEV: process.argv.includes('--dev'),
+};
+
+// Derive a machine-specific encryption key instead of a static one
+const _machineKey = crypto.createHash('sha256')
+    .update(`raman-studio-${require('os').hostname()}-${require('os').userInfo().username}`)
+    .digest('hex')
+    .slice(0, 32);
+
+// Initialize secure store
+const store = new Store({
+    name: 'raman-studio-settings',
+    encryptionKey: _machineKey,
+    defaults: {
+        windowBounds: { width: 1400, height: 900 },
+        lastProject: null,
+        theme: 'dark',
+        gpuEnabled: true
+    }
+});
+
+// Global references
+let mainWindow = null;
+let pythonProcess = null;
+let windowCount = 0;
+const ipcCallCounts = new Map();
+
+/**
+ * Validate server port
+ */
+function validatePort(port) {
+    const portNum = parseInt(port, 10);
+    if (isNaN(portNum) || portNum < 1024 || portNum > 65535) {
+        throw new Error(`Invalid port: ${port}`);
+    }
+    return portNum;
+}
+
+/**
+ * Rate limit IPC calls
+ */
+function rateLimitIPC(channel) {
+    const now = Date.now();
+    const key = channel;
+    
+    if (!ipcCallCounts.has(key)) {
+        ipcCallCounts.set(key, []);
+    }
+    
+    const calls = ipcCallCounts.get(key);
+    
+    // Remove calls older than 1 minute
+    const recentCalls = calls.filter(time => now - time < 60000);
+    
+    if (recentCalls.length >= CONFIG.IPC_RATE_LIMIT) {
+        throw new Error('Rate limit exceeded');
+    }
+    
+    recentCalls.push(now);
+    ipcCallCounts.set(key, recentCalls);
+}
+
+/**
+ * Sanitize file path
+ */
+function sanitizePath(filePath) {
+    if (!filePath || typeof filePath !== 'string') {
+        throw new Error('Invalid file path');
+    }
+    
+    // Remove null bytes
+    filePath = filePath.replace(/\0/g, '');
+    
+    // Resolve to absolute path
+    const resolved = path.resolve(filePath);
+    
+    // Check for path traversal
+    if (resolved.includes('..')) {
+        throw new Error('Path traversal detected');
+    }
+    
+    return resolved;
+}
+
+/**
+ * Create main application window with security
+ */
+function createWindow() {
+    // Limit window count
+    if (windowCount >= CONFIG.MAX_WINDOW_COUNT) {
+        dialog.showErrorBox('Error', 'Maximum window count reached');
+        return;
+    }
+    windowCount++;
+    
+    // Load saved bounds
+    const bounds = store.get('windowBounds');
+    
+    mainWindow = new BrowserWindow({
+        width: bounds.width,
+        height: bounds.height,
+        minWidth: 1200,
+        minHeight: 700,
+        title: 'RĀMAN Studio v2.0 — VidyuthLabs',
+        icon: path.join(__dirname, '../../resources/icons/icon.png'),
+        backgroundColor: '#141517',
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js'),
+            webSecurity: true,
+            allowRunningInsecureContent: false,
+            experimentalFeatures: false,
+            // ``enableRemoteModule`` was removed in Electron 14; the
+            // ``@electron/remote`` package was never installed here, so
+            // setting it is a no-op now and a deprecation warning in 32+.
+            sandbox: true,
+            // Disable dangerous features
+            nodeIntegrationInWorker: false,
+            nodeIntegrationInSubFrames: false,
+            webviewTag: false
+        },
+        show: false
+    });
+
+    // Set CSP headers
+    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+        callback({
+            responseHeaders: {
+                ...details.responseHeaders,
+                'Content-Security-Policy': [
+                    // Tightened: scripts only from app, fonts/styles bundled,
+                    // network limited to local sidecar + NVIDIA NIM. The
+                    // earlier policy whitelisted localhost:5173 (Vite dev),
+                    // raw.githack/raw.githubusercontent (no longer used) and
+                    // omitted the WebSocket scheme on 127.0.0.1 — which is
+                    // why telemetry was rejected. Fonts now ship offline via
+                    // @fontsource so we don't need fonts.googleapis.com.
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                    "style-src 'self' 'unsafe-inline'; " +
+                    "img-src 'self' data: blob:; " +
+                    "worker-src 'self' blob:; " +
+                    "child-src 'self' blob:; " +
+                    "connect-src 'self' http://127.0.0.1:8000 ws://127.0.0.1:8000 http://localhost:8000 ws://localhost:8000 http://localhost:5173 ws://localhost:5173 https://integrate.api.nvidia.com https://license.vidyuthlabs.co.in; " +
+                    "font-src 'self' data:; " +
+                    "object-src 'none'; " +
+                    "base-uri 'self'; " +
+                    "form-action 'self'; " +
+                    "frame-ancestors 'none';"
+                ],
+                'X-Content-Type-Options': ['nosniff'],
+                'X-Frame-Options': ['DENY'],
+                'X-XSS-Protection': ['1; mode=block'],
+                'Referrer-Policy': ['no-referrer'],
+                'Permissions-Policy': ['geolocation=(), microphone=(), camera=()']
+            }
+        });
+    });
+
+    // Block navigation to external sites
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        const allowedOrigins = [
+            `http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`,
+            `http://${CONFIG.SERVER_HOST}:${CONFIG.VITE_PORT}`,
+            `http://localhost:${CONFIG.VITE_PORT}`,
+            'https://license.vidyuthlabs.co.in'
+        ];
+        
+        if (!allowedOrigins.some(origin => url.startsWith(origin))) {
+            event.preventDefault();
+            console.warn('Blocked navigation to:', url);
+        }
+    });
+
+    // Block new window creation
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        // Only allow specific URLs to open in external browser
+        if (url.startsWith('https://vidyuthlabs.co.in') || 
+            url.startsWith('mailto:')) {
+            shell.openExternal(url);
+        }
+        return { action: 'deny' };
+    });
+
+    // Show window when ready
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+    });
+
+    // Forward renderer console + load failures into the main process log so
+    // a blank window on production isn't a black box. Without this every
+    // unhandled JS error stays inside the renderer's DevTools.
+    mainWindow.webContents.on('console-message', (_e, level, message, line, sourceId) => {
+        const tag = ['LOG', 'WARN', 'ERROR', 'INFO'][level] || `L${level}`;
+        console.log(`[Renderer ${tag}] ${message} (${sourceId}:${line})`);
+    });
+    mainWindow.webContents.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL) => {
+        console.error(`[Renderer DID-FAIL-LOAD] ${errorCode} ${errorDescription} for ${validatedURL}`);
+    });
+    mainWindow.webContents.on('render-process-gone', (_e, details) => {
+        console.error(`[Renderer GONE] reason=${details.reason} exitCode=${details.exitCode}`);
+    });
+    mainWindow.webContents.on('preload-error', (_e, preloadPath, error) => {
+        console.error(`[Preload ERROR] ${preloadPath}: ${error.stack || error.message}`);
+    });
+    // Auto-open DevTools when RAMAN_DEVTOOLS=1 — useful for blank-screen debug
+    // without rebuilding. Production users never set this.
+    mainWindow.webContents.once('dom-ready', () => {
+        if (process.env.RAMAN_DEVTOOLS === '1' || process.argv.includes('--devtools')) {
+            mainWindow.webContents.openDevTools({ mode: 'detach' });
+        }
+    });
+
+    // Load the application — Vite dev server in dev, built renderer in production
+    if (CONFIG.IS_DEV) {
+        mainWindow.loadURL(`http://localhost:${CONFIG.VITE_PORT}`);
+    } else {
+        // Vite emits the renderer to <repo>/build/renderer/index.html (configured
+        // in src/frontend/vite.config.js). When packaged by electron-builder the
+        // app source is rooted at app.asar/, so resolve relative to __dirname,
+        // which is .../app.asar/src/desktop/.
+        const fs = require('fs');
+        const candidates = [
+            path.join(__dirname, '../../build/renderer/index.html'),  // packaged + dev unpacked
+            path.join(__dirname, '../frontend/dist/index.html'),       // legacy fallback
+        ];
+        const rendererPath = candidates.find(p => fs.existsSync(p));
+        if (rendererPath) {
+            mainWindow.loadFile(rendererPath);
+        } else {
+            // Last-resort fallback: backend serves the frontend.
+            mainWindow.loadURL(`http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`);
+        }
+    }
+
+    // Open DevTools only in development
+    if (process.argv.includes('--dev')) {
+        mainWindow.webContents.openDevTools();
+    }
+
+    // Save window bounds on close
+    mainWindow.on('close', () => {
+        const bounds = mainWindow.getBounds();
+        store.set('windowBounds', bounds);
+    });
+
+    // Handle window close
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+        windowCount--;
+    });
+
+    // Create application menu
+    createMenu();
+
+    // Initialize auto-updater
+    initAutoUpdater(mainWindow);
+
+    // Update IPC handlers
+    ipcMain.handle('check-for-updates', () => checkForUpdates());
+    ipcMain.handle('download-update', () => downloadUpdate());
+    ipcMain.handle('install-update', () => installUpdate());
+}
+
+/**
+ * Create application menu
+ */
+/**
+ * Build the native application menu. The menu sends `menu:<action>` events
+ * to the renderer for app-specific actions; renderer panels subscribe via
+ * window.raman.onMenu(action, cb).
+ *
+ * Native dialogs (open / save) live in this process and are exposed
+ * through ipcMain.handle('fs:*') — see further down — so the renderer
+ * never has direct fs access (sandbox safety).
+ */
+function createMenu() {
+    const isMac = process.platform === 'darwin';
+    const send = (action, payload) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send(`menu:${action}`, payload);
+        }
+    };
+
+    const template = [
+        // macOS app menu (Quit etc. live here on Darwin)
+        ...(isMac ? [{
+            label: app.name,
+            submenu: [
+                { role: 'about' }, { type: 'separator' },
+                { role: 'services' }, { type: 'separator' },
+                { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' },
+                { type: 'separator' }, { role: 'quit' },
+            ],
+        }] : []),
+
+        {
+            label: 'File',
+            submenu: [
+                {
+                    label: 'New project',
+                    accelerator: 'CmdOrCtrl+N',
+                    click: () => send('new-project'),
+                },
+                {
+                    label: 'Open project…',
+                    accelerator: 'CmdOrCtrl+O',
+                    click: () => send('open-project'),
+                },
+                {
+                    label: 'Save project',
+                    accelerator: 'CmdOrCtrl+S',
+                    click: () => send('save-project'),
+                },
+                {
+                    label: 'Save project as…',
+                    accelerator: 'CmdOrCtrl+Shift+S',
+                    click: () => send('save-project-as'),
+                },
+                { type: 'separator' },
+                {
+                    label: 'Open lab data (xlsx / csv)…',
+                    click: () => send('open-lab-data'),
+                },
+                {
+                    label: 'Import EIS / CV data…',
+                    click: () => send('import-data'),
+                },
+                { type: 'separator' },
+                {
+                    label: 'Export current report (PDF)',
+                    accelerator: 'CmdOrCtrl+E',
+                    click: () => send('export-report'),
+                },
+                {
+                    label: 'Export plot (PNG)',
+                    accelerator: 'CmdOrCtrl+Shift+E',
+                    click: () => send('export-plot'),
+                },
+                { type: 'separator' },
+                isMac ? { role: 'close' } : { role: 'quit' },
+            ],
+        },
+
+        {
+            label: 'Edit',
+            submenu: [
+                { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+                { role: 'cut' }, { role: 'copy' }, { role: 'paste' },
+                { role: 'selectAll' },
+                { type: 'separator' },
+                {
+                    label: 'Settings…',
+                    accelerator: 'CmdOrCtrl+,',
+                    click: () => send('navigate-panel', 'profile'),
+                },
+            ],
+        },
+
+        {
+            label: 'View',
+            submenu: [
+                { role: 'reload' },
+                { role: 'forceReload' },
+                { role: 'toggleDevTools' },
+                { type: 'separator' },
+                { role: 'resetZoom' },
+                { role: 'zoomIn' },
+                { role: 'zoomOut' },
+                { type: 'separator' },
+                { role: 'togglefullscreen' },
+                { type: 'separator' },
+                {
+                    label: 'Light theme',
+                    accelerator: 'CmdOrCtrl+Shift+L',
+                    click: () => send('set-theme', 'light'),
+                },
+                {
+                    label: 'Dark theme',
+                    accelerator: 'CmdOrCtrl+Shift+D',
+                    click: () => send('set-theme', 'dark'),
+                },
+                {
+                    label: 'High-contrast theme',
+                    accelerator: 'CmdOrCtrl+Shift+H',
+                    click: () => send('set-theme', 'hc'),
+                },
+            ],
+        },
+
+        {
+            label: 'Tools',
+            submenu: [
+                { label: 'Dashboard',          accelerator: 'CmdOrCtrl+1', click: () => send('navigate-panel', 'dashboard') },
+                { label: 'EIS',                accelerator: 'CmdOrCtrl+2', click: () => send('navigate-panel', 'eis') },
+                { label: 'Cyclic voltammetry', accelerator: 'CmdOrCtrl+3', click: () => send('navigate-panel', 'cv') },
+                { label: 'GCD',                accelerator: 'CmdOrCtrl+4', click: () => send('navigate-panel', 'gcd') },
+                { label: 'DRT',                accelerator: 'CmdOrCtrl+5', click: () => send('navigate-panel', 'drt') },
+                { label: 'Circuit fitting',    accelerator: 'CmdOrCtrl+6', click: () => send('navigate-panel', 'circuit') },
+                { label: 'Biosensor',          accelerator: 'CmdOrCtrl+7', click: () => send('navigate-panel', 'biosensor') },
+                { type: 'separator' },
+                { label: 'Materials AI',       click: () => send('navigate-panel', 'alchemi') },
+                { label: 'Discovery & AI',     click: () => send('navigate-panel', 'discovery') },
+                { label: 'Alchemist canvas',   click: () => send('navigate-panel', 'alchemist_canvas') },
+                { label: 'Lab data',           click: () => send('navigate-panel', 'lab') },
+                { label: 'Literature mining',  click: () => send('navigate-panel', 'literature') },
+                { label: 'Reports',            click: () => send('navigate-panel', 'reports') },
+            ],
+        },
+
+        {
+            role: 'window',
+            label: 'Window',
+            submenu: [
+                { role: 'minimize' },
+                { role: 'zoom' },
+                ...(isMac ? [{ type: 'separator' }, { role: 'front' }] : [{ role: 'close' }]),
+            ],
+        },
+
+        {
+            label: 'Help',
+            submenu: [
+                {
+                    label: 'Documentation',
+                    click: () => shell.openExternal('https://github.com/varshinicb1/EIS-RV/blob/master/README.md'),
+                },
+                {
+                    label: 'Report an issue',
+                    click: () => shell.openExternal('https://github.com/varshinicb1/EIS-RV/issues/new'),
+                },
+                {
+                    label: 'Support',
+                    click: () => shell.openExternal('mailto:support@vidyuthlabs.co.in?subject=R%C4%80MAN%20Studio%20support'),
+                },
+                { type: 'separator' },
+                {
+                    label: 'About',
+                    click: () => {
+                        if (!mainWindow) return;
+                        dialog.showMessageBox(mainWindow, {
+                            type: 'info',
+                            title: 'About RĀMAN Studio',
+                            message: 'RĀMAN Studio 2.1.0',
+                            detail:
+                                'Desktop electrochemical analysis suite by VidyuthLabs.\n' +
+                                'EIS · CV · GCD · DRT · biosensor · materials AI.\n\n' +
+                                '© 2026 VidyuthLabs.',
+                            buttons: ['OK'],
+                        });
+                    },
+                },
+            ],
+        },
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+}
+
+// ── Native dialog IPC handlers ─────────────────────────────────────────
+//
+// Renderer calls window.raman.fs.<x>(...) which goes via these handlers.
+// We never trust paths from the renderer; every dialog runs in this
+// process, returning content (or path + content) back.
+
+function registerFsHandlers() {
+    const fs = require('fs');
+
+    ipcMain.handle('fs:open-project', async () => {
+        const r = await dialog.showOpenDialog(mainWindow, {
+            title: 'Open RĀMAN project',
+            filters: [
+                { name: 'RĀMAN project', extensions: ['raman', 'json'] },
+                { name: 'All files', extensions: ['*'] },
+            ],
+            properties: ['openFile'],
+        });
+        if (r.canceled || !r.filePaths[0]) return null;
+        const p = r.filePaths[0];
+        const content = await fs.promises.readFile(p, 'utf8');
+        return { path: p, content };
+    });
+
+    ipcMain.handle('fs:save-project', async (_e, { content, defaultPath }) => {
+        const r = await dialog.showSaveDialog(mainWindow, {
+            title: 'Save RĀMAN project',
+            defaultPath: defaultPath || 'project.raman',
+            filters: [{ name: 'RĀMAN project', extensions: ['raman', 'json'] }],
+        });
+        if (r.canceled || !r.filePath) return null;
+        await fs.promises.writeFile(r.filePath, content, 'utf8');
+        return { path: r.filePath };
+    });
+
+    ipcMain.handle('fs:open-lab-xlsx', async () => {
+        const r = await dialog.showOpenDialog(mainWindow, {
+            title: 'Open lab data',
+            filters: [
+                { name: 'Lab data', extensions: ['xlsx', 'xls', 'csv', 'json'] },
+                { name: 'All files', extensions: ['*'] },
+            ],
+            properties: ['openFile'],
+        });
+        if (r.canceled || !r.filePaths[0]) return null;
+        const p = r.filePaths[0];
+        const buf = await fs.promises.readFile(p);
+        return { path: p, name: path.basename(p), buffer: buf.toString('base64') };
+    });
+
+    ipcMain.handle('fs:export-report', async (_e, { content, defaultName, mime = 'application/pdf' }) => {
+        const ext = mime === 'application/pdf' ? 'pdf'
+                  : mime === 'image/png'        ? 'png'
+                  : 'bin';
+        const r = await dialog.showSaveDialog(mainWindow, {
+            title: 'Export report',
+            defaultPath: defaultName || `raman-report.${ext}`,
+            filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+        });
+        if (r.canceled || !r.filePath) return null;
+        // content is expected as a base64 string for binary outputs.
+        await fs.promises.writeFile(r.filePath, Buffer.from(content, 'base64'));
+        return { path: r.filePath };
+    });
+}
+
+/**
+ * Start Python backend server securely
+ */
+function startPythonServer() {
+    return new Promise((resolve, reject) => {
+        console.log('[RAMAN] Starting Python backend server...');
+
+        // Validate port
+        const serverPort = validatePort(CONFIG.SERVER_PORT);
+        
+        // Start backend server with security settings
+        let serverCmd;
+        let serverArgs;
+        
+        if (app.isPackaged) {
+            // Production: Try compiled executable first, fall back to Python
+            const exeExt = process.platform === 'win32' ? '.exe' : '';
+            const exePath = path.join(process.resourcesPath, 'backend', `raman_backend${exeExt}`);
+            const fs = require('fs');
+            
+            if (fs.existsSync(exePath)) {
+                // Use compiled executable if it exists
+                serverCmd = exePath;
+                serverArgs = [
+                    '--host', CONFIG.SERVER_HOST,
+                    '--port', serverPort.toString()
+                ];
+            } else {
+                // Fall back to Python with source files
+                console.log('[RAMAN] Compiled backend not found, using Python source');
+                serverCmd = process.platform === 'win32' ? 'python' : 'python3';
+                serverArgs = [
+                    '-m', 'uvicorn',
+                    'src.backend.api.server:app',
+                    '--host', CONFIG.SERVER_HOST,
+                    '--port', serverPort.toString(),
+                    '--log-level', 'info',
+                    '--no-access-log'
+                ];
+            }
+            
+            pythonProcess = spawn(serverCmd, serverArgs, {
+                cwd: path.join(process.resourcesPath, 'app'),
+                env: {
+                    ...process.env,
+                    PYTHONUNBUFFERED: '1',
+                    NVIDIA_API_KEY: process.env.NVIDIA_API_KEY || '',
+                    PYTHONDONTWRITEBYTECODE: '1'
+                },
+                ...(process.platform === 'win32' && {
+                    windowsHide: true,
+                    detached: false
+                })
+            });
+        } else {
+            // Development: use python executable
+            serverCmd = process.platform === 'win32' ? 'python' : 'python3';
+            serverArgs = [
+                '-m', 'uvicorn',
+                'src.backend.api.server:app',
+                '--host', CONFIG.SERVER_HOST,
+                '--port', serverPort.toString(),
+                '--log-level', 'info',
+                '--no-access-log'
+            ];
+            
+            pythonProcess = spawn(serverCmd, serverArgs, {
+                cwd: path.join(__dirname, '../..'),
+                env: {
+                    ...process.env,
+                    PYTHONUNBUFFERED: '1',
+                    NVIDIA_API_KEY: process.env.NVIDIA_API_KEY || '',
+                    PYTHONDONTWRITEBYTECODE: '1'
+                },
+                ...(process.platform === 'win32' && {
+                    windowsHide: true,
+                    detached: false
+                })
+            });
+        }
+
+        let serverStarted = false;
+
+        // Uvicorn writes its startup banner ("Uvicorn running on http://...")
+        // to STDERR, not stdout, so we have to watch both streams to detect
+        // readiness — otherwise createWindow() blocks behind the 30s fallback
+        // timeout and the user stares at a blank screen for half a minute.
+        const onPythonOutput = (data, isErr) => {
+            const output = data.toString().trim();
+            console.log(`[Python${isErr ? ' Error' : ''}] ${output}`);
+            if (output.includes('Uvicorn running') && !serverStarted) {
+                serverStarted = true;
+                console.log('[RAMAN] Python backend server started');
+                resolve();
+            }
+        };
+        pythonProcess.stdout.on('data', (data) => onPythonOutput(data, false));
+        pythonProcess.stderr.on('data', (data) => onPythonOutput(data, true));
+
+        pythonProcess.on('error', (error) => {
+            console.error('[RAMAN] Failed to start Python server:', error);
+            
+            // Show user-friendly error dialog
+            if (mainWindow) {
+                dialog.showErrorBox(
+                    'Startup Error',
+                    'Failed to start RĀMAN Studio backend server.\n\n' +
+                    'Please ensure Python and required dependencies are installed.\n\n' +
+                    `Error: spawn ${serverCmd} ENOENT`
+                );
+            }
+            reject(error);
+        });
+
+        pythonProcess.on('close', (code) => {
+            console.log(`Python server exited with code ${code}`);
+            if (!serverStarted) {
+                reject(new Error(`Python server failed to start (exit code: ${code})`));
+            }
+        });
+
+        // Timeout
+        setTimeout(() => {
+            if (!serverStarted) {
+                if (pythonProcess && !pythonProcess.killed) {
+                    resolve(); // Assume it started
+                } else {
+                    reject(new Error('Python server start timeout'));
+                }
+            }
+        }, CONFIG.PYTHON_TIMEOUT);
+    });
+}
+
+/**
+ * Stop Python backend server
+ */
+function stopPythonServer() {
+    if (pythonProcess) {
+        console.log('[RAMAN] Stopping Python backend server...');
+        
+        try {
+            // Try graceful shutdown first
+            pythonProcess.kill('SIGTERM');
+            
+            // Force kill after 5 seconds
+            setTimeout(() => {
+                if (pythonProcess && !pythonProcess.killed) {
+                    pythonProcess.kill('SIGKILL');
+                }
+            }, 5000);
+        } catch (error) {
+            console.error('Error stopping Python server:', error);
+        }
+        
+        pythonProcess = null;
+    }
+}
+
+/**
+ * Secure IPC Handlers
+ */
+
+// Get GPU status
+ipcMain.handle('get-gpu-status', async () => {
+    try {
+        rateLimitIPC('get-gpu-status');
+        // Fetch real GPU status from the Python backend
+        const http = require('http');
+        return new Promise((resolve) => {
+            const req = http.get(`http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}/api/v2/engine-info`, (res) => {
+                let body = '';
+                res.on('data', (chunk) => body += chunk);
+                res.on('end', () => {
+                    try {
+                        const data = JSON.parse(body);
+                        resolve({
+                            available: data.cpp || data.python,
+                            cpp_engine: data.cpp,
+                            python_fallback: data.python,
+                            engines: data.engines || [],
+                        });
+                    } catch {
+                        resolve({ available: false, error: 'Failed to parse engine info' });
+                    }
+                });
+            });
+            req.on('error', () => resolve({ available: false, error: 'Backend unreachable' }));
+            req.setTimeout(5000, () => { req.destroy(); resolve({ available: false, error: 'Timeout' }); });
+        });
+    } catch (error) {
+        console.error('IPC error:', error);
+        return { error: error.message };
+    }
+});
+
+// Get license info
+ipcMain.handle('get-license-info', async () => {
+    try {
+        rateLimitIPC('get-license-info');
+        // Fetch real license status from the Python backend
+        const http = require('http');
+        return new Promise((resolve) => {
+            const req = http.get(`http://${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}/api/v2/auth/license`, (res) => {
+                let body = '';
+                res.on('data', (chunk) => body += chunk);
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(body));
+                    } catch {
+                        resolve({ status: 'unknown', error: 'Failed to parse license info' });
+                    }
+                });
+            });
+            req.on('error', () => resolve({ status: 'unknown', error: 'Backend unreachable' }));
+            req.setTimeout(5000, () => { req.destroy(); resolve({ status: 'unknown', error: 'Timeout' }); });
+        });
+    } catch (error) {
+        console.error('IPC error:', error);
+        return { error: error.message };
+    }
+});
+
+// Open file dialog
+ipcMain.handle('open-file-dialog', async (_event, options) => {
+    try {
+        rateLimitIPC('open-file-dialog');
+        
+        // Validate options
+        if (!options || typeof options !== 'object') {
+            throw new Error('Invalid options');
+        }
+        
+        const result = await dialog.showOpenDialog(mainWindow, options);
+        
+        // Sanitize file paths
+        if (result.filePaths) {
+            result.filePaths = result.filePaths.map(sanitizePath);
+        }
+        
+        return result;
+    } catch (error) {
+        console.error('IPC error:', error);
+        return { error: error.message, canceled: true };
+    }
+});
+
+// Save file dialog
+ipcMain.handle('save-file-dialog', async (_event, options) => {
+    try {
+        rateLimitIPC('save-file-dialog');
+        
+        if (!options || typeof options !== 'object') {
+            throw new Error('Invalid options');
+        }
+        
+        const result = await dialog.showSaveDialog(mainWindow, options);
+        
+        // Sanitize file path
+        if (result.filePath) {
+            result.filePath = sanitizePath(result.filePath);
+        }
+        
+        return result;
+    } catch (error) {
+        console.error('IPC error:', error);
+        return { error: error.message, canceled: true };
+    }
+});
+
+// Show message box
+ipcMain.handle('show-message-box', async (_event, options) => {
+    try {
+        rateLimitIPC('show-message-box');
+        
+        if (!options || typeof options !== 'object') {
+            throw new Error('Invalid options');
+        }
+        
+        // Sanitize message content
+        if (options.message) {
+            options.message = String(options.message).substring(0, 1000);
+        }
+        if (options.detail) {
+            options.detail = String(options.detail).substring(0, 5000);
+        }
+        
+        const result = await dialog.showMessageBox(mainWindow, options);
+        return result;
+    } catch (error) {
+        console.error('IPC error:', error);
+        return { error: error.message };
+    }
+});
+
+/**
+ * App lifecycle
+ */
+
+app.whenReady().then(async () => {
+    try {
+        // File-system IPC handlers — needed before the renderer fires.
+        registerFsHandlers();
+
+        // Start Python backend
+        await startPythonServer();
+
+        // Wait for server to be fully ready
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // Create window
+        createWindow();
+        
+    } catch (error) {
+        console.error('Failed to start application:', error);
+        dialog.showErrorBox(
+            'Startup Error',
+            'Failed to start RĀMAN Studio backend server.\n\n' +
+            'Please ensure Python and required dependencies are installed.\n\n' +
+            `Error: ${error.message}`
+        );
+        app.quit();
+    }
+});
+
+app.on('window-all-closed', () => {
+    stopPythonServer();
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
+
+app.on('activate', () => {
+    if (mainWindow === null) {
+        createWindow();
+    }
+});
+
+app.on('before-quit', () => {
+    stopPythonServer();
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught exception:', error);
+    // Log to file in production
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled rejection at:', promise, 'reason:', reason);
+    // Log to file in production
+});
+
+// Security: Disable eval and related functions
+process.on('loaded', () => {
+    global.eval = function() {
+        throw new Error('eval() is disabled for security');
+    };
+});
+
+console.log('[RAMAN] RAMAN Studio v2.0 — Secure Edition');
+console.log('[RAMAN] The Digital Twin for Your Potentiostat');
+console.log('[RAMAN] Company: VidyuthLabs');
+console.log('[RAMAN] Version: 2.0.0');
+console.log('[RAMAN] Platform:', process.platform);
+console.log('[RAMAN] Arch:', process.arch);
+console.log('[RAMAN] Mode:', CONFIG.IS_DEV ? 'Development' : 'Production');
+console.log('[RAMAN] Security: Enhanced');

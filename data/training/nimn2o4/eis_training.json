@@ -1,0 +1,23 @@
+{
+  "material_id": "NiMn2O4_spinel",
+  "technique": "EIS",
+  "features": {
+    "Rs_ohm": 28.0,
+    "Rct_ohm": 24.5,
+    "Cdl_F": 1.5e-05,
+    "n": 0.85,
+    "semicircle_diameter": 24.5,
+    "high_freq_intercept": 28.0
+  },
+  "labels": {
+    "material_name": "NiMn2O4",
+    "category": "metal_oxide",
+    "subcategory": "spinel",
+    "conductivity_S_m": 12000.0
+  },
+  "metadata": {
+    "source": "experimental",
+    "date": "2025-03-25",
+    "validated": true
+  }
+}

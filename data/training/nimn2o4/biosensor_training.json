@@ -1,0 +1,26 @@
+{
+  "material_id": "NiMn2O4_spinel",
+  "technique": "DPV",
+  "analyte": "Uric Acid",
+  "features": {
+    "sensitivity_uA_uM_cm2": 0.044,
+    "lod_M": 3.999e-05,
+    "linear_range_M": [
+      1e-05,
+      0.00025
+    ],
+    "optimal_pH": 6.0,
+    "stability_cycles": 500
+  },
+  "labels": {
+    "material_name": "NiMn2O4",
+    "application": "biosensor",
+    "performance": "excellent"
+  },
+  "metadata": {
+    "source": "experimental",
+    "date": "2025-03-25",
+    "validated": true,
+    "real_sample": "human_urine"
+  }
+}

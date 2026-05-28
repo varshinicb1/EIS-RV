@@ -1,0 +1,163 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+.venv313/
+.venv_new/
+venv/
+env/
+.python-version
+
+# Environment files (never commit real secrets)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+*.env.local
+
+# TLS / cryptographic material
+certs/*.pem
+certs/*.key
+certs/*.crt
+certs/*.cer
+certs/*.p12
+certs/*.pfx
+*.pem
+*.key
+!alembic.ini
+
+# Runtime state — never commit
+data/projects.json
+data/reports/
+data/materials_cache/
+data/datasets/
+data/ml_datasets/processed/
+data/ml_datasets/raw/ebio/
+data/ml_datasets/raw/bacteria_id/
+data/ml_datasets/raw/mlrod/
+dev_tools/sentinel/*.db
+dev_tools/sentinel/*.log
+dev_tools/sentinel/*.pid
+dev_tools/sentinel/*.out
+datasets/*.db
+datasets/*.json
+# User lab data — proprietary and private, never commit
+datasets/*.xlsx
+datasets/*.xls
+datasets/*.csv
+
+# Large binary datasets — use Git LFS or DVC instead
+External datasets/*.zip
+External datasets/14902951/
+Lab data/*.zip
+
+# ML artifacts (large, regenerable)
+models/Raman-Qwen-Agent/checkpoint-*/
+models/**/*.bin
+models/**/*.safetensors
+models/**/*.pt
+models/**/*.pth
+*.pkl
+*.joblib
+
+# ML training artifacts (regenerable)
+models/*/attention_visualizations/
+models/*/runs/
+models/*/evaluation/
+models/**/events.out.tfevents.*
+
+# Node
+node_modules/
+src/frontend/node_modules/
+**/node_modules/
+.pnp/
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.history/
+EIS-RV/.history/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Logs
+*.log
+
+# Temp / backup
+*.tmp
+*.bak
+*.lck
+~*
+~$*
+
+# Build artifacts (Electron, Nuitka, CMake)
+out/
+release/
+engine_core/build/
+engine_core/.cache/
+dist-electron/
+resources/backend/_internal/
+resources/backend/*.exe
+
+# Scattered root-level artifacts that should not be tracked
+customer_raman_analysis.png
+noisy_data_analysis.png
+raman_carbon_library.png
+raman_database_overview.png
+synthetic_graphene_analysis.png
+benchmark_summary.html
+training_monitor.html
+VISUAL_PROOF.html
+test_result.json
+
+# Misc
+.clangd
+compile_commands.json
+
+# Local experimental data and external repos
+NiMn2O4*
+External datasets/
+Lab data/
+awesome-self-driving-labs/
+models/cv_transformer*
+models/anomaly_detector/
+reports/
+data/
+evaluation/
+scratch/
+test_data/
+external-repos/
+*.zip
+*.stl
+*.spec
+*.bat
+*.sh
+

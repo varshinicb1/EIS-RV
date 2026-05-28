@@ -1,0 +1,5 @@
+- [Frontend API wiring](frontend-api-wiring.md) — all simulation panels must use relative `/api/v2/...` URLs; Vite proxies to backend on port 8000
+- [Lab Brain architecture](lab-brain.md) — physics validator, loop, ingester, reporter are module-level singletons; DuckDB at db/lab_brain.duckdb; loop uses threading + _LOOP_STATE dict + _LOOP_LOCK
+- [WebSocket proxy config](vite-ws-proxy.md) — Vite needs `ws: true` on `/api` proxy; potentiostat WS will always fail in Replit (no hardware), Dashboard handles this gracefully
+- [MaterialDiscovery double-json bug](material-discovery-api.md) — apiPost/apiGet called `.json()` twice; apiCall already returns parsed JSON; fix by removing second `.json()` call
+- [Hydrothermal engine + NIM setup](hydrothermal-nim.md) — NVIDIA_API_KEY stored as Replit secret; error_handlers sanitizes only status 500, not 503; requests library required and present
