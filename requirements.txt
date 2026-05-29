@@ -19,7 +19,7 @@ httpx==0.28.1             # required by fastapi.testclient (used in tests/)
 websockets==15.0.1        # uvicorn[standard] WebSocket protocol — needed for /ws/telemetry
 
 # Testing
-pytest==9.0.2
+pytest==9.0.3
 
 # System Monitoring (for GPU manager)
 psutil==7.2.2
@@ -70,7 +70,7 @@ galvani==0.4.1
 duckdb>=0.10.0
 matplotlib==3.8.4
 seaborn==0.13.2
-tqdm==4.66.2
+tqdm==4.66.3
 
 # ── External Integrations (Optional) ────────────────────────────
 # These are optional dependencies for advanced features.

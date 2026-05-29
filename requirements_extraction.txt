@@ -21,7 +21,7 @@ scispacy>=0.5.3
 
 # Utilities
 requests>=2.31.0
-tqdm>=4.65.0
+tqdm>=4.66.3
 pandas>=2.0.0
 numpy>=1.24.0
 
