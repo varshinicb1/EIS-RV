@@ -42,7 +42,7 @@ except ImportError:
 # Check for ASE availability
 try:
     from ase import Atoms
-    from ase.optimize import BFGS
+    from ase.optimize import BFGS  # noqa: F401 — used dynamically
     ASE_AVAILABLE = True
 except ImportError:
     ASE_AVAILABLE = False
@@ -57,7 +57,7 @@ try:
         logger.info(f"✅ CUDA available: {torch.cuda.get_device_name(0)}")
     else:
         logger.warning("⚠️  CUDA not available, using CPU")
-except ImportError:
+except (ImportError, OSError):
     TORCH_AVAILABLE = False
     CUDA_AVAILABLE = False
     logger.warning("⚠️  PyTorch not available. Install: pip install torch")
@@ -70,22 +70,22 @@ class QuantumResult:
     forces_eV_A: Optional[np.ndarray] = None
     geometry_A: Optional[np.ndarray] = None
     atomic_numbers: Optional[np.ndarray] = None
-    
+
     # Electronic structure
     band_gap_eV: Optional[float] = None
     homo_eV: Optional[float] = None
     lumo_eV: Optional[float] = None
     electron_density: Optional[np.ndarray] = None
-    
+
     # Molecular orbitals
     molecular_orbitals: Optional[Dict] = None
-    
+
     # Metadata
     method: str = "Placeholder"
     converged: bool = True
     n_iterations: int = 0
     wall_time_s: float = 0.0
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for API responses."""
         return {
@@ -106,21 +106,21 @@ class QuantumResult:
 class QuantumEngine:
     """
     Quantum-accurate calculations using NVIDIA ALCHEMI.
-    
+
     Uses AIMNet2 machine learning interatomic potential (MLIP)
     for near-quantum accuracy at 100x-1000x speed of traditional DFT.
-    
+
     Example:
         >>> engine = QuantumEngine(device="cuda")
         >>> atoms = smiles_to_atoms("CCO")  # Ethanol
         >>> result = engine.optimize_geometry(atoms)
         >>> print(f"Energy: {result.energy_eV:.6f} eV")
     """
-    
+
     def __init__(self, device: str = "cuda"):
         """
         Initialize quantum engine.
-        
+
         Args:
             device: "cuda" for GPU, "cpu" for CPU
         """
@@ -129,20 +129,20 @@ class QuantumEngine:
             self.placeholder_mode = True
         else:
             self.placeholder_mode = False
-        
+
         if not TORCH_AVAILABLE:
             logger.warning("PyTorch not available - using placeholder mode")
             self.placeholder_mode = True
-        
+
         # Set device
         if device == "cuda" and not CUDA_AVAILABLE:
             logger.warning("CUDA not available, falling back to CPU")
             self.device = "cpu"
         else:
             self.device = device
-        
+
         logger.info(f"Quantum Engine initialized (device={self.device}, placeholder={self.placeholder_mode})")
-    
+
     def optimize_geometry(
         self,
         atoms: Union['Atoms', Dict],
@@ -152,39 +152,39 @@ class QuantumEngine:
     ) -> QuantumResult:
         """
         Optimize molecular geometry to minimum energy.
-        
+
         Args:
             atoms: ASE Atoms object or dict with positions and atomic_numbers
             method: "AIMNet2" (MLIP) or "DFT" (expensive)
             force_tol: Force convergence criterion (eV/Å)
             max_steps: Maximum optimization steps
-        
+
         Returns:
             QuantumResult with optimized geometry and energy
         """
         import time
         start_time = time.time()
-        
+
         if isinstance(atoms, dict):
             positions = np.array(atoms['positions'])
             atomic_numbers = np.array(atoms['atomic_numbers'])
         else:
             positions = atoms.get_positions()
             atomic_numbers = atoms.get_atomic_numbers()
-        
+
         if self.placeholder_mode:
             # Placeholder implementation for testing
             logger.info("Running placeholder geometry optimization")
-            
+
             # Simulate optimization (just return input with small perturbation)
             optimized_positions = positions + np.random.randn(*positions.shape) * 0.01
-            
+
             # Placeholder energy calculation (simple pairwise potential)
             energy = self._placeholder_energy(optimized_positions, atomic_numbers)
             forces = np.random.randn(*positions.shape) * 0.001  # Small random forces
-            
+
             wall_time = time.time() - start_time
-            
+
             return QuantumResult(
                 energy_eV=energy,
                 forces_eV_A=forces,
@@ -195,16 +195,16 @@ class QuantumEngine:
                 n_iterations=50,
                 wall_time_s=wall_time
             )
-        
+
         # Real ALCHEMI implementation
         try:
             logger.info(f"Running ALCHEMI geometry optimization with {method}")
-            
+
             # Use NVIDIA ALCHEMI NIM API for quantum-accurate optimization
             result = self._alchemi_optimize(positions, atomic_numbers, method, force_tol, max_steps)
-            
+
             wall_time = time.time() - start_time
-            
+
             return QuantumResult(
                 energy_eV=result['energy'],
                 forces_eV_A=result['forces'],
@@ -215,23 +215,23 @@ class QuantumEngine:
                 n_iterations=result['n_iterations'],
                 wall_time_s=wall_time
             )
-        
+
         except Exception as e:
             logger.error(f"ALCHEMI optimization failed: {e}")
             # Fallback to placeholder
             logger.warning("Falling back to placeholder mode")
             self.placeholder_mode = True
             return self.optimize_geometry(atoms, method, force_tol, max_steps)
-    
+
     def _placeholder_energy(self, positions: np.ndarray, atomic_numbers: np.ndarray) -> float:
         """
         Placeholder energy calculation using simple pairwise potential.
-        
+
         E = sum_ij (1/r_ij^12 - 2/r_ij^6)  [Lennard-Jones-like]
         """
         n_atoms = len(positions)
         energy = 0.0
-        
+
         for i in range(n_atoms):
             for j in range(i+1, n_atoms):
                 r_vec = positions[j] - positions[i]
@@ -239,12 +239,12 @@ class QuantumEngine:
                 if r > 0.1:  # Avoid division by zero
                     # Simple pairwise potential
                     energy += (1.0 / r**12 - 2.0 / r**6)
-        
+
         # Scale by atomic numbers (heavier atoms = more negative energy)
         energy *= -np.mean(atomic_numbers) / 10.0
-        
+
         return energy
-    
+
     def _alchemi_optimize(
         self,
         positions: np.ndarray,
@@ -255,25 +255,25 @@ class QuantumEngine:
     ) -> Dict:
         """
         Real ALCHEMI NIM API call for geometry optimization.
-        
+
         Uses NVIDIA's Batched Geometry Relaxation NIM with AIMNet2 MLIP.
         """
         import requests
         import os
-        
+
         api_key = os.getenv("NVIDIA_API_KEY")
         if not api_key:
             raise RuntimeError("NVIDIA_API_KEY not set")
-        
+
         # NVIDIA ALCHEMI NIM endpoint
         url = "https://integrate.api.nvidia.com/v1/alchemi/geometry-relaxation"
-        
+
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
-        
+
         payload = {
             "method": method,
             "positions": positions.tolist(),
@@ -282,11 +282,11 @@ class QuantumEngine:
             "max_steps": max_steps,
             "device": self.device
         }
-        
+
         logger.info(f"Calling NVIDIA ALCHEMI API: {url}")
-        
+
         response = requests.post(url, headers=headers, json=payload, timeout=120)
-        
+
         if response.status_code == 200:
             data = response.json()
             return {
@@ -298,7 +298,7 @@ class QuantumEngine:
             }
         else:
             raise RuntimeError(f"ALCHEMI API error: {response.status_code} - {response.text}")
-    
+
     def calculate_band_gap(
         self,
         atoms: Union['Atoms', Dict],
@@ -306,11 +306,11 @@ class QuantumEngine:
     ) -> float:
         """
         Calculate electronic band gap.
-        
+
         Args:
             atoms: ASE Atoms object or dict
             method: Calculation method
-        
+
         Returns:
             Band gap in eV
         """
@@ -320,22 +320,22 @@ class QuantumEngine:
         else:
             positions = atoms.get_positions()
             atomic_numbers = atoms.get_atomic_numbers()
-        
+
         if self.placeholder_mode:
             # Placeholder: estimate from atomic numbers
             # Simple heuristic: metals (low Z) have small gaps, non-metals (high Z) have large gaps
             avg_Z = np.mean(atomic_numbers)
-            
+
             # Better heuristic based on chemistry:
             # - Metals (Z < 20): band gap ~ 0-1 eV
             # - Semiconductors (20 < Z < 50): band gap ~ 1-3 eV
             # - Insulators (Z > 50): band gap ~ 3-6 eV
             # - Organic molecules (C, H, O, N): band gap ~ 4-8 eV
-            
+
             # Check if organic (mostly C, H, O, N)
-            is_organic = np.all((atomic_numbers == 1) | (atomic_numbers == 6) | 
+            is_organic = np.all((atomic_numbers == 1) | (atomic_numbers == 6) |
                                (atomic_numbers == 7) | (atomic_numbers == 8))
-            
+
             if is_organic:
                 # Organic molecules typically have large band gaps
                 # Benzene: ~5.5 eV, Ethanol: ~8 eV
@@ -350,10 +350,10 @@ class QuantumEngine:
                 band_gap = 2.0  # Semiconductor
             else:
                 band_gap = 4.0  # Insulator
-            
+
             logger.info(f"Placeholder band gap: {band_gap:.3f} eV (avg_Z={avg_Z:.1f}, organic={is_organic})")
             return band_gap
-        
+
         # Real ALCHEMI implementation
         try:
             logger.info(f"Calculating band gap with ALCHEMI {method}")
@@ -364,7 +364,7 @@ class QuantumEngine:
             logger.warning("Falling back to placeholder mode")
             self.placeholder_mode = True
             return self.calculate_band_gap(atoms, method)
-    
+
     def _alchemi_band_gap(
         self,
         positions: np.ndarray,
@@ -376,35 +376,35 @@ class QuantumEngine:
         """
         import requests
         import os
-        
+
         api_key = os.getenv("NVIDIA_API_KEY")
         if not api_key:
             raise RuntimeError("NVIDIA_API_KEY not set")
-        
+
         url = "https://integrate.api.nvidia.com/v1/alchemi/electronic-structure"
-        
+
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
-        
+
         payload = {
             "method": method,
             "positions": positions.tolist(),
             "atomic_numbers": atomic_numbers.tolist(),
             "properties": ["band_gap", "homo", "lumo"]
         }
-        
+
         logger.info(f"Calling NVIDIA ALCHEMI API for band gap: {url}")
-        
+
         response = requests.post(url, headers=headers, json=payload, timeout=120)
-        
+
         if response.status_code == 200:
             return response.json()
         else:
             raise RuntimeError(f"ALCHEMI API error: {response.status_code} - {response.text}")
-    
+
     def calculate_properties(
         self,
         atoms: Union['Atoms', Dict],
@@ -412,20 +412,20 @@ class QuantumEngine:
     ) -> Dict:
         """
         Calculate multiple properties at once.
-        
+
         Args:
             atoms: ASE Atoms object or dict
             properties: List of properties to calculate
                        ["energy", "forces", "band_gap", "homo", "lumo"]
-        
+
         Returns:
             Dictionary of calculated properties
         """
         if properties is None:
             properties = ["energy", "forces", "band_gap"]
-        
+
         results = {}
-        
+
         # Convert atoms to dict format if needed
         if isinstance(atoms, dict):
             positions = np.array(atoms['positions'])
@@ -438,7 +438,7 @@ class QuantumEngine:
                 'positions': positions,
                 'atomic_numbers': atomic_numbers
             }
-        
+
         if "energy" in properties or "forces" in properties:
             opt_result = self.optimize_geometry(atoms_dict)
             if "energy" in properties:
@@ -446,18 +446,18 @@ class QuantumEngine:
             if "forces" in properties:
                 results["forces_eV_A"] = opt_result.forces_eV_A
             results["geometry_A"] = opt_result.geometry_A
-        
+
         if "band_gap" in properties:
             results["band_gap_eV"] = self.calculate_band_gap(atoms_dict)
-        
+
         if "homo" in properties or "lumo" in properties:
             # Placeholder: estimate from band gap
             band_gap = results.get("band_gap_eV", self.calculate_band_gap(atoms_dict))
             results["homo_eV"] = -5.0  # Typical value
             results["lumo_eV"] = results["homo_eV"] + band_gap
-        
+
         return results
-    
+
     def run_molecular_dynamics(
         self,
         atoms: Union['Atoms', Dict],
@@ -468,14 +468,14 @@ class QuantumEngine:
     ) -> Dict:
         """
         Run molecular dynamics simulation using NVIDIA ALCHEMI.
-        
+
         Args:
             atoms: ASE Atoms object or dict
             n_steps: Number of MD steps
             timestep_fs: Timestep in femtoseconds
             temperature_K: Temperature in Kelvin
             ensemble: MD ensemble ("NVE", "NVT", "NPT")
-        
+
         Returns:
             Trajectory data (positions, velocities, energies, temperatures)
         """
@@ -485,11 +485,11 @@ class QuantumEngine:
         else:
             positions = atoms.get_positions()
             atomic_numbers = atoms.get_atomic_numbers()
-        
+
         if self.placeholder_mode:
             logger.info("Running placeholder molecular dynamics")
             return self._placeholder_md(positions, atomic_numbers, n_steps, timestep_fs, temperature_K)
-        
+
         # Real ALCHEMI implementation
         try:
             logger.info(f"Running ALCHEMI molecular dynamics ({n_steps} steps, {temperature_K} K)")
@@ -500,7 +500,7 @@ class QuantumEngine:
             logger.warning("Falling back to placeholder mode")
             self.placeholder_mode = True
             return self._placeholder_md(positions, atomic_numbers, n_steps, timestep_fs, temperature_K)
-    
+
     def _placeholder_md(
         self,
         positions: np.ndarray,
@@ -513,24 +513,24 @@ class QuantumEngine:
         Placeholder molecular dynamics using simple Langevin dynamics.
         """
         n_atoms = len(positions)
-        
+
         # Initialize trajectory arrays
         trajectory_positions = np.zeros((n_steps, n_atoms, 3))
         trajectory_velocities = np.zeros((n_steps, n_atoms, 3))
         trajectory_energies = np.zeros(n_steps)
         trajectory_temperatures = np.zeros(n_steps)
-        
+
         # Initialize velocities from Maxwell-Boltzmann distribution
         kB = 8.617333e-5  # eV/K
         masses = atomic_numbers * 1.66054e-27  # kg (approximate)
         velocities = np.random.randn(n_atoms, 3) * np.sqrt(kB * temperature_K / masses[:, np.newaxis])
-        
+
         current_positions = positions.copy()
-        
+
         # Simple Langevin dynamics
         gamma = 0.01  # friction coefficient
         dt = timestep_fs * 1e-15  # convert to seconds
-        
+
         for step in range(n_steps):
             # Calculate forces (simple harmonic potential)
             forces = np.zeros_like(current_positions)
@@ -544,26 +544,26 @@ class QuantumEngine:
                         f_vec = f_mag * r_vec / r
                         forces[i] -= f_vec
                         forces[j] += f_vec
-            
+
             # Langevin dynamics update
             random_force = np.random.randn(n_atoms, 3) * np.sqrt(2 * gamma * kB * temperature_K / dt)
             velocities += (forces / masses[:, np.newaxis] - gamma * velocities + random_force) * dt
             current_positions += velocities * dt
-            
+
             # Calculate energy and temperature
             kinetic_energy = 0.5 * np.sum(masses[:, np.newaxis] * velocities**2)
             potential_energy = self._placeholder_energy(current_positions, atomic_numbers)
             total_energy = kinetic_energy + potential_energy
-            
+
             # Temperature from kinetic energy
             temp = 2 * kinetic_energy / (3 * n_atoms * kB)
-            
+
             # Store trajectory
             trajectory_positions[step] = current_positions
             trajectory_velocities[step] = velocities
             trajectory_energies[step] = total_energy
             trajectory_temperatures[step] = temp
-        
+
         return {
             "positions": trajectory_positions,
             "velocities": trajectory_velocities,
@@ -575,7 +575,7 @@ class QuantumEngine:
             "target_temperature_K": temperature_K,
             "method": "Langevin (placeholder)"
         }
-    
+
     def _alchemi_md(
         self,
         positions: np.ndarray,
@@ -590,19 +590,19 @@ class QuantumEngine:
         """
         import requests
         import os
-        
+
         api_key = os.getenv("NVIDIA_API_KEY")
         if not api_key:
             raise RuntimeError("NVIDIA_API_KEY not set")
-        
+
         url = "https://integrate.api.nvidia.com/v1/alchemi/molecular-dynamics"
-        
+
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
-        
+
         payload = {
             "method": "AIMNet2",
             "positions": positions.tolist(),
@@ -613,11 +613,11 @@ class QuantumEngine:
             "ensemble": ensemble,
             "device": self.device
         }
-        
+
         logger.info(f"Calling NVIDIA ALCHEMI API for MD: {url}")
-        
+
         response = requests.post(url, headers=headers, json=payload, timeout=300)
-        
+
         if response.status_code == 200:
             data = response.json()
             return {
@@ -633,7 +633,7 @@ class QuantumEngine:
             }
         else:
             raise RuntimeError(f"ALCHEMI API error: {response.status_code} - {response.text}")
-    
+
     def calculate_electron_density(
         self,
         atoms: Union['Atoms', Dict],
@@ -642,12 +642,12 @@ class QuantumEngine:
     ) -> Dict:
         """
         Calculate electron density on a 3D grid using NVIDIA ALCHEMI.
-        
+
         Args:
             atoms: ASE Atoms object or dict
             grid_spacing: Grid spacing in Angstroms
             padding: Padding around molecule in Angstroms
-        
+
         Returns:
             Dictionary with density grid and metadata
         """
@@ -657,11 +657,11 @@ class QuantumEngine:
         else:
             positions = atoms.get_positions()
             atomic_numbers = atoms.get_atomic_numbers()
-        
+
         if self.placeholder_mode:
             logger.info("Calculating placeholder electron density")
             return self._placeholder_electron_density(positions, atomic_numbers, grid_spacing, padding)
-        
+
         # Real ALCHEMI implementation
         try:
             logger.info(f"Calculating electron density with ALCHEMI (grid spacing: {grid_spacing} Å)")
@@ -672,7 +672,7 @@ class QuantumEngine:
             logger.warning("Falling back to placeholder mode")
             self.placeholder_mode = True
             return self._placeholder_electron_density(positions, atomic_numbers, grid_spacing, padding)
-    
+
     def _placeholder_electron_density(
         self,
         positions: np.ndarray,
@@ -686,34 +686,34 @@ class QuantumEngine:
         # Define grid
         min_coords = positions.min(axis=0) - padding
         max_coords = positions.max(axis=0) + padding
-        
+
         nx = int((max_coords[0] - min_coords[0]) / grid_spacing) + 1
         ny = int((max_coords[1] - min_coords[1]) / grid_spacing) + 1
         nz = int((max_coords[2] - min_coords[2]) / grid_spacing) + 1
-        
+
         # Create grid
         x = np.linspace(min_coords[0], max_coords[0], nx)
         y = np.linspace(min_coords[1], max_coords[1], ny)
         z = np.linspace(min_coords[2], max_coords[2], nz)
-        
+
         X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-        
+
         # Calculate density (sum of Gaussian atomic densities)
         density = np.zeros((nx, ny, nz))
-        
+
         for i, (pos, Z_atom) in enumerate(zip(positions, atomic_numbers)):
             # Gaussian width depends on atomic number
             sigma = 0.5 + 0.1 * np.sqrt(Z_atom)  # Angstroms
-            
+
             # Calculate distance from atom
             dx = X - pos[0]
             dy = Y - pos[1]
             dz = Z - pos[2]
             r2 = dx**2 + dy**2 + dz**2
-            
+
             # Add Gaussian density (normalized)
             density += Z_atom * np.exp(-r2 / (2 * sigma**2)) / (sigma**3 * (2*np.pi)**1.5)
-        
+
         return {
             "density": density,
             "grid_x": x,
@@ -726,7 +726,7 @@ class QuantumEngine:
             "total_electrons": float(density.sum() * grid_spacing**3),
             "method": "Gaussian (placeholder)"
         }
-    
+
     def _alchemi_electron_density(
         self,
         positions: np.ndarray,
@@ -739,19 +739,19 @@ class QuantumEngine:
         """
         import requests
         import os
-        
+
         api_key = os.getenv("NVIDIA_API_KEY")
         if not api_key:
             raise RuntimeError("NVIDIA_API_KEY not set")
-        
+
         url = "https://integrate.api.nvidia.com/v1/alchemi/electron-density"
-        
+
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
-        
+
         payload = {
             "method": "AIMNet2",
             "positions": positions.tolist(),
@@ -760,11 +760,11 @@ class QuantumEngine:
             "padding": padding,
             "device": self.device
         }
-        
+
         logger.info(f"Calling NVIDIA ALCHEMI API for electron density: {url}")
-        
+
         response = requests.post(url, headers=headers, json=payload, timeout=300)
-        
+
         if response.status_code == 200:
             data = response.json()
             return {
@@ -790,18 +790,18 @@ class QuantumEngine:
 def smiles_to_atoms(smiles: str) -> Dict:
     """
     Convert SMILES string to atoms dictionary.
-    
+
     Args:
         smiles: SMILES string (e.g., "CCO" for ethanol)
-    
+
     Returns:
         Dictionary with positions and atomic_numbers
-    
+
     Note:
         This is a placeholder. Full implementation requires RDKit.
     """
     logger.warning("Using placeholder SMILES parser")
-    
+
     # Placeholder: create simple molecules
     if smiles == "CCO":  # Ethanol
         positions = np.array([
@@ -820,7 +820,7 @@ def smiles_to_atoms(smiles: str) -> Dict:
         # Default: single carbon atom
         positions = np.array([[0.0, 0.0, 0.0]])
         atomic_numbers = np.array([6])
-    
+
     return {
         "positions": positions,
         "atomic_numbers": atomic_numbers,
@@ -831,10 +831,10 @@ def smiles_to_atoms(smiles: str) -> Dict:
 def atoms_to_xyz(atoms: Union['Atoms', Dict]) -> str:
     """
     Convert atoms to XYZ format string.
-    
+
     Args:
         atoms: ASE Atoms object or dict
-    
+
     Returns:
         XYZ format string
     """
@@ -844,16 +844,16 @@ def atoms_to_xyz(atoms: Union['Atoms', Dict]) -> str:
     else:
         positions = atoms.get_positions()
         atomic_numbers = atoms.get_atomic_numbers()
-    
+
     # Atomic number to symbol mapping
     symbols = {1: 'H', 6: 'C', 7: 'N', 8: 'O', 16: 'S', 15: 'P'}
-    
+
     lines = [str(len(positions)), ""]
     for i, (pos, Z) in enumerate(zip(positions, atomic_numbers)):
         symbol = symbols.get(int(Z), 'X')
         x, y, z = pos
         lines.append(f"{symbol} {x:.6f} {y:.6f} {z:.6f}")
-    
+
     return "\n".join(lines)
 
 
@@ -865,10 +865,10 @@ def quick_test():
     """Quick test of quantum engine."""
     print("🧪 Testing Quantum Engine...")
     print("=" * 60)
-    
+
     # Initialize engine
     engine = QuantumEngine(device="cpu")  # Use CPU for testing
-    
+
     # Test 1: Ethanol
     print("\n1. Optimizing ethanol (CCO)...")
     atoms = smiles_to_atoms("CCO")
@@ -877,19 +877,19 @@ def quick_test():
     print(f"   Converged: {result.converged}")
     print(f"   Iterations: {result.n_iterations}")
     print(f"   Time: {result.wall_time_s:.3f} s")
-    
+
     # Test 2: Benzene
     print("\n2. Optimizing benzene (c1ccccc1)...")
     atoms = smiles_to_atoms("c1ccccc1")
     result = engine.optimize_geometry(atoms)
     print(f"   Energy: {result.energy_eV:.6f} eV")
     print(f"   Time: {result.wall_time_s:.3f} s")
-    
+
     # Test 3: Band gap
     print("\n3. Calculating band gap...")
     band_gap = engine.calculate_band_gap(atoms)
     print(f"   Band gap: {band_gap:.3f} eV")
-    
+
     # Test 4: Multiple properties
     print("\n4. Calculating multiple properties...")
     props = engine.calculate_properties(atoms, ["energy", "band_gap", "homo", "lumo"])
@@ -897,12 +897,12 @@ def quick_test():
     print(f"   Band gap: {props['band_gap_eV']:.3f} eV")
     print(f"   HOMO: {props['homo_eV']:.3f} eV")
     print(f"   LUMO: {props['lumo_eV']:.3f} eV")
-    
+
     # Test 5: XYZ export
     print("\n5. Exporting to XYZ format...")
     xyz = atoms_to_xyz(atoms)
     print(xyz)
-    
+
     print("\n" + "=" * 60)
     print("✅ All tests passed!")
     print("\nNote: This is placeholder mode. Full ALCHEMI integration coming soon.")
@@ -910,4 +910,3 @@ def quick_test():
 
 if __name__ == "__main__":
     quick_test()
-
