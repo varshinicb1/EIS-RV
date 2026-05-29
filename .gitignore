@@ -176,3 +176,6 @@ src/frontend/dist/
 
 # Allow example datasets
 !datasets/examples/*.xlsx
+
+# Sensitive OAuth test credentials (never commit real client secrets)
+google_oauth_desktop_test.json
