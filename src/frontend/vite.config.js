@@ -8,7 +8,7 @@ const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  base: isTauri ? '/' : './',
   root: '.',
   // Prevent vite from obscuring Rust errors
   clearScreen: false,
@@ -54,17 +54,11 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
+          // Keep heavy 3D libs separate but avoid circular deps with React/icons
           if (id.includes('/three/') || id.includes('three-mesh-bvh') || id.includes('three-stdlib')) return 'three-vendor';
           if (id.includes('@react-three')) return 'r3f-vendor';
-          if (id.includes('@reactflow') || id.includes('reactflow')) return 'reactflow-vendor';
-          if (id.includes('@theatre')) return 'theatre-vendor';
           if (id.includes('jspdf') || id.includes('html2canvas')) return 'pdf-vendor';
-          if (id.includes('react-joyride') || id.includes('@gilbarbara') ||
-              id.includes('@floating-ui') || id.includes('is-lite') ||
-              id.includes('react-floater') || id.includes('scroll-parent') ||
-              id.includes('scroll-doc') || id.includes('scrollparent')) return 'joyride-vendor';
-          if (id.includes('lucide-react')) return 'icons-vendor';
-          if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) return 'react-vendor';
+          // Everything else goes into a single vendor chunk to prevent inter-chunk cycles
           return 'vendor';
         },
       },
