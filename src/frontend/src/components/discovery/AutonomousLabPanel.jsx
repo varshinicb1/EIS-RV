@@ -411,6 +411,8 @@ export default function AutonomousLabPanel() {
   const [analyteFilter, setAnalyteFilter] = useState('all');
   const [validateForm, setValidateForm] = useState({ material: '', analyte: 'formaldehyde' });
   const [validateResult, setValidateResult] = useState(null);
+  const [clStatus,     setClStatus]     = useState(null);
+  const [clResult,     setClResult]     = useState(null);
   const [reportForm,   setReportForm]   = useState({ material: '', analyte: 'formaldehyde', title: '' });
   const pollRef = useRef(null);
 
@@ -466,11 +468,20 @@ export default function AutonomousLabPanel() {
     } catch (e) { /* silent */ }
   }, []);
 
+  const fetchClStatus = useCallback(async () => {
+    try {
+      const r = await api('/api/v2/brain/closed-loop/status');
+      setClStatus(r);
+      if (r && !r.running && r.result) setClResult(r.result);
+    } catch (e) { /* silent */ }
+  }, []);
+
   useEffect(() => {
     fetchStatus();
     fetchPapers();
     fetchLoopStatus();
     fetchIngestStatus();
+    fetchClStatus();
   }, []);
 
   useEffect(() => {
@@ -480,19 +491,20 @@ export default function AutonomousLabPanel() {
   // ── Polling while loop or ingest is running ──────────────────────────────
 
   useEffect(() => {
-    const isActive = loopStatus?.running || ingestStatus?.running;
+    const isActive = loopStatus?.running || ingestStatus?.running || clStatus?.running;
     if (isActive) {
       pollRef.current = setInterval(() => {
         fetchLoopStatus();
         fetchIngestStatus();
         fetchStatus();
+        if (clStatus?.running) fetchClStatus();
         if (activeTab === 'discoveries') fetchDiscoveries();
-      }, 2500);
+      }, clStatus?.running ? 1200 : 2500);
     } else {
       clearInterval(pollRef.current);
     }
     return () => clearInterval(pollRef.current);
-  }, [loopStatus?.running, ingestStatus?.running, activeTab]);
+  }, [loopStatus?.running, ingestStatus?.running, clStatus?.running, activeTab]);
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
@@ -521,6 +533,29 @@ export default function AutonomousLabPanel() {
       await api('/api/v2/brain/loop/stop', { method: 'POST' });
       setTimeout(() => { fetchLoopStatus(); setLoad('loopStop', false); }, 400);
     } catch (e) { setLoad('loopStop', false); }
+  };
+
+  const handleClStart = async () => {
+    setLoad('cl', true); setError(null); setClResult(null);
+    try {
+      await api('/api/v2/brain/closed-loop/start', {
+        method: 'POST',
+        body: JSON.stringify({
+          max_iterations: 60,
+          seed: Math.floor(Math.random() * 1000),
+          perfection_threshold: 0.80,
+        }),
+      });
+      setTimeout(() => { fetchClStatus(); setLoad('cl', false); }, 400);
+    } catch (e) { setError(e.message); setLoad('cl', false); }
+  };
+
+  const handleClStop = async () => {
+    setLoad('clStop', true);
+    try {
+      await api('/api/v2/brain/closed-loop/stop', { method: 'POST' });
+      setTimeout(() => { fetchClStatus(); setLoad('clStop', false); }, 400);
+    } catch (e) { setLoad('clStop', false); }
   };
 
   const handleGetRecipe = async (paperId) => {
@@ -587,6 +622,7 @@ export default function AutonomousLabPanel() {
 
   const loopRunning   = loopStatus?.running;
   const ingestRunning = ingestStatus?.running;
+  const clRunning     = clStatus?.running;
 
   // ════════════════════════════════════════════════════════════════════════
   //  RENDER
@@ -654,6 +690,8 @@ export default function AutonomousLabPanel() {
           <Tab label="Literature" icon={BookOpen} active={activeTab === 'papers'} onClick={() => setActiveTab('papers')} badge={papers.length || null} />
           <Tab label="Discovery Loop" icon={Activity} active={activeTab === 'loop'} onClick={() => setActiveTab('loop')}
             badge={loopRunning ? '●' : null} />
+          <Tab label="Recipe Engine" icon={Beaker} active={activeTab === 'recipe'} onClick={() => { setActiveTab('recipe'); fetchClStatus(); }}
+            badge={clRunning ? '●' : null} />
           <Tab label="Discoveries" icon={Database} active={activeTab === 'discoveries'} onClick={() => { setActiveTab('discoveries'); fetchDiscoveries(); }}
             badge={discoveries.length || null} />
           <Tab label="Validate" icon={Microscope} active={activeTab === 'validate'} onClick={() => setActiveTab('validate')} />
@@ -865,6 +903,143 @@ export default function AutonomousLabPanel() {
             )}
           </div>
         )}
+
+        {/* ── RECIPE ENGINE (CLOSED LOOP) TAB ──────────────────────── */}
+        {activeTab === 'recipe' && (() => {
+          const pr = clResult?.perfect_recipe;
+          const tgt = clResult?.target || clStatus?.target;
+          const subs = pr?.subscores || {};
+          const eis = pr?.results?.eis;
+          const cv  = pr?.results?.cv;
+          const gcd = pr?.results?.gcd;
+          const drt = pr?.results?.drt;
+          const comps = pr?.composition?.components || {};
+          const synth = pr?.synthesis || {};
+          const bestScore = clStatus?.running ? (clStatus?.best_score || 0) : (pr?.score || 0);
+          return (
+          <div>
+            {/* Controls */}
+            <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: 18, marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Closed-Loop Recipe Discovery</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.5 }}>
+                Invents an electrode → synthesises it in the hydrothermal digital twin → characterises it across
+                EIS, CV, GCD &amp; DRT → scores it against the perfect-recipe target → learns and repeats until it
+                converges on a reproducible recipe. Every number is produced by the physics engines.
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button
+                  onClick={handleClStart}
+                  disabled={clRunning || loading.cl}
+                  style={{
+                    padding: '9px 20px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                    background: '#8b5cf6', color: '#fff', fontWeight: 700, fontSize: 13,
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    opacity: (clRunning || loading.cl) ? 0.6 : 1,
+                  }}
+                >
+                  {loading.cl ? <Loader2 size={14} className="spin" /> : <Beaker size={14} />}
+                  Start Autonomous Discovery
+                </button>
+                <button
+                  onClick={handleClStop}
+                  disabled={!clRunning || loading.clStop}
+                  style={{
+                    padding: '9px 18px', borderRadius: 7, cursor: 'pointer', fontWeight: 600, fontSize: 13,
+                    border: '1px solid #ef444444', background: '#ef444415', color: '#ef4444',
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    opacity: !clRunning ? 0.4 : 1,
+                  }}
+                >
+                  {loading.clStop ? <Loader2 size={14} className="spin" /> : <Square size={14} />}
+                  Stop
+                </button>
+                <button onClick={fetchClStatus} style={{ background: 'none', border: '1px solid var(--border-primary)', borderRadius: 6, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <RefreshCcw size={11} /> Refresh
+                </button>
+                <Pill label={clStatus?.use_nim ? 'NIM inverse design' : 'Guided sampler'} color={clStatus?.use_nim ? '#22c55e' : '#6366f1'} />
+              </div>
+            </div>
+
+            {/* Live stats */}
+            {clStatus && (clStatus.running || clStatus.iteration > 0 || pr) && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginBottom: 16 }}>
+                <StatCard icon={Activity} label="Iteration" value={clStatus.iteration ?? 0} color="#8b5cf6" />
+                <StatCard icon={TrendingUp} label="Best Score" value={`${Math.round(bestScore * 100)}%`} sub={`target ${Math.round((tgt?.perfection_threshold || 0.8) * 100)}%`} color="#22c55e" />
+                <StatCard icon={Award} label="Status" value={clStatus.running ? 'Running' : (clResult?.converged ? 'Converged' : 'Stopped')} color={clResult?.converged ? '#22c55e' : (clStatus.running ? '#f59e0b' : '#6b7280')} />
+                <StatCard icon={Layers} label="Failures" value={clResult?.failures ?? '—'} sub="below target" color="#6b7280" />
+              </div>
+            )}
+
+            {clStatus?.running && (
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Loader2 size={14} className="spin" color="#8b5cf6" />
+                Best so far: <strong style={{ color: 'var(--text-primary)' }}>{clStatus.best_material || '…'}</strong>
+              </div>
+            )}
+
+            {/* Perfect recipe */}
+            {pr && !clStatus?.running && (
+              <div style={{ background: 'linear-gradient(135deg, #ede9fe30, #dcfce730)', border: `1px solid ${clResult?.converged ? '#22c55e55' : '#8b5cf655'}`, borderRadius: 12, padding: 18, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <Award size={18} color={clResult?.converged ? '#22c55e' : '#8b5cf6'} />
+                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {clResult?.converged ? 'Perfect Recipe Found' : 'Best Recipe (not yet at target)'}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: 20, fontWeight: 800, color: clResult?.converged ? '#22c55e' : '#8b5cf6' }}>
+                    {Math.round((pr.score || 0) * 100)}%
+                  </span>
+                </div>
+
+                {/* Composition */}
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Composition</div>
+                <div style={{ marginBottom: 12 }}>
+                  {Object.entries(comps).map(([k, v]) => (
+                    <Pill key={k} label={`${k} ${(v * 100).toFixed(0)}%`} color="#8b5cf6" />
+                  ))}
+                </div>
+
+                {/* Synthesis */}
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Hydrothermal Synthesis</div>
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-primary)', marginBottom: 14 }}>
+                  <span>{synth.temperature_C?.toFixed(0)} °C</span>
+                  <span>{synth.duration_hours?.toFixed(1)} h</span>
+                  <span>pH {synth.pH?.toFixed(1)}</span>
+                  {synth.concentration_mM != null && <span>{synth.concentration_mM?.toFixed(0)} mM</span>}
+                </div>
+
+                {/* Sub-scores */}
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Weighted Objectives</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: '8px 18px', marginBottom: 14 }}>
+                  {Object.entries(subs).map(([k, v]) => (
+                    <div key={k}>
+                      <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 3, textTransform: 'capitalize' }}>{k}</div>
+                      <ScoreBar value={v} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Characterisation grid */}
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Multi-Technique Characterisation</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+                  {gcd && <StatCard icon={BarChart2} label="Capacitance" value={`${gcd.specific_capacitance_F_g?.toFixed(0)}`} sub="F/g (GCD)" color="#22c55e" />}
+                  {eis && <StatCard icon={Network} label="Rct" value={`${eis.Rct_ohm?.toFixed(0)}`} sub="Ω (EIS)" color="#3b82f6" />}
+                  {cv && <StatCard icon={Activity} label="ΔEp" value={`${cv.delta_Ep_mV?.toFixed(0)}`} sub="mV (CV)" color="#f59e0b" />}
+                  {gcd && <StatCard icon={Zap} label="Energy" value={`${gcd.energy_density_Wh_kg?.toFixed(1)}`} sub="Wh/kg (GCD)" color="#ec4899" />}
+                  {drt && <StatCard icon={Layers} label="DRT peaks" value={drt.n_peaks} sub="processes" color="#6366f1" />}
+                </div>
+
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 12 }}>
+                  Converged in {clResult?.iterations_run} iterations · {clResult?.used_nim ? 'NIM-driven' : 'guided sampler'} · all values from physics engines
+                </div>
+              </div>
+            )}
+
+            {!clStatus?.running && !pr && (
+              <EmptyState icon={Beaker} title="No recipe yet" sub="Click 'Start Autonomous Discovery' to invent, synthesise, characterise and score electrodes until a perfect recipe emerges" />
+            )}
+          </div>
+          );
+        })()}
 
         {/* ── DISCOVERIES TAB ──────────────────────────────────────── */}
         {activeTab === 'discoveries' && (

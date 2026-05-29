@@ -50,6 +50,21 @@ class LoopStartRequest(BaseModel):
     )
 
 
+class ClosedLoopRequest(BaseModel):
+    max_iterations: int = Field(
+        default=40,
+        description="Maximum invent→synthesise→characterise→score iterations",
+        ge=1, le=500,
+    )
+    seed: int = Field(default=0, description="RNG seed for reproducible runs", ge=0)
+    target_capacitance_F_g: float = Field(default=400.0, gt=0)
+    perfection_threshold: float = Field(
+        default=0.80,
+        description="Overall score at which a 'perfect recipe' is declared",
+        ge=0.0, le=1.0,
+    )
+
+
 class ValidateRequest(BaseModel):
     material: str = Field(..., description="Material name or formula")
     analyte: str  = Field(..., description="Target analyte (e.g. 'formaldehyde', 'Pb2+')")
@@ -226,6 +241,82 @@ def loop_status():
         from src.backend.core.engines.lab_brain import get_loop_status
         return get_loop_status()
     except Exception as exc:
+        raise HTTPException(500, detail=str(exc))
+
+
+@router.post("/closed-loop/start")
+def closed_loop_start(req: ClosedLoopRequest):
+    """
+    Start the autonomous closed-loop discovery engine in the background.
+
+    Each iteration invents a candidate electrode (NIM-driven when a key is
+    configured, otherwise a deterministic guided sampler), synthesises it in
+    the hydrothermal digital twin, characterises it across EIS/CV/GCD/DRT, and
+    scores it. The loop keeps the best recipe and stops as soon as a candidate
+    crosses the perfection threshold — a reproducible "perfect recipe".
+    """
+    try:
+        from src.backend.core.engines.closed_loop import RecipeTarget, start_closed_loop
+        target = RecipeTarget(
+            target_capacitance_F_g=req.target_capacitance_F_g,
+            perfection_threshold=req.perfection_threshold,
+        )
+        return start_closed_loop(
+            target=target, max_iterations=req.max_iterations, seed=req.seed,
+        )
+    except Exception as exc:
+        logger.error("closed_loop_start: %s", exc)
+        raise HTTPException(500, detail=str(exc))
+
+
+@router.post("/closed-loop/stop")
+def closed_loop_stop():
+    """Request a graceful stop of the closed-loop discovery engine."""
+    try:
+        from src.backend.core.engines.closed_loop import stop_closed_loop
+        return stop_closed_loop()
+    except Exception as exc:
+        raise HTTPException(500, detail=str(exc))
+
+
+@router.get("/closed-loop/status")
+def closed_loop_status_route():
+    """Live status — current iteration, best score, best material, convergence."""
+    try:
+        from src.backend.core.engines.closed_loop import closed_loop_status
+        return closed_loop_status()
+    except Exception as exc:
+        raise HTTPException(500, detail=str(exc))
+
+
+@router.get("/closed-loop/result")
+def closed_loop_result_route():
+    """Full result of the most recent closed-loop run (perfect recipe + history)."""
+    try:
+        from src.backend.core.engines.closed_loop import closed_loop_result
+        return closed_loop_result()
+    except Exception as exc:
+        raise HTTPException(500, detail=str(exc))
+
+
+@router.post("/closed-loop/run")
+def closed_loop_run(req: ClosedLoopRequest):
+    """
+    Run the closed loop synchronously and return the full result. Bounded by
+    ``max_iterations`` so it is safe for the Dashboard end-to-end verification
+    button (use a small budget, e.g. 25 iterations).
+    """
+    try:
+        from src.backend.core.engines.closed_loop import RecipeTarget, run_closed_loop_sync
+        target = RecipeTarget(
+            target_capacitance_F_g=req.target_capacitance_F_g,
+            perfection_threshold=req.perfection_threshold,
+        )
+        return run_closed_loop_sync(
+            target=target, max_iterations=req.max_iterations, seed=req.seed,
+        )
+    except Exception as exc:
+        logger.error("closed_loop_run: %s", exc)
         raise HTTPException(500, detail=str(exc))
 
 
