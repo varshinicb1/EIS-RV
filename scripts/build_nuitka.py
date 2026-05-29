@@ -33,20 +33,40 @@ def build_nuitka(debug=False, onefile=False):
     cmd = [
         sys.executable, "-m", "nuitka",
         "--standalone",
+        "--follow-imports",
         f"--output-dir={out_dir}",
         "--python-flag=no_site",
+        # Core web framework
         "--include-package=fastapi",
         "--include-package=uvicorn",
         "--include-package=pydantic",
         "--include-package=starlette",
+        # Numerical / ML
         "--include-package=numpy",
         "--include-package=sklearn",
+        "--include-package=scipy",
+        "--include-package=pandas",
+        # Plotting
+        "--include-package=plotly",
+        "--include-package=matplotlib",
+        # HTTP / async
+        "--include-package=requests",
+        "--include-package=aiohttp",
+        "--include-package=httpx",
+        # Database
+        "--include-package=sqlalchemy",
+        "--include-package=alembic",
+        # Config
+        "--include-package=dotenv",
+        # Rust engine wheel
+        "--include-module=raman_core_rs",
+        # Data files
         "--include-data-dir=data/datasets=datasets",
         "--enable-plugin=numpy",
         "--company-name=VidyuthLabs",
         "--product-name=RAMAN-Studio-Backend",
-        "--file-version=2.0.0",
-        "--product-version=2.0.0",
+        "--file-version=3.0.0",
+        "--product-version=3.0.0",
     ]
 
     if onefile:
@@ -61,9 +81,9 @@ def build_nuitka(debug=False, onefile=False):
         ])
 
     if platform.system() == "Linux":
-        cmd.append("--linux-icon=resources/icon.png")
+        cmd.append("--linux-icon=src-tauri/icons/icon.png")
     elif platform.system() == "Windows":
-        cmd.append("--windows-icon-from-ico=resources/icon.ico")
+        cmd.append("--windows-icon-from-ico=src-tauri/icons/icon.ico")
         cmd.append("--windows-console-mode=disable")
 
     cmd.append(entry)

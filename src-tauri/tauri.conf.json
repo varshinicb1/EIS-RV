@@ -36,7 +36,7 @@
     "resources": {
       "../requirements.txt": "requirements.txt",
       "../src/backend": "src/backend",
-      "../resources/wheels": "wheels"
+      "../resources/python": "python"
     },
     "windows": {
       "certificateThumbprint": null,

@@ -22,34 +22,6 @@ fn find_python() -> Option<PathBuf> {
     None
 }
 
-fn install_wheel(resource_dir: &std::path::Path) -> Result<(), String> {
-    let wheel_dir = resource_dir.join("wheels");
-    if !wheel_dir.exists() {
-        return Ok(());
-    }
-    let python = find_python().ok_or("Python not found")?;
-
-    for entry in std::fs::read_dir(&wheel_dir).map_err(|e| e.to_string())? {
-        let entry = entry.map_err(|e| e.to_string())?;
-        let path = entry.path();
-        if path.extension().and_then(|s| s.to_str()) == Some("whl") {
-            println!("[RAMAN] Installing wheel: {}", path.display());
-            let out = Command::new(&python)
-                .args(&["-m", "pip", "install", "--force-reinstall", "--no-deps"])
-                .arg(&path)
-                .output()
-                .map_err(|e| format!("Failed to install wheel: {}", e))?;
-            if !out.status.success() {
-                let stderr = String::from_utf8_lossy(&out.stderr);
-                eprintln!("[RAMAN] Wheel install stderr: {}", stderr);
-            } else {
-                println!("[RAMAN] Wheel installed successfully");
-            }
-        }
-    }
-    Ok(())
-}
-
 fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::Child, String> {
     let resource_dir = app_handle.path().resource_dir()
         .map_err(|e| format!("Failed to get resource dir: {}", e))?;
@@ -73,13 +45,10 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
             repo_root,
         )
     } else {
-        let python_exe = if cfg!(windows) {
-            resource_dir.join("python").join("python.exe")
-        } else {
-            resource_dir.join("bin").join("python3")
-        };
-        let cmd_str = if python_exe.exists() {
-            python_exe.to_string_lossy().to_string()
+        // Production: use bundled Python from resources/python/
+        let bundled_python = resource_dir.join("python").join("python.exe");
+        let cmd_str = if bundled_python.exists() {
+            bundled_python.to_string_lossy().to_string()
         } else {
             match find_python() {
                 Some(p) => p.to_string_lossy().to_string(),
@@ -101,10 +70,6 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
             resource_dir.clone(),
         )
     };
-
-    if let Err(e) = install_wheel(&resource_dir) {
-        eprintln!("[RAMAN] Warning: could not install Rust wheel: {}", e);
-    }
 
     let mut child = Command::new(&cmd)
         .args(&args)
