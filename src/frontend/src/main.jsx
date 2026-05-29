@@ -19,7 +19,7 @@ import './styles/index.css';
 // surface the Electron preload used, so the rest of the UI doesn't
 // need to change.
 (async () => {
-  if (typeof window !== 'undefined' && window.__TAURI__) {
+  if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
     const { open, save } = await import('@tauri-apps/plugin-dialog');
     const { listen } = await import('@tauri-apps/api/event');
     const { invoke } = await import('@tauri-apps/api/core');

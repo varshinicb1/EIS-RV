@@ -40,8 +40,8 @@ const AutonomousLabPanel         = lazy(() => import('./components/discovery/Aut
 const GoogleDrivePanel           = lazy(() => import('./components/research/GoogleDrivePanel'));
 const ECLiteraturePanel          = lazy(() => import('./components/research/ECLiteraturePanel'));
 
-// Backend URL — uses Electron preload bridge or fallback
-const BACKEND_URL = '';
+// Backend URL — uses Tauri/Electron preload bridge or direct fallback
+const BACKEND_URL = 'http://127.0.0.1:8000';
 
 const PANELS = {
   dashboard:  { label: 'Dashboard',          component: DashboardPanel },
