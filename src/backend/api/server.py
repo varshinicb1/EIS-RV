@@ -88,7 +88,7 @@ async def lifespan(app: FastAPI):
 
     hw_bridge.add_callback(broadcast_telemetry)
     asyncio.create_task(hw_bridge.connect())
-    
+
     # Load materials database
     try:
         from src.backend.ml.material_identifier import get_material_identifier
@@ -101,7 +101,7 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Materials database not found at {db_path}")
     except Exception as e:
         logger.error(f"Failed to load materials database: {e}")
-    
+
     # Initialize workflow templates
     try:
         from src.backend.workflows.workflow_templates import WorkflowTemplates
@@ -109,7 +109,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"Workflow templates initialized: {len(templates)} templates")
     except Exception as e:
         logger.error(f"Failed to initialize workflow templates: {e}")
-    
+
     logger.info("RĀMAN Studio v2 backend started")
     yield
     # Shutdown
@@ -922,7 +922,7 @@ except ImportError as e:
 try:
     from src.backend.api.v1_routes.quantum_routes import router as quantum_router
     app.include_router(quantum_router)
-except ImportError as e:
+except (ImportError, OSError) as e:
     logger.warning("Quantum router unavailable: %s", e)
 
 # NVIDIA Intelligence + Paper Validation routes.
@@ -960,14 +960,14 @@ try:
     from src.backend.api.v1_routes.ml_routes import router as ml_router
     app.include_router(ml_router, dependencies=_license_dep)
     logger.info("ML prediction engine loaded (CV Transformer ready)")
-except ImportError as e:
+except (ImportError, OSError) as e:
     logger.warning("ML prediction router unavailable: %s", e)
 
 # Raman material database routes (material identification, database queries)
 try:
     from src.backend.api.v1_routes.raman_material_routes import raman_material_bp
     app.include_router(raman_material_bp)
-    logger.info("Raman material database loaded (%d materials)", len(identifier.materials) if 'identifier' in dir() else 0)
+    logger.info("Raman material database loaded")
 except Exception as e:
     logger.warning("Raman material database router unavailable: %s", e)
 
@@ -1250,10 +1250,10 @@ async def simulate_biosensor_v1(req: LegacyBiosensorRequest):
                 "response_time": 2.0,  # s
                 "linear_range": req.concentration_range
             }
-        
+
         from src.backend.core.engines.biosensor_engine import BiosensorConfig, BiosensorType, simulate_biosensor
         analyte_key = req.analyte.lower().replace(" ", "_")
-        
+
         config = BiosensorConfig(
             analyte=analyte_key,
             sensor_type=BiosensorType.AMPEROMETRIC,
@@ -1264,10 +1264,10 @@ async def simulate_biosensor_v1(req: LegacyBiosensorRequest):
             pH=req.pH,
             temperature_C=req.temperature - 273.15,
         )
-        
+
         perf = simulate_biosensor(config)
         perf_dict = perf.to_dict()
-        
+
         return {
             "status": "success",
             "material": req.material,
@@ -1511,22 +1511,22 @@ class InverseEISRequest(BaseModel):
 async def inverse_solve_eis(req: InverseEISRequest):
     """
     Inverse problem solver for EIS data.
-    
+
     Given measured EIS data, infer:
     - Circuit parameters (Rs, Rct, Cdl, Warburg)
     - Material candidates with confidence scores
     - Synthesis suggestions
-    
+
     This replaces physical lab synthesis by predicting material composition
     from electrochemical signatures.
     """
     import numpy as np
     try:
         from src.backend.ml.models.inverse_solver import get_solver
-        
+
         if len(req.frequency_Hz) != len(req.Z_real_ohm) or len(req.frequency_Hz) != len(req.Z_imag_ohm):
             raise HTTPException(400, "frequency_Hz, Z_real_ohm, Z_imag_ohm must have equal length")
-        
+
         solver = get_solver()
         t0 = time.perf_counter()
         solution = solver.solve_from_eis(
@@ -1536,11 +1536,11 @@ async def inverse_solve_eis(req: InverseEISRequest):
             method=req.method,
         )
         elapsed = time.perf_counter() - t0
-        
+
         result = solution.to_dict()
         result["compute_time_ms"] = round(elapsed * 1000, 2)
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1558,7 +1558,7 @@ class InverseCVRequest(BaseModel):
 async def inverse_solve_cv(req: InverseCVRequest):
     """
     Inverse problem solver for CV data.
-    
+
     Given measured CV data, infer:
     - Peak positions, ΔEp, ipa/ipc ratio
     - Material candidates with confidence scores
@@ -1567,10 +1567,10 @@ async def inverse_solve_cv(req: InverseCVRequest):
     import numpy as np
     try:
         from src.backend.ml.models.inverse_solver import get_solver
-        
+
         if len(req.potential_V) != len(req.current_A):
             raise HTTPException(400, "potential_V and current_A must have equal length")
-        
+
         solver = get_solver()
         t0 = time.perf_counter()
         solution = solver.solve_from_cv(
@@ -1579,11 +1579,11 @@ async def inverse_solve_cv(req: InverseCVRequest):
             scan_rate_V_s=req.scan_rate_V_s,
         )
         elapsed = time.perf_counter() - t0
-        
+
         result = solution.to_dict()
         result["compute_time_ms"] = round(elapsed * 1000, 2)
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1600,7 +1600,7 @@ class InverseRamanRequest(BaseModel):
 async def inverse_solve_raman(req: InverseRamanRequest):
     """
     Inverse problem solver for Raman data.
-    
+
     Given measured Raman spectrum, infer:
     - Peak positions and D/G ratio
     - Material candidates with confidence scores
@@ -1609,10 +1609,10 @@ async def inverse_solve_raman(req: InverseRamanRequest):
     import numpy as np
     try:
         from src.backend.ml.models.inverse_solver import get_solver
-        
+
         if len(req.wavenumber_cm) != len(req.intensity):
             raise HTTPException(400, "wavenumber_cm and intensity must have equal length")
-        
+
         solver = get_solver()
         t0 = time.perf_counter()
         solution = solver.solve_from_raman(
@@ -1620,11 +1620,11 @@ async def inverse_solve_raman(req: InverseRamanRequest):
             intensity=np.array(req.intensity),
         )
         elapsed = time.perf_counter() - t0
-        
+
         result = solution.to_dict()
         result["compute_time_ms"] = round(elapsed * 1000, 2)
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1642,11 +1642,11 @@ class InverseMultimodalRequest(BaseModel):
 async def inverse_solve_multimodal(req: InverseMultimodalRequest):
     """
     Multi-modal inverse problem solver.
-    
+
     Fuses results from EIS, CV, and Raman data for highest confidence
     material identification. This is the most powerful approach for
     replacing physical lab synthesis with predictive simulation.
-    
+
     Returns:
     - Material candidates with multi-modal confidence scores
     - Inferred properties from all modalities
@@ -1655,7 +1655,7 @@ async def inverse_solve_multimodal(req: InverseMultimodalRequest):
     import numpy as np
     try:
         from src.backend.ml.models.inverse_solver import get_solver
-        
+
         # Convert lists to numpy arrays
         eis_np = None
         if req.eis_data:
@@ -1664,7 +1664,7 @@ async def inverse_solve_multimodal(req: InverseMultimodalRequest):
                 "Z_real_ohm": np.array(req.eis_data["Z_real_ohm"]),
                 "Z_imag_ohm": np.array(req.eis_data["Z_imag_ohm"]),
             }
-        
+
         cv_np = None
         if req.cv_data:
             cv_np = {
@@ -1672,17 +1672,17 @@ async def inverse_solve_multimodal(req: InverseMultimodalRequest):
                 "current_A": np.array(req.cv_data["current_A"]),
                 "scan_rate_V_s": req.cv_data["scan_rate_V_s"],
             }
-        
+
         raman_np = None
         if req.raman_data:
             raman_np = {
                 "wavenumber_cm": np.array(req.raman_data["wavenumber_cm"]),
                 "intensity": np.array(req.raman_data["intensity"]),
             }
-        
+
         if not any([eis_np, cv_np, raman_np]):
             raise HTTPException(400, "At least one modality (eis_data, cv_data, or raman_data) must be provided")
-        
+
         solver = get_solver()
         t0 = time.perf_counter()
         solution = solver.solve_multimodal(
@@ -1691,11 +1691,11 @@ async def inverse_solve_multimodal(req: InverseMultimodalRequest):
             raman_data=raman_np,
         )
         elapsed = time.perf_counter() - t0
-        
+
         result = solution.to_dict()
         result["compute_time_ms"] = round(elapsed * 1000, 2)
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1727,7 +1727,8 @@ async def semantic_extract(req: SemanticExtractRequest):
 @app.post("/api/v2/lab/analyze")
 async def lab_auto_analyze(file: UploadFile = File(...)):
     """Auto-analyze a CHI instrument file (EIS/DPV/CV/Raman)."""
-    import tempfile, shutil
+    import tempfile
+    import shutil
     try:
         from src.backend.core.chi_parser import get_analyzer
         analyzer = get_analyzer()
@@ -1745,7 +1746,7 @@ async def lab_auto_analyze(file: UploadFile = File(...)):
         if result.get("technique") == "DPV" or "dpv_analysis" in result:
             from src.backend.core.dpv_calibration import get_calibration_builder
             from src.backend.core.concentration_study import get_concentration_study_analyzer
-            
+
             try:
                 # Try concentration study analyzer first (for gomutra-style data)
                 study_analyzer = get_concentration_study_analyzer()
@@ -1759,7 +1760,7 @@ async def lab_auto_analyze(file: UploadFile = File(...)):
                         "equation": study_res.equation
                     }
                     result["technique"] = "DPV Calibration"
-            except Exception as e:
+            except Exception:
                 pass
 
             if result.get("technique") != "DPV Calibration":
@@ -1776,7 +1777,7 @@ async def lab_auto_analyze(file: UploadFile = File(...)):
                             "equation": cal_res.equation
                         }
                         result["technique"] = "DPV Calibration"
-                except Exception as e:
+                except Exception:
                     pass
 
         # Cleanup
@@ -1810,36 +1811,36 @@ async def upload_eis_csv(file: UploadFile = File(...)):
         # Read file content
         content = await file.read()
         text = content.decode('utf-8')
-        
+
         # Parse CSV
         reader = csv.DictReader(io.StringIO(text))
         rows = list(reader)
-        
+
         # Extract data (support multiple column name formats)
         frequencies = []
         Z_real = []
         Z_imag = []
-        
+
         for row in rows:
             # Try different column name formats
-            freq = (row.get('frequency') or row.get('Frequency') or 
+            freq = (row.get('frequency') or row.get('Frequency') or
                    row.get('freq') or row.get('f') or row.get('F'))
-            real = (row.get('Z_real') or row.get('Zreal') or row.get('Z\'') or 
+            real = (row.get('Z_real') or row.get('Zreal') or row.get('Z\'') or
                    row.get('real') or row.get('Re(Z)') or row.get('ReZ'))
-            imag = (row.get('Z_imag') or row.get('Zimag') or row.get('Z\"') or 
+            imag = (row.get('Z_imag') or row.get('Zimag') or row.get('Z\"') or
                    row.get('imag') or row.get('Im(Z)') or row.get('ImZ'))
-            
+
             if freq and real and imag:
                 frequencies.append(float(freq))
                 Z_real.append(float(real))
                 Z_imag.append(float(imag))
-        
+
         if not frequencies:
             raise HTTPException(
                 status_code=400,
                 detail="Could not parse EIS data. Expected columns: frequency, Z_real, Z_imag"
             )
-        
+
         return {
             "status": "success",
             "filename": file.filename,
@@ -1862,33 +1863,33 @@ async def upload_cv_csv(file: UploadFile = File(...)):
         # Read file content
         content = await file.read()
         text = content.decode('utf-8')
-        
+
         # Parse CSV
         reader = csv.DictReader(io.StringIO(text))
         rows = list(reader)
-        
+
         # Extract data (support multiple column name formats)
         potential = []
         current = []
-        
+
         for row in rows:
             # Try different column name formats
-            pot = (row.get('potential') or row.get('Potential') or 
-                  row.get('voltage') or row.get('Voltage') or 
+            pot = (row.get('potential') or row.get('Potential') or
+                  row.get('voltage') or row.get('Voltage') or
                   row.get('V') or row.get('E'))
-            cur = (row.get('current') or row.get('Current') or 
+            cur = (row.get('current') or row.get('Current') or
                   row.get('I') or row.get('i'))
-            
+
             if pot and cur:
                 potential.append(float(pot))
                 current.append(float(cur))
-        
+
         if not potential:
             raise HTTPException(
                 status_code=400,
                 detail="Could not parse CV data. Expected columns: potential/voltage, current"
             )
-        
+
         return {
             "status": "success",
             "filename": file.filename,
@@ -1911,33 +1912,33 @@ async def upload_gcd_csv(file: UploadFile = File(...)):
         # Read file content
         content = await file.read()
         text = content.decode('utf-8')
-        
+
         # Parse CSV
         reader = csv.DictReader(io.StringIO(text))
         rows = list(reader)
-        
+
         # Extract data (support multiple column name formats)
         time = []
         voltage = []
-        
+
         for row in rows:
             # Try different column name formats
-            t = (row.get('time') or row.get('Time') or 
+            t = (row.get('time') or row.get('Time') or
                 row.get('t') or row.get('T'))
-            v = (row.get('voltage') or row.get('Voltage') or 
-                row.get('potential') or row.get('Potential') or 
+            v = (row.get('voltage') or row.get('Voltage') or
+                row.get('potential') or row.get('Potential') or
                 row.get('V') or row.get('E'))
-            
+
             if t and v:
                 time.append(float(t))
                 voltage.append(float(v))
-        
+
         if not time:
             raise HTTPException(
                 status_code=400,
                 detail="Could not parse GCD data. Expected columns: time, voltage"
             )
-        
+
         return {
             "status": "success",
             "filename": file.filename,
@@ -1959,34 +1960,34 @@ async def upload_raman_csv(file: UploadFile = File(...)):
         # Read file content
         content = await file.read()
         text = content.decode('utf-8')
-        
+
         # Parse CSV
         reader = csv.DictReader(io.StringIO(text))
         rows = list(reader)
-        
+
         # Extract data (support multiple column name formats)
         wavenumber = []
         intensity = []
-        
+
         for row in rows:
             # Try different column name formats
-            wn = (row.get('wavenumber') or row.get('Wavenumber') or 
-                 row.get('raman_shift') or row.get('shift') or 
+            wn = (row.get('wavenumber') or row.get('Wavenumber') or
+                 row.get('raman_shift') or row.get('shift') or
                  row.get('cm-1') or row.get('cm^-1'))
-            intens = (row.get('intensity') or row.get('Intensity') or 
-                     row.get('counts') or row.get('Counts') or 
+            intens = (row.get('intensity') or row.get('Intensity') or
+                     row.get('counts') or row.get('Counts') or
                      row.get('I'))
-            
+
             if wn and intens:
                 wavenumber.append(float(wn))
                 intensity.append(float(intens))
-        
+
         if not wavenumber:
             raise HTTPException(
                 status_code=400,
                 detail="Could not parse Raman data. Expected columns: wavenumber, intensity"
             )
-        
+
         return {
             "status": "success",
             "filename": file.filename,
@@ -2237,7 +2238,7 @@ async def generate_report(data: Dict[str, Any]):
     if not template:
         raise HTTPException(400, "Unknown template")
 
-    project_id = data.get("project_id")
+    _project_id = data.get("project_id")
     sim_data = data.get("simulation_data", {})
     user = _load_user()
 
@@ -2739,10 +2740,10 @@ async def validate_against_paper(req: PaperValidationRequest):
     if req.technique == "eis":
         p = req.params
         Rs = p.get("Rs", 10); Rct = p.get("Rct", 100)
-        Cdl = p.get("Cdl", 1e-5); sigma_w = p.get("sigma_w", 50)
+        Cdl = p.get("Cdl", 1e-5); _sigma_w = p.get("sigma_w", 50)
         # Run EIS simulation
         n_pts = 50
-        freqs = [10 ** (math.log10(0.01) + i * 8 / (n_pts - 1)) for i in range(n_pts)]
+        _freqs = [10 ** (math.log10(0.01) + i * 8 / (n_pts - 1)) for i in range(n_pts)]
         z_real_at_0 = Rs + Rct  # DC limit
         tau_ct = Rct * Cdl
         f_char = 1 / (2 * math.pi * tau_ct) if tau_ct > 0 else 1000
@@ -2820,5 +2821,3 @@ async def validation_status():
         "tolerance_default_pct": 10.0,
         "description": "Validates simulation results against published research paper data",
     }
-
-
