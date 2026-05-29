@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 const CIRCUITS = {
   randles: { name: 'Randles', desc: 'Rs + (Cdl ∥ (Rct + W))', params: ['Rs','Rct','Cdl','sigma_w'] },

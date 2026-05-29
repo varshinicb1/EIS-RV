@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 /* ─── tiny style helpers ────────────────────────────────────────────────── */
 const card  = (extra={}) => ({ background:'var(--bg-secondary)', border:'1px solid var(--border-primary)', borderRadius:'var(--radius)', padding:16, ...extra });

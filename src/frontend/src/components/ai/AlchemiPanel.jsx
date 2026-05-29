@@ -7,7 +7,7 @@ import { OrbitControls, Sphere, Cylinder, ContactShadows } from '@react-three/dr
 //   POST /api/v2/alchemi/properties  — curated DB → LLM estimate → unavailable
 //   POST /api/v2/alchemi/chat        — materials Q&A against the configured NIM
 //   GET  /api/v2/alchemi/search/:q   — PubChem fetch + parsed 3D structure
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 const ELEMENT_COLORS = {
   H:'#ffffff', C:'#333333', N:'#3050f8', O:'#ff0d0d', F:'#90e050',

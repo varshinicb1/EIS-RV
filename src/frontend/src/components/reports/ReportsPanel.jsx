@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { generateIEEEReport } from '../../utils/ieeeReportGenerator';
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 const fmtDate = ts => ts ? new Date(ts * 1000).toLocaleDateString('en-US', { 
   month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
 }) : '—';

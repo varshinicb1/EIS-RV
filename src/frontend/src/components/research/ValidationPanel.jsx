@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 const SAMPLE_PAPERS = [
   { id: 'P001', title: 'Glucose biosensor on Au/SAM electrode', technique: 'eis',

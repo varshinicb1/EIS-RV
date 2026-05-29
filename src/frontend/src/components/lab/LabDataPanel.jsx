@@ -4,7 +4,7 @@ import {
   RefreshCcw, AlertTriangle, CheckCircle2, Beaker, FileSpreadsheet, X,
 } from 'lucide-react';
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 // ───────────────────────────────────────────────────────────────────
 // Tiny helpers

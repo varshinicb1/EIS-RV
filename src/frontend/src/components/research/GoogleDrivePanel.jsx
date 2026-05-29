@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 const S = {
   root: { display: 'grid', gridTemplateColumns: '300px 1fr', gap: 12, height: '100%', overflow: 'hidden' },

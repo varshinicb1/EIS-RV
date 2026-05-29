@@ -7,7 +7,7 @@ import {
   Layers, Info, Clock, TrendingUp, Award, Microscope,
 } from 'lucide-react';
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 async function api(path, opts = {}) {
   const res = await fetch(`${API}${path}`, {

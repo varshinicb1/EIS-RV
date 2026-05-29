@@ -13,7 +13,7 @@ import useTheme, { THEMES } from '../../hooks/useTheme';
  *  - Notification preferences (local)
  */
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 const DEFAULT_PROFILE = {
   name: '',

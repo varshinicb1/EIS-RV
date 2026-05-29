@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
  * port animations.
  */
 
-const API = '';
+const API = 'http://127.0.0.1:8000';
 
 const ENGINES = [
   { name: 'EIS',           technique: 'Randles + CPE',           status: 'ready' },
