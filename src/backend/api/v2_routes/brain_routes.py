@@ -244,6 +244,18 @@ def loop_status():
         raise HTTPException(500, detail=str(exc))
 
 
+@router.get("/enrichment/status")
+def enrichment_status():
+    """Lightweight status for the new autonomous closed-loop enrichment
+    (hydrothermal synthesis simulation + virtual EIS/CV validation).
+    Used by Dashboard E2E verify and future UI indicators."""
+    try:
+        from src.backend.core.engines.lab_brain import get_autonomous_enrichment_status
+        return get_autonomous_enrichment_status()
+    except Exception as exc:
+        raise HTTPException(500, detail=str(exc))
+
+
 @router.post("/closed-loop/start")
 def closed_loop_start(req: ClosedLoopRequest):
     """

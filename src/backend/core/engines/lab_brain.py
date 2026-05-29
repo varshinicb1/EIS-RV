@@ -1358,6 +1358,27 @@ def get_report(report_id: str) -> Optional[Dict]:
     return _REPORT_CACHE.get(report_id)
 
 
+def get_autonomous_enrichment_status() -> Dict:
+    """
+    Clean, lightweight summary of the new autonomous closed-loop enrichment
+    (hydrothermal + virtual EC validation). Intended for UI and E2E verify.
+    """
+    try:
+        status = _loop.status()
+        return {
+            "enrichment_enabled": status.get("enrichment_enabled", False),
+            "synthesis_simulation_attempts": status.get("synthesis_simulation_attempts", 0),
+            "virtual_synthesis_validated": status.get("virtual_synthesis_validated", 0),
+            "loop_running": status.get("running", False),
+            "iteration": status.get("iteration", 0),
+        }
+    except Exception:
+        return {
+            "enrichment_enabled": False,
+            "error": "Could not read loop status"
+        }
+
+
 def get_unified_stats() -> Dict:
     papers_db = _db.query("SELECT COUNT(*) as n FROM brain_papers") or [{"n": 0}]
     disc_db   = _db.query("SELECT COUNT(*) as n FROM brain_discoveries") or [{"n": 0}]
