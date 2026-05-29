@@ -22,6 +22,30 @@ fn find_python() -> Option<PathBuf> {
     None
 }
 
+fn find_repo_root() -> Option<PathBuf> {
+    // Try to find the repo root by looking for src/backend/api/server.py
+    // relative to the executable location
+    if let Ok(exe) = std::env::current_exe() {
+        let mut dir = exe.parent().map(|p| p.to_path_buf());
+        // Walk up from exe directory (e.g. target/release/) looking for repo root
+        for _ in 0..5 {
+            if let Some(ref d) = dir {
+                if d.join("src").join("backend").join("api").join("server.py").exists() {
+                    return Some(d.clone());
+                }
+                dir = d.parent().map(|p| p.to_path_buf());
+            }
+        }
+    }
+    // Also check current working directory
+    if let Ok(cwd) = std::env::current_dir() {
+        if cwd.join("src").join("backend").join("api").join("server.py").exists() {
+            return Some(cwd);
+        }
+    }
+    None
+}
+
 fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::Child, String> {
     let resource_dir = app_handle.path().resource_dir()
         .map_err(|e| format!("Failed to get resource dir: {}", e))?;
@@ -45,9 +69,19 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
             repo_root,
         )
     } else {
-        // Production: use bundled Python from resources/python/
+        // Production: try bundled Python first, validate it works, then fall
+        // back to any Python found on PATH.
         let bundled_python = resource_dir.join("python").join("python.exe");
-        let cmd_str = if bundled_python.exists() {
+        let bundled_ok = bundled_python.exists() && {
+            Command::new(&bundled_python)
+                .args(&["-c", "import sys"])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false)
+        };
+        let cmd_str = if bundled_ok {
             bundled_python.to_string_lossy().to_string()
         } else {
             match find_python() {
@@ -59,6 +93,10 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
                 ),
             }
         };
+
+        // Find repo root by walking up from exe or using CWD
+        let backend_cwd = find_repo_root().unwrap_or_else(|| resource_dir.clone());
+
         (
             cmd_str,
             vec![
@@ -67,18 +105,26 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
                 "--host".to_string(), "127.0.0.1".to_string(),
                 "--port".to_string(), "8000".to_string(),
             ],
-            resource_dir.clone(),
+            backend_cwd,
         )
     };
 
-    let mut child = Command::new(&cmd)
+    let mut command = Command::new(&cmd);
+    command
         .args(&args)
         .current_dir(&cwd)
         .env("PYTHONUNBUFFERED", "1")
         .env("PYTHONDONTWRITEBYTECODE", "1")
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
+        .stderr(Stdio::piped());
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let mut child = command.spawn()
         .map_err(|e| format!("Failed to start Python backend: {}\n\nMake sure Python and uvicorn are installed:\n  pip install uvicorn fastapi", e))?;
 
     PYTHON_RUNNING.store(true, Ordering::SeqCst);
