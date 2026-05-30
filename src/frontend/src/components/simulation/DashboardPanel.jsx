@@ -215,7 +215,24 @@ export default function DashboardPanel() {
 
       {/* Honest A + B Progress Widget (live, powered by Cand 1 + Cand 5 winners) */}
       <div style={{ margin: '12px 0', padding: 12, background: '#0f1117', border: '1px solid #2a2f3a', borderRadius: 8, fontSize: 12 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6, color: '#7dd3fc' }}>Honest Progress (live from backend — 0 fakes)</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontWeight: 600, color: '#7dd3fc' }}>Honest Progress (live from backend — 0 fakes)</span>
+          <button
+            onClick={async () => {
+              try {
+                const [enr, arts] = await Promise.all([
+                  api.getEnrichmentStatus ? api.getEnrichmentStatus() : api.get('/api/v2/brain/enrichment/status'),
+                  api.listLabArtifacts ? api.listLabArtifacts({ limit: 5 }) : Promise.resolve([])
+                ]);
+                setEnrichment(enr);
+                setArtifactsB(arts);
+              } catch {}
+            }}
+            style={{ fontSize: 11, padding: '2px 8px', background: 'transparent', border: '1px solid #444', color: '#888', borderRadius: 4, cursor: 'pointer' }}
+          >
+            ⟳ Refresh
+          </button>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <strong>A — Autonomous (self-improving)</strong><br/>
