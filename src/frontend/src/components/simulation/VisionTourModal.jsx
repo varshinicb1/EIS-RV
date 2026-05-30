@@ -287,6 +287,11 @@ export default function VisionTourModal({ open, onClose }) {
                 <div style={{ color: '#7dd3fc', fontWeight: 600, marginBottom: 4 }}>Honest A + B (live)</div>
                 <div>A: {tourSummary.enr?.synthesis_simulation_attempts ?? 0} attempts / {tourSummary.enr?.virtual_synthesis_validated ?? 0} validated • perfect: {String(tourSummary.enr?.perfect_recipe_found ?? false)}</div>
                 <div>B: {tourSummary.arts?.length ?? 0} real artifacts (FOG/Silver from your folders)</div>
+                {tourSummary.arts && tourSummary.arts.length > 0 && (
+                  <div style={{ color: '#888', marginTop: 2 }}>
+                    Latest: {tourSummary.arts[0]?.name || tourSummary.arts[0]?.path}
+                  </div>
+                )}
 
                 <button
                   onClick={async () => {

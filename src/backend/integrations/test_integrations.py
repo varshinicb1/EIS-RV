@@ -482,5 +482,40 @@ def test_vision_tour_generate_report_from_live_snapshot_e2e():
     print("VISION TOUR GENERATE REPORT FROM LIVE SNAPSHOT E2E: PASS (real report generation from A+B data)")
 
 
+def test_vision_tour_full_a_b_snapshot_to_report_flow_e2e():
+    """End-to-end test of the exact flow the Vision Tour 'Generate Publication Report from this snapshot' button performs.
+    Gets live A+B data (same shape as the widget/tour summary) and generates a real lab_electrochem_data report.
+    """
+    from src.backend.core.engines.lab_brain import get_autonomous_enrichment_status
+    from src.backend.api.v1_routes.lab_routes import list_lab_artifacts
+    from fastapi.testclient import TestClient
+    from src.backend.api.server import app
+    import asyncio
+
+    # 1. Get the exact data the UI would have at that moment
+    enr = get_autonomous_enrichment_status()
+    arts = asyncio.run(list_lab_artifacts(5))
+
+    # 2. Call the report generation exactly like the button does
+    client = TestClient(app)
+    payload = {
+        "template": "lab_electrochem_data",
+        "title": "Vision Tour — Honest A+B Snapshot (Full Flow E2E)",
+        "simulation_data": {
+            "enrichment": enr,
+            "artifacts": arts,
+            "source": "Vision Tour full snapshot-to-report E2E test"
+        }
+    }
+
+    response = client.post("/api/v2/reports/generate", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    # The endpoint should succeed and produce a report
+    assert data.get("ok") is True or "id" in data or "report" in data
+
+    print("VISION TOUR FULL SNAPSHOT-TO-REPORT FLOW E2E: PASS (live A+B data → real publication report)")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
