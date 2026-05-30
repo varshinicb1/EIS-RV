@@ -123,6 +123,18 @@ INFO:     Application startup complete.
 
 ---
 
+## 📦 Packaged .exe (Production — Recommended for End Users)
+
+After `cargo tauri build --debug` (from `src-tauri`):
+
+Run the generated setup .exe once.  
+On first run the app auto-launches the **Vision Tour** (real E2E exercising every core path with the bundled sidecar + Qwen adapter + data).  
+Drive, local LLM, FOG analysis, reports — all via the centralized HTTP client. No extra setup.
+
+See START_HERE.md for the exact build command and what the tour validates.
+
+---
+
 ## 🧪 Quick Test
 
 ### Test 1: Run EIS Simulation

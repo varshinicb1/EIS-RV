@@ -133,11 +133,29 @@ export default function DashboardPanel() {
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Hero header */}
       <header style={{ marginBottom: 4 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-          Dashboard
-        </h1>
-        <div style={{ marginTop: 4, color: 'var(--text-tertiary)', fontSize: 13 }}>
-          Local backend status, simulation engines, and research pipeline activity.
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              Dashboard
+            </h1>
+            <div style={{ marginTop: 4, color: 'var(--text-tertiary)', fontSize: 13 }}>
+              Local backend status, simulation engines, and research pipeline activity.
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              try { localStorage.removeItem('raman-vision-tour-completed'); } catch {}
+              window.dispatchEvent(new CustomEvent('LAUNCH_VISION_TOUR'));
+            }}
+            style={{
+              padding: '8px 14px', fontSize: 12.5, fontWeight: 600,
+              background: 'var(--accent, #4a8eff)', color: '#fff', border: 'none',
+              borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap'
+            }}
+            title="Guided interactive tour exercising health, Drive, local Qwen LLM, brain, A/B tracks, and report gen — all via real centralized client.js calls. Perfect for verifying packaged first-run."
+          >
+            🚀 Launch Vision Tour
+          </button>
         </div>
       </header>
 

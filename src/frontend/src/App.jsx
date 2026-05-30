@@ -39,6 +39,7 @@ const HydrothermalDiscoveryPanel = lazy(() => import('./components/discovery/Hyd
 const AutonomousLabPanel         = lazy(() => import('./components/discovery/AutonomousLabPanel'));
 const GoogleDrivePanel           = lazy(() => import('./components/research/GoogleDrivePanel'));
 const ECLiteraturePanel          = lazy(() => import('./components/research/ECLiteraturePanel'));
+const VisionTourModal            = lazy(() => import('./components/simulation/VisionTourModal'));
 
 // Backend URL — uses Tauri/Electron preload bridge or direct fallback
 const BACKEND_URL = 'http://127.0.0.1:8000';
@@ -82,6 +83,7 @@ function AppContent() {
   const [backendStatus, setBackendStatus] = useState('connecting');
   const [licenseInfo, setLicenseInfo] = useState(null);
   const [nimConfigured, setNimConfigured] = useState(null);
+  const [showVisionTour, setShowVisionTour] = useState(false);
   const { setTheme } = useTheme();
 
   useKeyboardShortcuts(setActivePanel, () => setSidebarCollapsed(c => !c));
@@ -220,9 +222,31 @@ function AppContent() {
     return () => offs.forEach(off => off?.());
   }, [setTheme]);
 
+  // ── Vision Tour: auto-launch on very first run (zero-friction packaged experience) ─
+  useEffect(() => {
+    try {
+      const done = localStorage.getItem('raman-vision-tour-completed') === 'true';
+      if (!done) {
+        // Wait a moment for backend probe + sidecar to be healthy
+        const t = setTimeout(() => setShowVisionTour(true), 1350);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, []);
+
+  // Global event so Dashboard (or future buttons) can force-launch the tour
+  useEffect(() => {
+    const onLaunch = () => setShowVisionTour(true);
+    window.addEventListener('LAUNCH_VISION_TOUR', onLaunch);
+    return () => window.removeEventListener('LAUNCH_VISION_TOUR', onLaunch);
+  }, []);
+
+  const closeTour = () => setShowVisionTour(false);
+
   return (
     <div className="app-shell">
       <Toaster />
+      <VisionTourModal open={showVisionTour} onClose={closeTour} />
       <Sidebar
         panels={PANELS}
         active={activePanel}

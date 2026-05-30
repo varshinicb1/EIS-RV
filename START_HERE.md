@@ -127,6 +127,27 @@ Go to: **http://localhost:5173**
 
 ---
 
+## 📦 Production Packaged Windows Install (Tauri v2 — Zero-Friction First Run)
+
+**Exact one-command (or double-click) path after build:**
+
+```powershell
+cd "C:\Users\varsh\OneDrive\Documents\Vidyuthlabs\Raman-studio\EIS-RV\src-tauri"
+$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+cargo tauri build --debug
+```
+
+- Resulting installer: `src-tauri\target\debug\bundle\nsis\RAMAN Studio_3.0.0_x64-setup.exe` (or release for final)
+- Double-click the .exe → full install (includes embedded Python 3.11 + all wheels + src/backend + models/Raman-Qwen-Agent adapter + Lab data + FOG samples)
+- **First launch automatically shows the Vision Tour wizard** (multi-step, real calls via client.js):
+  Health → Drive (graceful if no creds) → Local LLM (Raman-Qwen structure-paper) → Brain sync → A enrichment → B FOG+SHAP → Real report generation.
+- Sidecar (Python) starts/stops cleanly with the app (fixed lifecycle).
+- Everything works offline after first install — no external Python required.
+
+This is the C-track "on first install, everything works, guided tour" vision made real.
+
+---
+
 ## 🎨 Special: Publication-Ready Plots
 
 **All plots now have WHITE backgrounds** for scientific publications:
