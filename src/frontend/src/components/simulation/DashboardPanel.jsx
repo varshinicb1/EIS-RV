@@ -188,14 +188,20 @@ export default function DashboardPanel() {
                   api.getEnrichmentStatus ? api.getEnrichmentStatus() : api.get('/api/v2/brain/enrichment/status'),
                   api.listLabArtifacts ? api.listLabArtifacts({ limit: 6 }) : Promise.resolve([])
                 ]);
+                // Update the live A+B widget with fresh honest data
+                setEnrichment(enr);
+                setArtifactsB(arts);
+
                 const summary = {
                   A: { attempts: enr?.synthesis_simulation_attempts ?? 0, validated: enr?.virtual_synthesis_validated ?? 0, perfect: enr?.perfect_recipe_found ?? false, recipes: (enr?.recipes || []).length },
                   B: { artifacts: (arts || []).length, samplePaths: (arts || []).slice(0,3).map(a => a.name || a.path) },
                   tauri: isTauri(),
                   honest: "0 fakes — only real synthesis evidence counts"
                 };
-                alert("Full Vision E2E Summary (honest)\n\n" + JSON.stringify(summary, null, 2));
-                // In real flow this would open VisionTourModal or update a live widget
+                // Keep the alert as quick proof + offer to open Vision Tour
+                if (confirm("Full Vision E2E Summary (honest)\n\n" + JSON.stringify(summary, null, 2) + "\n\nOpen Vision Tour now?")) {
+                  window.dispatchEvent(new CustomEvent('LAUNCH_VISION_TOUR'));
+                }
               } catch (e) {
                 alert("E2E verify error (honest): " + (e.message || e));
               }
