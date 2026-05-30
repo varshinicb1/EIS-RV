@@ -36,6 +36,7 @@ export default function DashboardPanel() {
   // Live honest A + B status (from Cand 1 memory winner + Cand 5 visibility)
   const [enrichment, setEnrichment] = useState(null);
   const [artifactsB, setArtifactsB] = useState(null);
+  const [lastGeneratedReport, setLastGeneratedReport] = useState(null);
   const [bResults, setBResults] = useState(null);
   const [bBusy, setBBusy] = useState(false);
 
@@ -294,8 +295,13 @@ export default function DashboardPanel() {
                   body: JSON.stringify({ template: 'lab_electrochem_data', title: 'FOG + Silver Vanadate Publication Report (B-track real artifacts)', simulation_data: bResults || {source: 'B-track dashboard'} })
                 });
                 const rep = await r.json();
+                // Refresh artifacts so the new report is visible, then record for success feedback (consistent with Vision Tour)
+                const freshArts = await fetch(`${API}/api/v2/lab/artifacts?limit=5`).then(r=>r.json()).catch(()=>[]);
+                setArtifactsB(freshArts);
+                if (freshArts && freshArts.length > 0) {
+                  setLastGeneratedReport(freshArts[0].name || freshArts[0].path || 'lab_electrochem_data report');
+                }
                 alert('Publication report created (lab_electrochem_data template). ID: ' + (rep.id || 'ok') + '\nArtifacts now in /api/v2/lab/artifacts + data/reports/');
-                // navigation hint: user can switch to Reports tab
               } catch (e) { alert('Report gen: ' + (e.message||e)); }
             }}
             style={{ padding: '6px 10px', fontSize: 12, background: 'var(--accent, #4a8eff)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
@@ -313,6 +319,11 @@ export default function DashboardPanel() {
         )}
         {artifactsB && artifactsB.length > 0 && (
           <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text-tertiary)' }}>Latest real artifacts: {artifactsB.slice(0,3).map(a => a.name || a.path).join(' | ')}</div>
+        )}
+        {lastGeneratedReport && (
+          <div style={{ marginTop: 4, fontSize: 11, color: '#34c759', fontWeight: 600 }}>
+            ✓ Report created: {lastGeneratedReport}
+          </div>
         )}
       </div>
 

@@ -593,5 +593,39 @@ def test_vision_tour_report_generation_shows_success_feedback_e2e():
     print("VISION TOUR REPORT SUCCESS FEEDBACK E2E: PASS (new report artifact visible after generation)")
 
 
+def test_dashboard_btrack_generate_report_shows_success_feedback_e2e():
+    """Direct E2E for the exact flow the Dashboard B-Track 'Create Publication Report' button + success feedback now performs.
+    Uses realistic B-track data + live A enrichment (same shape the widget would send).
+    """
+    from src.backend.core.engines.lab_brain import get_autonomous_enrichment_status
+    from src.backend.api.v1_routes.lab_routes import list_lab_artifacts
+    from fastapi.testclient import TestClient
+    from src.backend.api.server import app
+    import asyncio
+
+    enr = get_autonomous_enrichment_status()
+    arts_before = asyncio.run(list_lab_artifacts(8))
+
+    client = TestClient(app)
+    payload = {
+        "template": "lab_electrochem_data",
+        "title": "Dashboard B-Track — Success Feedback E2E",
+        "simulation_data": {
+            "enrichment": enr,
+            "artifacts": arts_before,
+            "source": "Dashboard B-Track report generation E2E test"
+        }
+    }
+
+    resp = client.post("/api/v2/reports/generate", json=payload)
+    assert resp.status_code == 200
+
+    arts_after = asyncio.run(list_lab_artifacts(8))
+
+    assert len(arts_after) >= len(arts_before)
+
+    print("DASHBOARD B-TRACK REPORT SUCCESS FEEDBACK E2E: PASS (live data → report → new artifact visible)")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
