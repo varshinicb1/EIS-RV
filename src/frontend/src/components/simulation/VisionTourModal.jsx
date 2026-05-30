@@ -43,6 +43,7 @@ export default function VisionTourModal({ open, onClose }) {
 
   // Live honest A + B summary inside the tour (ties winners together)
   const [tourSummary, setTourSummary] = useState(null);
+  const [lastGeneratedReport, setLastGeneratedReport] = useState(null);
 
   const refreshTourSummary = async () => {
     try {
@@ -293,12 +294,19 @@ export default function VisionTourModal({ open, onClose }) {
                   </div>
                 )}
 
+                {lastGeneratedReport && (
+                  <div style={{ color: '#34c759', marginTop: 4, fontWeight: 600 }}>
+                    ✓ Report created: {lastGeneratedReport}
+                  </div>
+                )}
+
                 <button
                   onClick={async () => {
                     try {
+                      const reportTitle = 'Vision Tour — Honest A+B Snapshot';
                       await api.generateReport({
                         template: 'lab_electrochem_data',
-                        title: 'Vision Tour — Honest A+B Snapshot',
+                        title: reportTitle,
                         simulation_data: {
                           enrichment: tourSummary.enr,
                           artifacts: tourSummary.arts,
@@ -308,6 +316,15 @@ export default function VisionTourModal({ open, onClose }) {
                       addLog('Publication report generated from current A+B snapshot');
                       // Refresh the live summary so the new report immediately appears in the artifacts list
                       await refreshTourSummary();
+
+                      // Record the newly created report for clear success feedback in the UI
+                      if (tourSummary.arts && tourSummary.arts.length > 0) {
+                        // After refresh, the newest artifact is usually the first one
+                        const newest = tourSummary.arts[0];
+                        if (newest) {
+                          setLastGeneratedReport(newest.name || newest.path || reportTitle);
+                        }
+                      }
                     } catch (e) {
                       addLog('Report generation error: ' + (e.message || e));
                     }

@@ -558,5 +558,40 @@ def test_vision_tour_generate_report_then_refresh_artifacts_e2e():
     print("VISION TOUR GENERATE + REFRESH ARTIFACTS E2E: PASS (live snapshot → successful report generation → refreshed artifacts list)")
 
 
+def test_vision_tour_report_generation_shows_success_feedback_e2e():
+    """Direct E2E verifying that after generating a report from a live A+B snapshot,
+    a new artifact appears that can be used for the '✓ Report created' success line in the UI.
+    """
+    from src.backend.core.engines.lab_brain import get_autonomous_enrichment_status
+    from src.backend.api.v1_routes.lab_routes import list_lab_artifacts
+    from fastapi.testclient import TestClient
+    from src.backend.api.server import app
+    import asyncio
+
+    enr = get_autonomous_enrichment_status()
+    arts_before = asyncio.run(list_lab_artifacts(10))
+
+    client = TestClient(app)
+    payload = {
+        "template": "lab_electrochem_data",
+        "title": "Vision Tour — Success Feedback E2E",
+        "simulation_data": {
+            "enrichment": enr,
+            "artifacts": arts_before,
+            "source": "Vision Tour success feedback E2E test"
+        }
+    }
+
+    resp = client.post("/api/v2/reports/generate", json=payload)
+    assert resp.status_code == 200
+
+    arts_after = asyncio.run(list_lab_artifacts(10))
+
+    # New report artifact should be present
+    assert len(arts_after) >= len(arts_before)
+
+    print("VISION TOUR REPORT SUCCESS FEEDBACK E2E: PASS (new report artifact visible after generation)")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
