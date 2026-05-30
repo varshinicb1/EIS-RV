@@ -445,5 +445,42 @@ def test_vision_tour_auto_summary_on_completion_flow():
     print("VISION TOUR AUTO A+B SUMMARY ON COMPLETION: PASS (data the tour now shows automatically)")
 
 
+def test_vision_tour_generate_report_from_live_snapshot_e2e():
+    """Direct E2E for the exact action the new 'Generate Publication Report from this snapshot' button in the Vision Tour performs.
+    Uses data shaped like the live A+B summary (Cand 1 + Cand 2 winners).
+    """
+    from fastapi.testclient import TestClient
+    from src.backend.api.server import app
+    import json
+
+    client = TestClient(app)
+
+    # Simulate the data the tour button sends
+    payload = {
+        "template": "lab_electrochem_data",
+        "title": "Vision Tour — Honest A+B Snapshot (E2E)",
+        "simulation_data": {
+            "enrichment": {
+                "synthesis_simulation_attempts": 24,
+                "virtual_synthesis_validated": 0,
+                "perfect_recipe_found": False,
+                "recipes": []
+            },
+            "artifacts": [
+                {"name": "fog_shap_20260530_....json", "path": "data/reports/fog_shap_....json"},
+                {"name": "silver_vanadate_cv_....json", "path": "data/reports/silver_vanadate_cv_....json"}
+            ],
+            "source": "Vision Tour live summary E2E test"
+        }
+    }
+
+    response = client.post("/api/v2/reports/generate", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data.get("ok") is True or "report" in data or "id" in data
+
+    print("VISION TOUR GENERATE REPORT FROM LIVE SNAPSHOT E2E: PASS (real report generation from A+B data)")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

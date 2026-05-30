@@ -287,6 +287,28 @@ export default function VisionTourModal({ open, onClose }) {
                 <div style={{ color: '#7dd3fc', fontWeight: 600, marginBottom: 4 }}>Honest A + B (live)</div>
                 <div>A: {tourSummary.enr?.synthesis_simulation_attempts ?? 0} attempts / {tourSummary.enr?.virtual_synthesis_validated ?? 0} validated • perfect: {String(tourSummary.enr?.perfect_recipe_found ?? false)}</div>
                 <div>B: {tourSummary.arts?.length ?? 0} real artifacts (FOG/Silver from your folders)</div>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.generateReport({
+                        template: 'lab_electrochem_data',
+                        title: 'Vision Tour — Honest A+B Snapshot',
+                        simulation_data: {
+                          enrichment: tourSummary.enr,
+                          artifacts: tourSummary.arts,
+                          source: 'Vision Tour live summary (Cand 1 + Cand 2 winners)'
+                        }
+                      });
+                      addLog('Publication report generated from current A+B snapshot');
+                    } catch (e) {
+                      addLog('Report generation error: ' + (e.message || e));
+                    }
+                  }}
+                  style={{ marginTop: 6, fontSize: 10, padding: '2px 8px', background: '#1e3a8a', color: 'white', border: '1px solid #3b5a9e', borderRadius: 3, cursor: 'pointer' }}
+                >
+                  Generate Publication Report from this snapshot
+                </button>
               </div>
             )}
 
