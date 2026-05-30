@@ -149,6 +149,8 @@ export const api = {
   structurePaper: (fullText) => api.post('/api/v2/agent/structure-paper', { full_text: fullText }),
   brainSync: () => api.post('/api/v2/brain/knowledge/sync'),
   getBrainStatus: () => api.get('/api/v2/brain/status'),
+  // New from best-of-n Cand 1 winner (honest self-improving A memory)
+  getEnrichmentStatus: () => api.get('/api/v2/brain/enrichment/status'),
 
   // Human researcher flow (FOG/Silver vanadate/Electrochem-suite real data + ML + explain)
   runFogShapAnalysis: (opts = {}) => api.post('/api/v2/lab/run-fog-shap', opts),

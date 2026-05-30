@@ -101,7 +101,7 @@ class TestEngineInfo:
     def test_engine_info(self):
         from src.backend.core.native_bridge import get_engine_info
         info = get_engine_info()
-        assert "cpp_available" in info
+        assert "rust_available" in info
         assert "python_fallback" in info
 
     def test_force_python(self):

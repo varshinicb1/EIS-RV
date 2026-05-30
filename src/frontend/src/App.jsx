@@ -39,7 +39,8 @@ const HydrothermalDiscoveryPanel = lazy(() => import('./components/discovery/Hyd
 const AutonomousLabPanel         = lazy(() => import('./components/discovery/AutonomousLabPanel'));
 const GoogleDrivePanel           = lazy(() => import('./components/research/GoogleDrivePanel'));
 const ECLiteraturePanel          = lazy(() => import('./components/research/ECLiteraturePanel'));
-const VisionTourModal            = lazy(() => import('./components/simulation/VisionTourModal'));
+// Eager: small, always potentially visible on first run
+import VisionTourModal            from './components/simulation/VisionTourModal';
 
 // Backend URL — uses Tauri/Electron preload bridge or direct fallback
 const BACKEND_URL = 'http://127.0.0.1:8000';

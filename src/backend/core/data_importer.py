@@ -95,7 +95,7 @@ def _parse_csv(text: str) -> Dict[str, Any]:
 
     return {
         "format": "csv",
-        "data_type": _guess_data_type(headers, columns, filename),
+        "data_type": _guess_data_type(headers, columns, ""),
         "headers": headers,
         "columns": columns,
         "metadata": {},
@@ -226,7 +226,7 @@ def _parse_biologic_mpt(text: str) -> Dict[str, Any]:
 
     return {
         "format": "biologic_mpt",
-        "data_type": _guess_data_type(headers, columns, filename),
+        "data_type": _guess_data_type(headers, columns, ""),
         "headers": headers,
         "columns": columns,
         "metadata": metadata,
