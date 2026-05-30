@@ -58,6 +58,13 @@ try:
 except ImportError:
     HAS_PYMECSIM = False
 
+# Rust PyO3 acceleration (raman_core_rs) - prefer over pure Python fallback for CV
+try:
+    import raman_core_rs as _rust_cv  # type: ignore
+    _HAS_RUST_CV = True
+except ImportError:
+    _HAS_RUST_CV = False
+
 logger = logging.getLogger(__name__)
 
 # Physical constants
@@ -352,6 +359,47 @@ def simulate_cv(params: CVParameters, n_points: int = 2000, mechanism: str = 'E'
         except Exception as e:
             logger.warning(f"pyMECSim failed: {e}. Falling back to analytical Nicholson-Shain solver.")
     
+    # Prefer Rust PyO3 CV engine (replaces pure Python Nicholson-Shain fallback where possible)
+    if _HAS_RUST_CV:
+        try:
+            p = _rust_cv.PyCVParams()
+            p.area_cm2 = float(params.electrode_area_cm2)
+            p.roughness = float(params.roughness_factor)
+            p.E_formal_V = float(params.E_formal_V)
+            p.n_electrons = int(params.n_electrons)
+            p.C_ox_M = float(params.C_ox_bulk_M)
+            p.C_red_M = float(params.C_red_bulk_M)
+            p.D_ox_cm2s = float(params.D_ox_cm2_s)
+            p.D_red_cm2s = float(params.D_red_cm2_s)
+            p.k0_cm_s = float(params.k0_cm_s)
+            p.alpha = float(params.alpha)
+            p.Cdl_F_cm2 = float(params.Cdl_F_cm2)
+            p.Rs_ohm = float(params.Rs_ohm)
+            p.E_start_V = float(params.E_start_V)
+            p.E_vertex_V = float(params.E_vertex1_V)
+            p.E_end_V = float(getattr(params, 'E_vertex2_V', params.E_vertex1_V))
+            p.scan_rate_V_s = float(params.scan_rate_V_s)
+            p.n_cycles = int(params.n_cycles)
+            p.temperature_K = float(params.temperature_K)
+            rust_res = _rust_cv.simulate_cv_py(p, int(n_points))
+            res = CVResult(
+                E=np.asarray(rust_res.E),
+                i_total=np.asarray(rust_res.i_total),
+                i_faradaic=np.asarray(rust_res.i_faradaic),
+                i_capacitive=np.asarray(rust_res.i_capacitive),
+                time=np.asarray(rust_res.time),
+                params=params,
+                i_pa=float(rust_res.i_pa),
+                i_pc=float(rust_res.i_pc),
+                E_pa=float(rust_res.E_pa),
+                E_pc=float(rust_res.E_pc),
+                delta_Ep=float(rust_res.dEp),
+            )
+            logger.info("Using Rust (PyO3) CV solver")
+            return res
+        except Exception as e:
+            logger.warning(f"Rust CV solver failed: {e}. Falling back to Python Nicholson-Shain.")
+
     # Fallback to standard Nicholson-Shain
     logger.info("Using analytical Nicholson-Shain solver")
     p = params

@@ -21,6 +21,10 @@ from models.raman_material_identifier import (
 
 DB_PATH = ROOT / "data" / "material_database" / "raman_materials.json"
 
+# Guard to fix pytest test collection issues (old regressed guard restored).
+# Prevents this standalone runner script from interfering with `pytest tests/` collection.
+__test__ = False
+
 _results = []
 def check(name, cond, detail=""):
     status = "✅ PASS" if cond else "❌ FAIL"

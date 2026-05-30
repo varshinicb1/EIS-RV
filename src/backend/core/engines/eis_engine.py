@@ -30,6 +30,13 @@ from typing import Tuple
 from dataclasses import dataclass
 from .materials import EISParameters, StructuralDescriptors
 
+# Rust PyO3 acceleration (raman_core_rs) - prefer over pure Python fallbacks
+try:
+    import raman_core_rs as _rust_eis  # type: ignore
+    _HAS_RUST_EIS = True
+except ImportError:
+    _HAS_RUST_EIS = False
+
 
 # ---------------------------------------------------------------------------
 #   Equivalent Circuit Impedance Calculations
@@ -205,6 +212,30 @@ def simulate_eis(
     Returns:
         EISResult with frequencies, impedance data, and plot-ready arrays
     """
+    # Prefer Rust PyO3 engine (full EIS/CV/DRT/circuit acceleration) over pure Python fallback
+    if _HAS_RUST_EIS:
+        try:
+            p = _rust_eis.PyEISParams()
+            p.Rs = float(params.Rs)
+            p.Rct = float(params.Rct)
+            p.Cdl = float(params.Cdl)
+            p.sigma_w = float(params.sigma_warburg)
+            p.n_cpe = float(params.n_cpe)
+            p.bounded_w = bool(use_bounded_warburg)
+            p.diff_len_um = 100.0
+            p.diff_coeff = 1e-6
+            rust_res = _rust_eis.simulate_eis_py(p, float(freq_range[0]), float(freq_range[1]), int(n_points))
+            return EISResult(
+                frequencies=np.asarray(rust_res.frequencies),
+                Z_real=np.asarray(rust_res.Z_real),
+                Z_imag=np.asarray(rust_res.Z_imag),
+                Z_magnitude=np.asarray(rust_res.Z_magnitude),
+                Z_phase=np.asarray(rust_res.Z_phase),
+                params=params,
+            )
+        except Exception:
+            pass  # silent fallback to Python (keeps API identical)
+
     # Log-spaced frequency array
     frequencies = np.logspace(
         np.log10(freq_range[0]),

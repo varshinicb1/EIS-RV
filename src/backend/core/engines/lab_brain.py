@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 _DATA_DIR  = Path(__file__).parent.parent.parent / "data"
 _PAPERS_PATH = _DATA_DIR / "electrode_papers.json"
 _DB_PATH   = "db/lab_brain.duckdb"
+_RECIPES_PATH = _DATA_DIR / "autonomous_recipes.json"
 
 # ── Physical constants ──────────────────────────────────────────────────────
 
@@ -623,6 +624,10 @@ _LOOP_STATE: Dict[str, Any] = {
     "best_material":    None,
     "error":            None,
     "thread":           None,
+    # Honest A-track memory & self-improvement counters
+    "recipes_persisted": 0,
+    "perfect_recipe_found": False,
+    "nim_proposals": 0,
 }
 _LOOP_LOCK = threading.Lock()
 
@@ -655,7 +660,9 @@ class DiscoveryLoop:
         self.db        = db
         self.validator = validator
         self._inventory: List[Dict] = []
+        self._recipe_memory: List[Dict] = []  # top/recent high-evidence recipes for self-biasing
         self._load_inventory()
+        self._load_recipe_memory()
 
     def _load_inventory(self):
         inv_path = _DATA_DIR / "lab_inventory.json"
@@ -678,6 +685,84 @@ class DiscoveryLoop:
                 {"name": "CTAB", "category": "surfactant"},
                 {"name": "Urea", "category": "structure_director"},
             ]
+
+    def _load_recipe_memory(self):
+        """Load persistent recipe cards (only those with real synth evidence)."""
+        try:
+            if _RECIPES_PATH.exists():
+                with open(_RECIPES_PATH) as f:
+                    data = json.load(f)
+                recs = data.get("recipes", [])
+                # Keep top 5 by score for biasing (or most recent if tie)
+                self._recipe_memory = sorted(
+                    recs, key=lambda r: r.get("overall_score", 0), reverse=True
+                )[:5]
+        except Exception as exc:
+            logger.debug("Recipe memory load (ok if first run): %s", exc)
+            self._recipe_memory = []
+
+    def _persist_recipe_card(self, card: Dict[str, Any]):
+        """Append only honest cards (physics + virtual + REAL synth evidence)."""
+        try:
+            _RECIPES_PATH.parent.mkdir(parents=True, exist_ok=True)
+            existing: List[Dict] = []
+            if _RECIPES_PATH.exists():
+                with open(_RECIPES_PATH) as f:
+                    existing = json.load(f).get("recipes", [])
+            existing.append(card)
+            # cap growth
+            if len(existing) > 100:
+                existing = existing[-100:]
+            payload = {
+                "recipes": existing,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+            with open(_RECIPES_PATH, "w") as f:
+                json.dump(payload, f, indent=2)
+            # refresh in-memory top5
+            self._recipe_memory = sorted(
+                existing, key=lambda r: r.get("overall_score", 0), reverse=True
+            )[:5]
+            with _LOOP_LOCK:
+                _LOOP_STATE["recipes_persisted"] = len(existing)
+        except Exception as exc:
+            logger.warning("Recipe persist failed (non-fatal): %s", exc)
+
+    def _get_biased_metals(self, groups: Dict[str, List[Dict]], rng: random.Random) -> List[Dict]:
+        """Simple bias + mutation toward top memory recipes (self-improving)."""
+        metals = groups.get("metals", [])[:]
+        if not self._recipe_memory or not metals:
+            return metals
+        # Collect favored metal names from high scorers
+        favored_names: List[str] = []
+        for rec in self._recipe_memory:
+            mat = str(rec.get("material", ""))
+            for token in mat.replace("/", " ").replace("-", " ").split():
+                if token and len(token) > 1:
+                    favored_names.append(token)
+        if not favored_names:
+            return metals
+        # Bias: move matching metals to front (re-seed preference)
+        biased = []
+        seen = set()
+        for m in metals:
+            if any(f.lower() in m["name"].lower() for f in favored_names):
+                if m["name"] not in seen:
+                    biased.append(m)
+                    seen.add(m["name"])
+        # Fill rest + simple mutation: occasionally swap in a favored variant
+        for m in metals:
+            if m["name"] not in seen:
+                biased.append(m)
+                seen.add(m["name"])
+        # Mutation example: if high scorer, tweak one entry by picking similar category
+        if len(biased) > 1 and rng.random() < 0.4:
+            idx = rng.randint(0, len(biased) - 1)
+            cat = biased[idx].get("category")
+            alts = [x for x in metals if x.get("category") == cat and x["name"] != biased[idx]["name"]]
+            if alts:
+                biased[idx] = rng.choice(alts)
+        return biased
 
     def _classify(self) -> Dict[str, List[Dict]]:
         groups: Dict[str, List[Dict]] = {
@@ -735,6 +820,8 @@ class DiscoveryLoop:
                 started = time.time()
         seed = int(started)
         rng  = random.Random(seed)
+        # Apply memory bias + mutation from top persisted honest recipes (self-improving A-track)
+        metals = self._get_biased_metals({"metals": metals, "supports": supports, "bases": bases, "dopants": groups.get("dopants", [])}, rng)
         rng.shuffle(metals)
 
         iteration = _LOOP_STATE.get("iteration", 0)
@@ -787,6 +874,28 @@ class DiscoveryLoop:
                     ecsa_multiplier=ecsa_mult,
                     synthesis_feasibility=feasibility,
                 )
+
+                # Optional NVIDIA NIM call path (after physics pass): propose 1-2 next experiments
+                # based on current candidate. Graceful degrade if no key / any failure.
+                try:
+                    from src.ai_engine.nim_client import get_default_client
+                    nim_client = get_default_client()
+                    if nim_client.configured:
+                        best_note = f"scored {pred.overall_score:.3f} (LoD {pred.lod_nM} nM)"
+                        prompt = (
+                            f"Electrochemical biosensor candidate: {material_name} for {analyte} {best_note}. "
+                            "Suggest 1-2 concrete next experiments or minor variants using lab chemicals "
+                            "(metal salts, supports, bases, dopants). Return strict JSON: "
+                            "{\"suggestions\": [{\"variant\": \"<short desc>\", \"reason\": \"<why better>\"}, ...]}"
+                        )
+                        nim_data = nim_client.chat_json(prompt, max_tokens=200, temperature=0.4)
+                        if isinstance(nim_data, dict) and nim_data.get("suggestions"):
+                            suggs = nim_data["suggestions"][:2]
+                            pred.assumptions.append(f"NIM next-expt proposals: {suggs}")
+                            with _LOOP_LOCK:
+                                _LOOP_STATE["nim_proposals"] = _LOOP_STATE.get("nim_proposals", 0) + 1
+                except Exception:
+                    pass  # honest graceful: no key or error -> no proposal, continue loop
 
                 if pred.overall_score < 0.25:
                     with _LOOP_LOCK:
@@ -854,6 +963,37 @@ class DiscoveryLoop:
                                 pred.overall_score = min(1.0, pred.overall_score + 0.10)
                         except Exception:
                             pass
+
+                        # === Real persistent memory: only for candidates with physics + virtual + REAL synth evidence ===
+                        # (honest: never for pure virtual/no-synth-evidence cases)
+                        had_real_synth = True  # we are inside the "no error in synth" block
+                        is_perfect = (pred.overall_score > 0.7) and had_real_synth
+                        card = {
+                            "combo_id": combo_id,
+                            "material": material_name,
+                            "analyte": analyte,
+                            "params": {
+                                "metals": [m["name"] for m in metal_list],
+                                "support": support["name"] if support else None,
+                                "base": base["name"] if base else None,
+                                "ecsa_multiplier": ecsa_mult,
+                                "synthesis_feasibility": feasibility,
+                            },
+                            "scores": {
+                                "overall_score": pred.overall_score,
+                                "lod_nM": pred.lod_nM,
+                                "sensitivity_uA_uM_cm2": pred.sensitivity_uA_uM_cm2,
+                                "selectivity_score": pred.selectivity_score,
+                            },
+                            "evidence": list(pred.assumptions),
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "real_synth_label": label,
+                            "virtual_validations": True,
+                        }
+                        self._persist_recipe_card(card)
+                        if is_perfect:
+                            with _LOOP_LOCK:
+                                _LOOP_STATE["perfect_recipe_found"] = True
                 except Exception:
                     pass  # Non-fatal — core physics path remains
 
@@ -914,6 +1054,15 @@ class DiscoveryLoop:
         s.setdefault("virtual_synthesis_validated", 0)
         s.setdefault("synthesis_simulation_attempts", 0)
         s["enrichment_enabled"] = True  # signals the hydrothermal + sim closed-loop path is active
+        # Actionable persistent memory (top honest recipe cards + perfect flag)
+        s["recipes"] = self._recipe_memory[:]
+        s["perfect_recipe_found"] = bool(s.get("perfect_recipe_found", False))
+        if not s["recipes"] and _RECIPES_PATH.exists():
+            try:
+                with open(_RECIPES_PATH) as f:
+                    s["recipes"] = json.load(f).get("recipes", [])[-5:]
+            except Exception:
+                pass
         return s
 
 
@@ -1362,20 +1511,28 @@ def get_autonomous_enrichment_status() -> Dict:
     """
     Clean, lightweight summary of the new autonomous closed-loop enrichment
     (hydrothermal + virtual EC validation). Intended for UI and E2E verify.
+    Now returns actionable recipes list + perfect_recipe_found (when virtual+real_synth+score>0.7).
     """
     try:
         status = _loop.status()
+        recipes = status.get("recipes", []) or []
         return {
             "enrichment_enabled": status.get("enrichment_enabled", False),
             "synthesis_simulation_attempts": status.get("synthesis_simulation_attempts", 0),
             "virtual_synthesis_validated": status.get("virtual_synthesis_validated", 0),
             "loop_running": status.get("running", False),
             "iteration": status.get("iteration", 0),
+            "recipes_persisted": status.get("recipes_persisted", len(recipes)),
+            "perfect_recipe_found": status.get("perfect_recipe_found", False),
+            "recipes": recipes,  # full actionable cards (params, scores, evidence, real label, ts)
+            "nim_proposals": status.get("nim_proposals", 0),
         }
     except Exception:
         return {
             "enrichment_enabled": False,
-            "error": "Could not read loop status"
+            "error": "Could not read loop status",
+            "recipes": [],
+            "perfect_recipe_found": False,
         }
 
 
@@ -1400,8 +1557,8 @@ def run_short_autonomous_demo(max_iterations: int = 3) -> Dict:
     """
     Bounded short run of the DiscoveryLoop for Dashboard 'End-to-end verify'
     and Vision Tour. Exercises honest A-track enrichment (real synth only for
-    evidence, virtual char always for physics passes).
-    Returns final get_autonomous_enrichment_status() payload.
+    evidence, virtual char always for physics passes). No fakes.
+    Returns actionable recipes + perfect_recipe_found (true only on virtual+real_synth+>0.7).
     """
     try:
         # Ensure we don't leave a thread running
