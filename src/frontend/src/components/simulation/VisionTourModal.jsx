@@ -306,6 +306,8 @@ export default function VisionTourModal({ open, onClose }) {
                         }
                       });
                       addLog('Publication report generated from current A+B snapshot');
+                      // Refresh the live summary so the new report immediately appears in the artifacts list
+                      await refreshTourSummary();
                     } catch (e) {
                       addLog('Report generation error: ' + (e.message || e));
                     }
