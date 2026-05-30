@@ -37,7 +37,10 @@
     "resources": {
       "../requirements.txt": "requirements.txt",
       "../src/backend": "src/backend",
-      "../resources/python": "python"
+      "../resources/python": "python",
+      "../models/Raman-Qwen-Agent": "models/Raman-Qwen-Agent",
+      "../data/cleaned/fog": "data/cleaned/fog",
+      "../Lab data": "Lab data"
     },
     "windows": {
       "certificateThumbprint": null,

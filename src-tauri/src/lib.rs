@@ -1,10 +1,12 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use tauri::{Emitter, Manager};
 use tauri_plugin_updater::UpdaterExt;
 
 static PYTHON_RUNNING: AtomicBool = AtomicBool::new(false);
+static PYTHON_PID: Mutex<Option<u32>> = Mutex::new(None);
 
 fn find_python() -> Option<PathBuf> {
     let candidates = if cfg!(windows) {
@@ -44,6 +46,28 @@ fn find_repo_root() -> Option<PathBuf> {
         }
     }
     None
+}
+
+fn kill_python_backend() {
+    let mut guard = PYTHON_PID.lock().unwrap();
+    if let Some(pid) = *guard {
+        #[cfg(windows)]
+        {
+            // Force kill the tree (uvicorn child processes too)
+            let _ = Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .status();
+        }
+        #[cfg(not(windows))]
+        {
+            let _ = Command::new("kill").args(["-TERM", &pid.to_string()]).status();
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            let _ = Command::new("kill").args(["-9", &pid.to_string()]).status();
+        }
+        *guard = None;
+        PYTHON_RUNNING.store(false, Ordering::SeqCst);
+        eprintln!("[RAMAN] Python sidecar terminated (pid {})", pid);
+    }
 }
 
 fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::Child, String> {
@@ -94,8 +118,12 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
             }
         };
 
-        // Find repo root by walking up from exe or using CWD
-        let backend_cwd = find_repo_root().unwrap_or_else(|| resource_dir.clone());
+        // Production: ALWAYS use the resource_dir as cwd. This guarantees that
+        // the bundled "src/backend", "models/Raman-Qwen-Agent", and "data/cleaned/fog"
+        // (copied by tauri.conf.json resources) are discoverable by relative paths
+        // used in agent_routes (ADAPTER_DIR), lab_routes FOG searches, and uvicorn module.
+        // find_repo_root is retained only for dev edge cases.
+        let backend_cwd = resource_dir.clone();
 
         (
             cmd_str,
@@ -115,6 +143,8 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
         .current_dir(&cwd)
         .env("PYTHONUNBUFFERED", "1")
         .env("PYTHONDONTWRITEBYTECODE", "1")
+        // Ensure imports resolve to bundled src/ + any wheels in python/
+        .env("PYTHONPATH", cwd.to_string_lossy().to_string())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -127,6 +157,12 @@ fn start_python_backend(app_handle: &tauri::AppHandle) -> Result<std::process::C
     let mut child = command.spawn()
         .map_err(|e| format!("Failed to start Python backend: {}\n\nMake sure Python and uvicorn are installed:\n  pip install uvicorn fastapi", e))?;
 
+    // Record PID for clean shutdown on app exit / window close (fixes sidecar lifecycle leak)
+    {
+        let pid = child.id();
+        let mut guard = PYTHON_PID.lock().unwrap();
+        *guard = Some(pid);
+    }
     PYTHON_RUNNING.store(true, Ordering::SeqCst);
 
     if let Some(stdout) = child.stdout.take() {
@@ -282,6 +318,13 @@ pub fn run() {
                         eprintln!("[RAMAN] Failed to start Python backend: {}", e);
                         let _ = py_handle.emit("backend-error", e);
                     }
+                }
+            });
+
+            // ── Sidecar lifecycle: kill Python on any window close / app exit ─
+            app.on_window_event(|event| {
+                if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event.event() {
+                    kill_python_backend();
                 }
             });
 
