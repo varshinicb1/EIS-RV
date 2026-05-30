@@ -406,5 +406,24 @@ def test_dashboard_widget_a_b_data_shape_e2e():
     print("DASHBOARD WIDGET A+B E2E: PASS (enrichment + artifacts shape matches live widget expectations, honest data)")
 
 
+def test_vision_tour_live_a_b_summary_data_e2e():
+    """Direct E2E for the exact data the Vision Tour 'Show Live A+B Summary' button consumes.
+    Mirrors the new summary panel added to the guided first-run tour (ties Cand 1 + Cand 2 winners).
+    """
+    from src.backend.core.engines.lab_brain import get_autonomous_enrichment_status
+    from src.backend.api.v1_routes.lab_routes import list_lab_artifacts
+    import asyncio
+
+    enr = get_autonomous_enrichment_status()
+    arts = asyncio.run(list_lab_artifacts(4))
+
+    # Must have the winner fields the tour summary displays
+    assert "synthesis_simulation_attempts" in enr and "virtual_synthesis_validated" in enr
+    assert "perfect_recipe_found" in enr
+    assert isinstance(arts, list)
+
+    print("VISION TOUR LIVE A+B SUMMARY E2E: PASS (honest data shape for tour summary panel)")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

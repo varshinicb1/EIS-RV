@@ -41,6 +41,9 @@ export default function VisionTourModal({ open, onClose }) {
   const [running, setRunning] = useState(false);
   const [autoMode, setAutoMode] = useState(false);
 
+  // Live honest A + B summary inside the tour (ties winners together)
+  const [tourSummary, setTourSummary] = useState(null);
+
   const addLog = (msg) => {
     setLog(prev => [...prev.slice(-18), `[${new Date().toLocaleTimeString()}] ${msg}`]);
   };
@@ -255,6 +258,33 @@ export default function VisionTourModal({ open, onClose }) {
               </button>
               <button onClick={resetTour} style={{ ...btnStyle, background: 'transparent' }}>Reset Tour</button>
             </div>
+
+            {/* Live A+B Summary from winners (Cand 1 memory + Cand 2 real B) */}
+            <div style={{ marginTop: 12 }}>
+              <button
+                onClick={async () => {
+                  try {
+                    const [enr, arts] = await Promise.all([
+                      api.getEnrichmentStatus ? api.getEnrichmentStatus() : api.get('/api/v2/brain/enrichment/status'),
+                      api.listLabArtifacts ? api.listLabArtifacts({ limit: 4 }) : Promise.resolve([])
+                    ]);
+                    setTourSummary({ enr, arts });
+                  } catch {}
+                }}
+                style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}
+              >
+                ⟳ Show Live A+B Summary (honest)
+              </button>
+            </div>
+
+            {tourSummary && (
+              <div style={{ marginTop: 8, background: '#0a0c12', border: '1px solid #222', borderRadius: 4, padding: 8, fontSize: 10 }}>
+                <div style={{ color: '#7dd3fc', fontWeight: 600, marginBottom: 4 }}>Honest A + B (live)</div>
+                <div>A: {tourSummary.enr?.synthesis_simulation_attempts ?? 0} attempts / {tourSummary.enr?.virtual_synthesis_validated ?? 0} validated • perfect: {String(tourSummary.enr?.perfect_recipe_found ?? false)}</div>
+                <div>B: {tourSummary.arts?.length ?? 0} real artifacts (FOG/Silver from your folders)</div>
+              </div>
+            )}
+
             <div style={{ fontSize: 10, color: '#666', marginTop: 10, lineHeight: 1.4 }}>
               All calls hit the real Python sidecar (bundled in the .exe). Local Qwen adapter is used when torch+adapter are present in the packaged python env.
             </div>
