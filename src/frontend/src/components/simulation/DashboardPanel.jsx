@@ -250,6 +250,11 @@ export default function DashboardPanel() {
         <div style={{ marginTop: 8, fontSize: 11, color: '#666' }}>
           Click the master button above for full A+B E2E JSON summary + Vision Tour.
         </div>
+        {lastGeneratedReport && (
+          <div style={{ marginTop: 6, fontSize: 11, color: '#34c759', fontWeight: 600 }}>
+            ✓ Report created: {lastGeneratedReport}
+          </div>
+        )}
       </div>
 
       {/* B-Track Real Human Data Controls (minimal surface of runFogShapAnalysis + analyzeSilver + report nav) */}

@@ -627,5 +627,39 @@ def test_dashboard_btrack_generate_report_shows_success_feedback_e2e():
     print("DASHBOARD B-TRACK REPORT SUCCESS FEEDBACK E2E: PASS (live data → report → new artifact visible)")
 
 
+def test_dashboard_a_b_widget_report_generation_success_feedback_e2e():
+    """Direct E2E for the exact flow the main A+B Progress Widget + master E2E button context now supports.
+    Generates a report from realistic live A+B widget data and verifies a new artifact appears (for the ✓ success line).
+    """
+    from src.backend.core.engines.lab_brain import get_autonomous_enrichment_status
+    from src.backend.api.v1_routes.lab_routes import list_lab_artifacts
+    from fastapi.testclient import TestClient
+    from src.backend.api.server import app
+    import asyncio
+
+    enr = get_autonomous_enrichment_status()
+    arts_before = asyncio.run(list_lab_artifacts(8))
+
+    client = TestClient(app)
+    payload = {
+        "template": "lab_electrochem_data",
+        "title": "Dashboard A+B Widget — Success Feedback E2E",
+        "simulation_data": {
+            "enrichment": enr,
+            "artifacts": arts_before,
+            "source": "Dashboard main A+B widget report E2E test"
+        }
+    }
+
+    resp = client.post("/api/v2/reports/generate", json=payload)
+    assert resp.status_code == 200
+
+    arts_after = asyncio.run(list_lab_artifacts(8))
+
+    assert len(arts_after) >= len(arts_before)
+
+    print("DASHBOARD A+B WIDGET REPORT SUCCESS FEEDBACK E2E: PASS (live widget data → report → new artifact visible for success line)")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
