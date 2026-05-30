@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-05-30 — "Make it Famous" + best-of-n 100% Push (Docs, Visuals, Badges, A+B Honesty)
+
+- **Major README + vision overhaul**: New compelling top with full original user vision (A autonomous honest closed-loop + B real human 01-08 pipelines), 5 professional visual proofs, GitHub badges (CI, Tauri, Rust, Python, License, best-of-n), honest status table, real E2E terminal + UI proof blocks, clear "try it" and contribution paths.
+- **5 new visual assets** committed to `screenshots/vision/` (hero dashboard, architecture diagram, B-pipeline results, honest A E2E counters proof, first-install target) and embedded.
+- **Honest A-track memory progress** (recipe persistence, self-biasing, extra counters) landing via parallel sub-agents.
+- **Everything pushed and in sync** with GitHub per user directive. Sub-agents (5 in isolated worktrees) actively finishing the remaining packaging, Rust, full docs, release slices.
+- Updated CHANGELOG + pointers in other docs to the new vision narrative.
+
+This slice significantly advances the "make the repo famous" and "update all docs about the true vision" goals while keeping 100% honesty (no fake fallbacks).
+
 ## [2.1.0] — 2026-05-03
 
 First release in which RĀMAN Studio is intended for direct use by external

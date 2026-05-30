@@ -1,15 +1,20 @@
-# 🎯 START HERE - RĀMAN Studio Testing
+# 🎯 START HERE - RĀMAN Studio (EIS-RV)
 
-## ✅ Everything is Ready!
+**The complete virtual electrochemistry & nanomaterials discovery lab — now in active best-of-n maximum-subagent 100% push.**
 
-Your localhost web app is **fully configured** with:
-- ✅ Data persistence (LocalStorage)
-- ✅ API key storage (Backend .env)
-- ✅ Publication-ready plots (white backgrounds)
-- ✅ 92.5% frontend audit complete
-- ✅ All major features working
+See the brand-new vision README (badges, 5 visual proofs, honest A autonomous closed-loop + B real human pipelines, E2E evidence) for the full story and current status: [README.md](README.md)
+
+## ✅ Core Engines + A+B Flows Are Real and E2E Proven (May 2026)
+
+- Honest Autonomous A (zero synthetic fallbacks, always-virtual characterization, real-synth-only evidence)
+- Human B (real FOG 01-08 SHAP + Silver vanadate + artifacted reports from your exact CSVs)
+- Tauri v2 + centralized client + local Qwen brain + real Drive + Rust acceleration skeleton
+
+Everything below is the practical on-ramp and is being refreshed as part of the docs vision alignment.
 
 ---
+
+## 🚀 Quick Start (30 seconds)
 
 ## 🚀 Quick Start (30 seconds)
 
