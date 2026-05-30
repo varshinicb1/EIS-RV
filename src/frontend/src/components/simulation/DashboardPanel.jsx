@@ -253,6 +253,14 @@ export default function DashboardPanel() {
         {lastGeneratedReport && (
           <div style={{ marginTop: 6, fontSize: 11, color: '#34c759', fontWeight: 600 }}>
             ✓ Report created: {lastGeneratedReport}
+            <button
+              onClick={() => {
+                navigator.clipboard?.writeText(lastGeneratedReport).catch(() => {});
+              }}
+              style={{ marginLeft: 8, fontSize: 10, padding: '1px 6px', background: 'transparent', border: '1px solid #444', color: '#888', borderRadius: 3, cursor: 'pointer' }}
+            >
+              Copy path
+            </button>
           </div>
         )}
       </div>
