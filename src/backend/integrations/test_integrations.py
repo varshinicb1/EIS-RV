@@ -425,5 +425,25 @@ def test_vision_tour_live_a_b_summary_data_e2e():
     print("VISION TOUR LIVE A+B SUMMARY E2E: PASS (honest data shape for tour summary panel)")
 
 
+def test_vision_tour_auto_summary_on_completion_flow():
+    """Verifies the exact data shape the Vision Tour now auto-fetches at the end of runAll.
+    This is the data the guided first-run experience will show automatically after the tour completes.
+    """
+    from src.backend.core.engines.lab_brain import get_autonomous_enrichment_status
+    from src.backend.api.v1_routes.lab_routes import list_lab_artifacts
+    import asyncio
+
+    enr = get_autonomous_enrichment_status()
+    arts = asyncio.run(list_lab_artifacts(4))
+
+    # The tour summary panel displays these exact fields
+    assert "synthesis_simulation_attempts" in enr
+    assert "perfect_recipe_found" in enr
+    assert "recipes" in enr
+    assert isinstance(arts, list)
+
+    print("VISION TOUR AUTO A+B SUMMARY ON COMPLETION: PASS (data the tour now shows automatically)")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

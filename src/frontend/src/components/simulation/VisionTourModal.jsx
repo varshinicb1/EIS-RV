@@ -44,6 +44,16 @@ export default function VisionTourModal({ open, onClose }) {
   // Live honest A + B summary inside the tour (ties winners together)
   const [tourSummary, setTourSummary] = useState(null);
 
+  const refreshTourSummary = async () => {
+    try {
+      const [enr, arts] = await Promise.all([
+        api.getEnrichmentStatus ? api.getEnrichmentStatus() : api.get('/api/v2/brain/enrichment/status'),
+        api.listLabArtifacts ? api.listLabArtifacts({ limit: 4 }) : Promise.resolve([])
+      ]);
+      setTourSummary({ enr, arts });
+    } catch {}
+  };
+
   const addLog = (msg) => {
     setLog(prev => [...prev.slice(-18), `[${new Date().toLocaleTimeString()}] ${msg}`]);
   };
@@ -155,6 +165,9 @@ export default function VisionTourModal({ open, onClose }) {
     }
     setAutoMode(false);
     addLog('=== ALL STEPS COMPLETE — honest E2E proof ===');
+
+    // Auto-show the live honest A+B summary from the winners at the natural end of the tour
+    await refreshTourSummary();
   };
 
   const resetTour = () => {
@@ -262,18 +275,10 @@ export default function VisionTourModal({ open, onClose }) {
             {/* Live A+B Summary from winners (Cand 1 memory + Cand 2 real B) */}
             <div style={{ marginTop: 12 }}>
               <button
-                onClick={async () => {
-                  try {
-                    const [enr, arts] = await Promise.all([
-                      api.getEnrichmentStatus ? api.getEnrichmentStatus() : api.get('/api/v2/brain/enrichment/status'),
-                      api.listLabArtifacts ? api.listLabArtifacts({ limit: 4 }) : Promise.resolve([])
-                    ]);
-                    setTourSummary({ enr, arts });
-                  } catch {}
-                }}
+                onClick={refreshTourSummary}
                 style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}
               >
-                ⟳ Show Live A+B Summary (honest)
+                ⟳ Show / Refresh Live A+B Summary (honest)
               </button>
             </div>
 
