@@ -32,7 +32,28 @@ export default function DashboardPanel() {
     serialStatus: 'idle',
   });
   const [backendOnline, setBackendOnline] = useState(false);
+
+  // Live honest A + B status (from Cand 1 memory winner + Cand 5 visibility)
+  const [enrichment, setEnrichment] = useState(null);
+  const [artifactsB, setArtifactsB] = useState(null);
+
   const chartRef = useRef(null);
+
+  // Live fetch for honest A/B widget (runs once on mount)
+  useEffect(() => {
+    (async () => {
+      try {
+        if (api.getEnrichmentStatus) {
+          const enr = await api.getEnrichmentStatus();
+          setEnrichment(enr);
+        }
+        if (api.listLabArtifacts) {
+          const arts = await api.listLabArtifacts({ limit: 5 });
+          setArtifactsB(arts);
+        }
+      } catch {}
+    })();
+  }, []);
 
   useEffect(() => {
     fetch(`${API}/api/v2/pipeline/stats`).then(r => r.ok ? r.json() : null).then(setPipeStats).catch(() => {});
@@ -184,21 +205,24 @@ export default function DashboardPanel() {
         </div>
       </header>
 
-      {/* Honest A + B Progress Widget (Cand 5 winner style, minimal) */}
+      {/* Honest A + B Progress Widget (live, powered by Cand 1 + Cand 5 winners) */}
       <div style={{ margin: '12px 0', padding: 12, background: '#0f1117', border: '1px solid #2a2f3a', borderRadius: 8, fontSize: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 6, color: '#7dd3fc' }}>Honest Progress (live from backend — 0 fakes)</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <strong>A — Autonomous (self-improving)</strong><br/>
-            Attempts / Validated: <span id="a-counts">loading...</span><br/>
-            Perfect recipe found: <span id="a-perfect">—</span><br/>
+            Attempts / Validated: <b>{enrichment ? `${enrichment.synthesis_simulation_attempts ?? 0} / ${enrichment.virtual_synthesis_validated ?? 0}` : '...'}</b><br/>
+            Perfect recipe found: <b>{enrichment?.perfect_recipe_found ? 'Yes' : 'No (honest)'}</b> • Recipes in memory: {enrichment?.recipes?.length ?? 0}<br/>
             <span style={{ color: '#888' }}>Only real synth evidence + virtual validation count (Cand 1 winner)</span>
           </div>
           <div>
             <strong>B — Human real data (FOG / Silver)</strong><br/>
-            Recent artifacts: <span id="b-count">loading...</span><br/>
+            Recent artifacts: <b>{artifactsB ? artifactsB.length : '...'}</b><br/>
             <span style={{ color: '#888' }}>Real committed paths surfaced via /api/v2/lab/artifacts</span>
           </div>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: '#666' }}>
+          Click the master button above for full A+B E2E JSON summary + Vision Tour.
         </div>
       </div>
 

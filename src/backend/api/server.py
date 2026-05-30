@@ -2225,6 +2225,10 @@ REPORT_TEMPLATES = {
         "name": "Full Project Report",
         "sections": ["Executive Summary", "Materials", "Experimental Methods", "Simulation Results", "Analysis", "Discussion", "Conclusions", "References"],
     },
+    "lab_electrochem_data": {
+        "name": "Lab Electrochem Data (FOG Biosensor + Silver Vanadate + Electrochem-suite)",
+        "sections": ["Summary", "FOG 01-08 SHAP/DPV/EIS/Gomutra", "Silver Vanadate CV Analysis", "Real Metrics & Artifacts", "Publication Figures", "Conclusions"],
+    },
 }
 
 @app.get("/api/v2/reports/templates")
