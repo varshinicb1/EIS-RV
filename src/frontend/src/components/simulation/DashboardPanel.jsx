@@ -36,6 +36,8 @@ export default function DashboardPanel() {
   // Live honest A + B status (from Cand 1 memory winner + Cand 5 visibility)
   const [enrichment, setEnrichment] = useState(null);
   const [artifactsB, setArtifactsB] = useState(null);
+  const [bResults, setBResults] = useState(null);
+  const [bBusy, setBBusy] = useState(false);
 
   const chartRef = useRef(null);
 
@@ -224,6 +226,71 @@ export default function DashboardPanel() {
         <div style={{ marginTop: 8, fontSize: 11, color: '#666' }}>
           Click the master button above for full A+B E2E JSON summary + Vision Tour.
         </div>
+      </div>
+
+      {/* B-Track Real Human Data Controls (minimal surface of runFogShapAnalysis + analyzeSilver + report nav) */}
+      <div style={{ padding: 12, background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>B-Track: Real Human Data Pipeline (FOG 01-08 + Silver Vanadate)</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+          <button
+            disabled={bBusy}
+            onClick={async () => {
+              setBBusy(true);
+              try {
+                const res = await fetch(`${API}/api/v2/lab/run-fog-shap`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
+                const data = await res.json();
+                setBResults(data);
+                // refresh artifacts list
+                try {
+                  const arts = await (window.api && window.api.listLabArtifacts ? window.api.listLabArtifacts({limit:8}) : fetch(`${API}/api/v2/lab/artifacts?limit=8`).then(r=>r.json()));
+                  setArtifactsB(arts);
+                } catch {}
+              } catch (e) { alert('FOG run error: ' + (e.message||e)); }
+              finally { setBBusy(false); }
+            }}
+            style={{ padding: '6px 10px', fontSize: 12, background: '#166534', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+          >▶ Run FOG 01-08 (real CSVs + biosensor_ml)</button>
+          <button
+            disabled={bBusy}
+            onClick={async () => {
+              setBBusy(true);
+              try {
+                const res = await fetch(`${API}/api/v2/lab/analyze-silver-vanadate`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
+                const data = await res.json();
+                setBResults(data);
+              } catch (e) { alert('Silver run error: ' + (e.message||e)); }
+              finally { setBBusy(false); }
+            }}
+            style={{ padding: '6px 10px', fontSize: 12, background: '#854d0e', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+          >Analyze Silver vanadate (real CV peaks)</button>
+          <button
+            onClick={async () => {
+              try {
+                const r = await fetch(`${API}/api/v2/reports/generate`, {
+                  method: 'POST', headers: {'Content-Type':'application/json'},
+                  body: JSON.stringify({ template: 'lab_electrochem_data', title: 'FOG + Silver Vanadate Publication Report (B-track real artifacts)', simulation_data: bResults || {source: 'B-track dashboard'} })
+                });
+                const rep = await r.json();
+                alert('Publication report created (lab_electrochem_data template). ID: ' + (rep.id || 'ok') + '\nArtifacts now in /api/v2/lab/artifacts + data/reports/');
+                // navigation hint: user can switch to Reports tab
+              } catch (e) { alert('Report gen: ' + (e.message||e)); }
+            }}
+            style={{ padding: '6px 10px', fontSize: 12, background: 'var(--accent, #4a8eff)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+          >Create Publication Report (lab_electrochem_data)</button>
+          <button onClick={async () => {
+            const arts = await fetch(`${API}/api/v2/lab/artifacts?limit=10`).then(r=>r.json()).catch(()=>[]);
+            setArtifactsB(arts);
+            alert('Artifacts refreshed: ' + (arts?.length||0) + ' real paths (see below + /api/v2/lab/artifacts)');
+          }} style={{ padding: '6px 10px', fontSize: 12, background: '#334155', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Refresh /api/v2/lab/artifacts</button>
+        </div>
+        {bResults && (
+          <div style={{ fontSize: 11, background: '#0b0f17', padding: 8, borderRadius: 4, fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#a5b4fc' }}>
+            stages: {(bResults.stages_attempted || []).join(' → ')} | artifacts: {(bResults.artifacts || []).slice(0,2).join('; ')} | metrics: {JSON.stringify(bResults.metrics || bResults, null, 0).slice(0,180)}...
+          </div>
+        )}
+        {artifactsB && artifactsB.length > 0 && (
+          <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text-tertiary)' }}>Latest real artifacts: {artifactsB.slice(0,3).map(a => a.name || a.path).join(' | ')}</div>
+        )}
       </div>
 
       {/* Top-level metrics */}

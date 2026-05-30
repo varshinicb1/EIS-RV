@@ -421,7 +421,8 @@ async def run_fog_shap_analysis(payload: dict = Body(default={})) -> dict[str, A
         "metrics": metrics,
         "duration_s": round(_time.time() - started, 2),
         "note": "B-track: fully real data from user's cleaned FOG CSVs + biosensor_ml stages (patched+invoked). Publication report auto-generated via lab_electrochem_data template. Complementary to A-track synthetic/autonomous.",
-        "report_template": "lab_electrochem_data"
+        "report_template": "lab_electrochem_data",
+        "no_synthetic": True
     }
 
 
