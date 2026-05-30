@@ -58,6 +58,11 @@ The licensing system is being rebuilt; see [Roadmap](#roadmap).
 | PDF / HTML report export | Works |
 | Local AI agent (Qwen-1.5-1.8B + LoRA) | Works if model weights are present under `models/Raman-Qwen-Agent/` |
 
+**Honest autonomous (A) + human real-data (B) pipelines (active best-of-n push to 100%)**:
+- A: DiscoveryLoop with zero synthetic fallbacks (real `data/lab_inventory.json` template only; virtual EIS/CV always for physics-validated candidates; synthesis evidence ONLY on real hydro/local success). `run_short_autonomous_demo()` + `/api/v2/brain/enrichment/status` proven via direct E2E.
+- B: Full `/api/v2/lab/run-fog-shap` (FOG 01-08 stages on real user CSVs, concentration parsing, SHAP, artifacts to `data/reports/`) + `/analyze-silver-vanadate` (Csp ~505 mF/cm² grounded) + `/artifacts` lister. Exact UI button flows (via centralized client.js) now produce real artifacts. Direct FastAPI E2E passes.
+- Dashboard "End-to-end verify (full vision)" + Vision Tour exercise both A+B live.
+
 ## Known limitations
 
 These are documented openly so users (and ourselves) know not to depend on
