@@ -1394,3 +1394,34 @@ def get_unified_stats() -> Dict:
         "loop":           _loop.status(),
         "reports_cached": len(_REPORT_CACHE),
     }
+
+
+def run_short_autonomous_demo(max_iterations: int = 3) -> Dict:
+    """
+    Bounded short run of the DiscoveryLoop for Dashboard 'End-to-end verify'
+    and Vision Tour. Exercises honest A-track enrichment (real synth only for
+    evidence, virtual char always for physics passes).
+    Returns final get_autonomous_enrichment_status() payload.
+    """
+    try:
+        # Ensure we don't leave a thread running
+        with _LOOP_LOCK:
+            _LOOP_STATE["running"] = False
+        time.sleep(0.05)
+
+        _loop.start(max_iterations=max_iterations)
+
+        # Give the daemon thread a moment to execute a few combos
+        time.sleep(0.8)
+
+        # Force stop for the short demo
+        with _LOOP_LOCK:
+            _LOOP_STATE["running"] = False
+
+        time.sleep(0.2)
+        return get_autonomous_enrichment_status()
+    except Exception as exc:
+        return {
+            "error": f"demo_failed: {exc}",
+            **get_autonomous_enrichment_status()
+        }
