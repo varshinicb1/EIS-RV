@@ -11,7 +11,7 @@ crate-type = ["cdylib", "rlib"]
 ndarray = { version = "0.16", features = ["serde"] }
 num-complex = { version = "0.4", features = ["serde"] }
 numpy = "0.24"
-pyo3 = { version = "0.24", features = ["abi3-py311", "extension-module"] }
+pyo3 = { version = "0.29", features = ["abi3-py311", "extension-module"] }
 rayon = "1.10"
 serde = { version = "1", features = ["derive"] }
 
