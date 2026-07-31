@@ -48,7 +48,7 @@ email-validator==2.3.0
 
 # Scheduling & Webhooks (Phase 5 Week 19)
 croniter==6.2.2
-aiohttp==3.13.5
+aiohttp==3.14.0
 
 # Report Generation (Phase 5 Week 20)
 reportlab==4.5.0
